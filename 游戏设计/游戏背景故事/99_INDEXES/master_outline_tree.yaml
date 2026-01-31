@@ -1,0 +1,123 @@
+level: master_outline
+id: BOOK
+title: 苍玄格物纪
+children:
+  - id: BOOK-Q
+    beat: 起
+    title: 奠基期（曙光探源｜卷1–6）
+    goal: 提出并验证“工程化修行”的最小可行方法；建立方法论与早期团队/资源
+    conflict: 生存倒计时与宗门守旧的怀疑/打压并存
+    evidence: [镜头, 对话, 数据, 文件]
+    mapping: { seven_step: [1, 2], crossbow: 弩弦 }
+    volumes_mapped: [1, 2, 3, 4, 5, 6]
+    children:
+      - id: BOOK-Q-Q
+        beat: 起
+        title: 危局与萌芽
+        goal: 生存倒计时+最小方法雏形（吐纳矩阵/可视化雏形）
+        mapping: { seven_step: [1, 2], crossbow: 弩弦 }
+      - id: BOOK-Q-C
+        beat: 承
+        title: 市场与技艺的小试
+        goal: 产销分离与品控理念起势
+        mapping: { seven_step: [3, 4], crossbow: 弩弦 }
+      - id: BOOK-Q-Z
+        beat: 转
+        title: 首次冲突与制度触点
+        goal: 智取对抗、进入讲学/制度视野
+        mapping: { seven_step: [5, 6], crossbow: 卡扣 }
+      - id: BOOK-Q-H
+        beat: 合
+        title: 阶段盘点与资源解锁
+        goal: 特招/导师关注/研发样机就位
+        mapping: { seven_step: [7], crossbow: 弩弓 }
+
+  - id: BOOK-C
+    beat: 承
+    title: 扩张期（金丹争锋｜卷7–12）
+    goal: 在更大舞台推广“天篆工程学”，形成标准/网络/军备合作雏形
+    conflict: 精英剑修与科技路线的对抗、信息封锁与自由流动之争
+    evidence: [镜头, 对话, 数据, 文件]
+    mapping: { seven_step: [3, 4], crossbow: 弩弦 }
+    volumes_mapped: [7, 8, 9, 10, 11, 12]
+    children:
+      - id: BOOK-C-Q
+        beat: 起
+        title: 路线正名
+        goal: 代表性成果正名（青龙战甲/阵网验证）
+        mapping: { seven_step: [3], crossbow: 弩弦 }
+      - id: BOOK-C-C
+        beat: 承
+        title: 对抗加压
+        goal: 传送网络/黑洞阵对抗监控体系
+        mapping: { seven_step: [4], crossbow: 弩弦 }
+      - id: BOOK-C-Z
+        beat: 转
+        title: 学术与情报的翻转
+        goal: 《天篆可计算性》引发震荡与潜行夺副本
+        mapping: { seven_step: [5, 6], crossbow: 卡扣 }
+      - id: BOOK-C-H
+        beat: 合
+        title: 阶段盘点
+        goal: 军备/标准/副本在手，进入更高层博弈
+        mapping: { seven_step: [7], crossbow: 弩箭 }
+
+  - id: BOOK-Z
+    beat: 转
+    title: 联盟期（元婴裂缝｜卷13–18）
+    goal: 构建跨洲联盟与“补天蓝图”，确认“三重枷锁”机制与破局路径
+    conflict: 联盟科研 vs 天道封锁；域外天魔威胁抬头
+    evidence: [镜头, 对话, 数据, 文件]
+    mapping: { seven_step: [5, 6], crossbow: 卡扣 }
+    volumes_mapped: [13, 14, 15, 16, 17, 18]
+    children:
+      - id: BOOK-Z-Q
+        beat: 起
+        title: 枢纽与星链
+        goal: 流火枢纽与星链阵列搭建
+        mapping: { seven_step: [5], crossbow: 卡扣 }
+      - id: BOOK-Z-C
+        beat: 承
+        title: 同盟与推演
+        goal: 万相同盟+寂灭模拟
+        mapping: { seven_step: [5], crossbow: 卡扣 }
+      - id: BOOK-Z-Z
+        beat: 转
+        title: 谈判与档案
+        goal: 临停与枷锁档案交接
+        mapping: { seven_step: [6], crossbow: 扳机 }
+      - id: BOOK-Z-H
+        beat: 合
+        title: 蓝图出炉
+        goal: 发布补天蓝图并经小规模侵袭验证其必要性
+        mapping: { seven_step: [6, 7], crossbow: 弩箭 }
+
+  - id: BOOK-H
+    beat: 合
+    title: 执行期（化神补天｜卷19–22）
+    goal: 化神、统合二十二道枢，执行补天工程，重写法则、进入启明纪元
+    conflict: 化神心魔与文明使命的代价；终局对抗的牺牲抉择
+    evidence: [镜头, 对话, 数据, 文件]
+    mapping: { seven_step: [7], crossbow: 弩箭 }
+    volumes_mapped: [19, 20, 21, 22]
+    children:
+      - id: BOOK-H-Q
+        beat: 起
+        title: 化神之阶
+        goal: 以创世之念突破化神并统御道枢
+        mapping: { seven_step: [5, 6], crossbow: 卡扣 }
+      - id: BOOK-H-C
+        beat: 承
+        title: 战线稳固
+        goal: 防火墙完整版+天工号稳定战线
+        mapping: { seven_step: [6], crossbow: 扳机 }
+      - id: BOOK-H-Z
+        beat: 转
+        title: 总攻与献祭
+        goal: 联盟总攻与关键献祭/承载
+        mapping: { seven_step: [6], crossbow: 扳机 }
+      - id: BOOK-H-H
+        beat: 合
+        title: 补天与启明
+        goal: 执行补天计划、重写法则、启明纪元开启
+        mapping: { seven_step: [7], crossbow: 弩箭 }

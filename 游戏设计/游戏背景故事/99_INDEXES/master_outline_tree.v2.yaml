@@ -1,0 +1,71 @@
+level: master_outline
+id: BOOK_V2
+title: 时间账本（学术流）
+meta:
+  pitch: 模拟器/回档/时间账本 + 学术流；以“回档税/次数上限/审计成本”为硬约束，以学术方法学为升级线
+  constraints:
+    rollback_limit: 3        # 一生仅允许真实回档三次
+    rollback_tax: [0.10, 0.25, 0.60]  # 三次回档的“因果熵税”占比（随次数陡增）
+    sim_unlimited: true      # 学术模拟器可无限试演，但会产生“伦理磨损/现实脱敏”惩罚
+    oversight: 时间伦理委员会/时庭监察
+  style:
+    narrative: third_person_limited
+    pacing: wave-medium
+    tone: rational_academic_with_emotion_peaks
+volumes: 16
+children:
+  - id: BOOK-Q
+    beat: 起
+    title: 奠基期（回档经济学的诞生｜卷1–4）
+    goal: 建立“时间账本”的度量与审计；获得模拟器V1；首度被迫回档并存活
+    conflict: 伦理审查、同行质疑、基金截留与初代监管
+    evidence: [镜头, 对话, 数据, 文件]
+    mapping: { seven_step: [1, 2], crossbow: 弩弦 }
+    volumes_mapped: [1, 2, 3, 4]
+    children:
+      - { id: BOOK-Q-Q, beat: 起,  title: 问题成形, goal: 倒计时与最小账本雏形, mapping: { seven_step: [1,2] }}
+      - { id: BOOK-Q-C, beat: 承,  title: 方法立论, goal: 论文+实验室成立, mapping: { seven_step: [3,4] }}
+      - { id: BOOK-Q-Z, beat: 转,  title: 首次回档, goal: 为活命支付10%税并换来团队保全, mapping: { seven_step: [5,6] }}
+      - { id: BOOK-Q-H, beat: 合,  title: 审计过线, goal: 通过伦理与监管的首轮审计, mapping: { seven_step: [7] }}
+
+  - id: BOOK-C
+    beat: 承
+    title: 扩张期（方法学体系与机构化｜卷5–9）
+    goal: 完成“回档经济学”核心模型；引入跨域数据；模拟器V2；建立规范与联盟
+    conflict: 保守学派封杀、伦理攻讦、权限扣押、仿制与学阀之争
+    evidence: [镜头, 对话, 数据, 文件]
+    mapping: { seven_step: [3, 4], crossbow: 弩弦 }
+    volumes_mapped: [5, 6, 7, 8, 9]
+    children:
+      - { id: BOOK-C-Q, beat: 起,  title: 模型成形, goal: 多变量账本与收益率曲线, mapping: { seven_step: [3] }}
+      - { id: BOOK-C-C, beat: 承,  title: 联盟试点, goal: 区域试点+跨域审计通道, mapping: { seven_step: [4] }}
+      - { id: BOOK-C-Z, beat: 转,  title: 第二次回档, goal: 支付25%税以阻断熵疫外溢, mapping: { seven_step: [5,6] }}
+      - { id: BOOK-C-H, beat: 合,  title: 标准落地, goal: 发布《回档伦理准则1.0》, mapping: { seven_step: [7] }}
+
+  - id: BOOK-Z
+    beat: 转
+    title: 联盟期（蓝图与对赌｜卷10–13）
+    goal: 形成文明级“时间修复蓝图”；与时庭/旧神势力就“终极回档权”对赌
+    conflict: 审判与反审判、联盟裂痕、舆情反扑、敌对模拟器投毒
+    evidence: [镜头, 对话, 数据, 文件]
+    mapping: { seven_step: [5, 6], crossbow: 卡扣 }
+    volumes_mapped: [10, 11, 12, 13]
+    children:
+      - { id: BOOK-Z-Q, beat: 起,  title: 蓝图起稿, goal: 修复回路小样验证, mapping: { seven_step: [5] }}
+      - { id: BOOK-Z-C, beat: 承,  title: 公开对赌, goal: 与时庭就“终局回档权”辩论庭战, mapping: { seven_step: [5] }}
+      - { id: BOOK-Z-Z, beat: 转,  title: 伦理裂谷, goal: 同盟内部分裂与学派出走, mapping: { seven_step: [6] }}
+      - { id: BOOK-Z-H, beat: 合,  title: 合流, goal: 整合异论并锁定唯一可行路径, mapping: { seven_step: [6,7] }}
+
+  - id: BOOK-H
+    beat: 合
+    title: 执行期（文明回档与新纪元｜卷14–16）
+    goal: 第三次也是最后一次回档（60%税），以文明级牺牲换取“可继承的最优未来”
+    conflict: 自我崩解与记忆账本保全、时庭终审、舆情与个人情感的对冲
+    evidence: [镜头, 对话, 数据, 文件]
+    mapping: { seven_step: [7], crossbow: 弩箭 }
+    volumes_mapped: [14, 15, 16]
+    children:
+      - { id: BOOK-H-Q, beat: 起,  title: 最终审计, goal: 对自身与文明进行总审计, mapping: { seven_step: [5,6] }}
+      - { id: BOOK-H-C, beat: 承,  title: 执行窗口, goal: 选择唯一窗口并完成动员, mapping: { seven_step: [6] }}
+      - { id: BOOK-H-Z, beat: 转,  title: 代价兑现, goal: 记忆分摊/伦理背书/个人牺牲, mapping: { seven_step: [6] }}
+      - { id: BOOK-H-H, beat: 合,  title: 新纪元, goal: 文明回到最优起点且“账本可继承”, mapping: { seven_step: [7] }}
