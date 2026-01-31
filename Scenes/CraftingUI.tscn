@@ -1,6 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://e2f3g4h5i6j7k"]
+[gd_scene load_steps=5 format=3 uid="uid://607u2kvxyogs"]
 
-[ext_resource type="Script" path="res://Scripts/CraftingSystem.cs" id="1_crafting"]
+[ext_resource type="Script" uid="uid://b216pjf0ttr03" path="res://Scripts/CraftingSystem.cs" id="1_crafting"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_main"]
 bg_color = Color(0.1, 0.11, 0.14, 1)
@@ -63,10 +63,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -550.0
-offset_top = -400.0
-offset_right = 550.0
-offset_bottom = 400.0
+offset_left = -507.5
+offset_top = -321.5
+offset_right = 507.5
+offset_bottom = 321.5
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_main")
@@ -92,8 +92,8 @@ offset_top = 15.0
 offset_right = -15.0
 offset_bottom = 55.0
 grow_horizontal = 0
-text = "X"
 theme_override_font_sizes/font_size = 20
+text = "X"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MainPanel"]
 layout_mode = 1
@@ -137,9 +137,11 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 tab_alignment = 1
+current_tab = 0
 
 [node name="丹药" type="Control" parent="MainPanel/HBoxContainer/LeftPanel/VBoxContainer/TabContainer"]
 layout_mode = 2
+metadata/_tab_index = 0
 
 [node name="MarginContainer" type="MarginContainer" parent="MainPanel/HBoxContainer/LeftPanel/VBoxContainer/TabContainer/丹药"]
 layout_mode = 1
@@ -162,6 +164,7 @@ theme_override_constants/separation = 5
 [node name="符箓" type="Control" parent="MainPanel/HBoxContainer/LeftPanel/VBoxContainer/TabContainer"]
 visible = false
 layout_mode = 2
+metadata/_tab_index = 1
 
 [node name="MarginContainer" type="MarginContainer" parent="MainPanel/HBoxContainer/LeftPanel/VBoxContainer/TabContainer/符箓"]
 layout_mode = 1
@@ -182,6 +185,7 @@ theme_override_constants/separation = 5
 [node name="阵法" type="Control" parent="MainPanel/HBoxContainer/LeftPanel/VBoxContainer/TabContainer"]
 visible = false
 layout_mode = 2
+metadata/_tab_index = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="MainPanel/HBoxContainer/LeftPanel/VBoxContainer/TabContainer/阵法"]
 layout_mode = 1
@@ -202,6 +206,7 @@ theme_override_constants/separation = 5
 [node name="傀儡" type="Control" parent="MainPanel/HBoxContainer/LeftPanel/VBoxContainer/TabContainer"]
 visible = false
 layout_mode = 2
+metadata/_tab_index = 3
 
 [node name="MarginContainer" type="MarginContainer" parent="MainPanel/HBoxContainer/LeftPanel/VBoxContainer/TabContainer/傀儡"]
 layout_mode = 1
@@ -241,7 +246,7 @@ theme_override_constants/separation = 15
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_styles/panel = SubResource("StyleBoxFlat_npc_info")
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MainPanel/HBoxContainer/RightPanel/VBoxContainer/RecipeDetailPanel"]
 layout_mode = 1

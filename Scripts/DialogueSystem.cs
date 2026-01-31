@@ -4,258 +4,284 @@ using System.Threading.Tasks;
 
 namespace TianYanShop.Scripts
 {
-    /// <summary>
-    /// 对话系统 - 处理与NPC的对话交互
-    /// </summary>
-    public partial class DialogueSystem : Control
-    {
-        [Export] public RichTextLabel DialogueText;
-        [Export] public Label NPCNameLabel;
-        [Export] public Label NPCInfoLabel;
-        [Export] public LineEdit PlayerInput;
-        [Export] public Button SendButton;
-        [Export] public Button TradeButton;
-        [Export] public Button CloseButton;
-        [Export] public VBoxContainer HistoryContainer;
-        [Export] public PackedScene MessageBubblePrefab;
+	/// <summary>
+	/// 对话系统 - 处理与NPC的对话交互
+	/// </summary>
+	public partial class DialogueSystem : Control
+	{
+		// 节点引用
+		private Label _npcNameLabel;
+		private Label _npcInfoLabel;
+		private LineEdit _playerInput;
+		private Button _sendButton;
+		private Button _tradeButton;
+		private Button _closeButton;
+		private VBoxContainer _historyContainer;
 
-        private NPCData _currentNPC;
-        private bool _isWaitingResponse = false;
+		private NPCData _currentNPC;
+		private bool _isWaitingResponse = false;
 
-        public override void _Ready()
-        {
-            // 连接按钮信号
-            SendButton.Pressed += OnSendButtonPressed;
-            TradeButton.Pressed += OnTradeButtonPressed;
-            CloseButton.Pressed += OnCloseButtonPressed;
-            PlayerInput.TextSubmitted += OnInputSubmitted;
+		public override void _Ready()
+		{
+			// 获取节点引用
+			_npcNameLabel = GetNode<Label>("DialoguePanel/NPCInfoPanel/NPCNameLabel");
+			_npcInfoLabel = GetNode<Label>("DialoguePanel/NPCInfoPanel/NPCInfoLabel");
+			_playerInput = GetNode<LineEdit>("DialoguePanel/InputPanel/HBoxContainer/PlayerInput");
+			_sendButton = GetNode<Button>("DialoguePanel/InputPanel/HBoxContainer/SendButton");
+			_tradeButton = GetNode<Button>("DialoguePanel/InputPanel/HBoxContainer/TradeButton");
+			_closeButton = GetNode<Button>("DialoguePanel/InputPanel/HBoxContainer/CloseButton");
+			_historyContainer = GetNode<VBoxContainer>("DialoguePanel/ScrollContainer/HistoryContainer");
 
-            // 监听游戏状态变化
-            GameManager.Instance.GameStateChanged += OnGameStateChanged;
+			// 连接按钮信号
+			_sendButton.Pressed += OnSendButtonPressed;
+			_tradeButton.Pressed += OnTradeButtonPressed;
+			_closeButton.Pressed += OnCloseButtonPressed;
+			_playerInput.TextSubmitted += OnInputSubmitted;
 
-            // 初始隐藏
-            Hide();
-        }
+			// 初始隐藏
+			Hide();
 
-        public override void _ExitTree()
-        {
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.GameStateChanged -= OnGameStateChanged;
-            }
-        }
+			// 延迟连接信号，等待 GameManager 初始化完成
+			CallDeferred(nameof(DeferredConnectSignals));
+		}
 
-        private void OnGameStateChanged(GameManager.GameState newState)
-        {
-            if (newState == GameManager.GameState.Dialogue)
-            {
-                _currentNPC = GameManager.Instance.CurrentNPC;
-                if (_currentNPC != null)
-                {
-                    ShowDialogue();
-                }
-            }
-            else
-            {
-                Hide();
-            }
-        }
+		/// <summary>
+		/// 延迟连接信号 - 确保 GameManager 已初始化完成
+		/// </summary>
+		private void DeferredConnectSignals()
+		{
+			// 监听游戏状态变化
+			if (GameManager.Instance != null)
+			{
+				GameManager.Instance.GameStateChanged += OnGameStateChanged;
+				GD.Print("[DialogueSystem] 成功连接到 GameManager 信号");
+			}
+			else
+			{
+				GD.PrintErr("[DialogueSystem] GameManager.Instance 为 null，无法连接信号");
+			}
+		}
 
-        /// <summary>
-        /// 显示对话界面
-        /// </summary>
-        private void ShowDialogue()
-        {
-            Show();
-            NPCNameLabel.Text = _currentNPC.Name;
-            NPCInfoLabel.Text = $"{_currentNPC.GetCultivationDescription()} | {BackgroundToDescription(_currentNPC.Background)} | 关系: {_currentNPC.GetRelationshipLevel()}";
+		public override void _ExitTree()
+		{
+			if (GameManager.Instance != null)
+			{
+				GameManager.Instance.GameStateChanged -= OnGameStateChanged;
+			}
+		}
 
-            // 清空历史显示
-            foreach (Node child in HistoryContainer.GetChildren())
-            {
-                child.QueueFree();
-            }
+		private void OnGameStateChanged(GameManager.GameState newState)
+		{
+			if (newState == GameManager.GameState.Dialogue)
+			{
+				_currentNPC = GameManager.Instance.CurrentNPC;
+				if (_currentNPC != null)
+				{
+					ShowDialogue();
+				}
+			}
+			else
+			{
+				Hide();
+			}
+		}
 
-            // 添加欢迎消息
-            AddNPCMessage($"你好，我是{_currentNPC.Name}。");
-            if (!string.IsNullOrEmpty(_currentNPC.CurrentGoal))
-            {
-                AddNPCMessage($"目前我正在寻求{_currentNPC.CurrentGoal}。");
-            }
+		/// <summary>
+		/// 显示对话界面
+		/// </summary>
+		private void ShowDialogue()
+		{
+			Show();
+			_npcNameLabel.Text = _currentNPC.Name;
+			_npcInfoLabel.Text = $"{_currentNPC.GetCultivationDescription()} | {BackgroundToDescription(_currentNPC.Background)} | 关系: {_currentNPC.GetRelationshipLevel()}";
 
-            PlayerInput.GrabFocus();
-        }
+			// 清空历史显示
+			foreach (Node child in _historyContainer.GetChildren())
+			{
+				child.QueueFree();
+			}
 
-        /// <summary>
-        /// 背景转描述
-        /// </summary>
-        private string BackgroundToDescription(string background)
-        {
-            return background switch
-            {
-                "家族弃子" => "家族弃子",
-                "散修" => "散修",
-                "小家族弟子" => "小家族弟子",
-                "流浪修士" => "流浪修士",
-                "宗门弃徒" => "宗门弃徒",
-                "商人之子" => "商人之子",
-                _ => background
-            };
-        }
+			// 添加欢迎消息
+			AddNPCMessage($"你好，我是{_currentNPC.Name}。");
+			if (!string.IsNullOrEmpty(_currentNPC.CurrentGoal))
+			{
+				AddNPCMessage($"目前我正在寻求{_currentNPC.CurrentGoal}。");
+			}
 
-        /// <summary>
-        /// 玩家发送消息
-        /// </summary>
-        private async void OnSendButtonPressed()
-        {
-            string message = PlayerInput.Text.Trim();
-            if (string.IsNullOrEmpty(message) || _isWaitingResponse)
-                return;
+			_playerInput.GrabFocus();
+		}
 
-            // 添加玩家消息
-            AddPlayerMessage(message);
-            _currentNPC.AddToHistory("玩家", message);
+		/// <summary>
+		/// 背景转描述
+		/// </summary>
+		private string BackgroundToDescription(string background)
+		{
+			return background switch
+			{
+				"家族弃子" => "家族弃子",
+				"散修" => "散修",
+				"小家族弟子" => "小家族弟子",
+				"流浪修士" => "流浪修士",
+				"宗门弃徒" => "宗门弃徒",
+				"商人之子" => "商人之子",
+				_ => background
+			};
+		}
 
-            // 清空输入框
-            PlayerInput.Text = "";
-            _isWaitingResponse = true;
-            SendButton.Disabled = true;
+		/// <summary>
+		/// 玩家发送消息
+		/// </summary>
+		private async void OnSendButtonPressed()
+		{
+			string message = _playerInput.Text.Trim();
+			if (string.IsNullOrEmpty(message) || _isWaitingResponse)
+				return;
 
-            // 模拟NPC响应（将来接入LLM）
-            await SimulateNPCResponse(message);
+			// 添加玩家消息
+			AddPlayerMessage(message);
+			_currentNPC.AddToHistory("玩家", message);
 
-            _isWaitingResponse = false;
-            SendButton.Disabled = false;
-            PlayerInput.GrabFocus();
-        }
+			// 清空输入框
+			_playerInput.Text = "";
+			_isWaitingResponse = true;
+			_sendButton.Disabled = true;
 
-        private void OnInputSubmitted(string text)
-        {
-            OnSendButtonPressed();
-        }
+			// 模拟NPC响应（将来接入LLM）
+			await SimulateNPCResponse(message);
 
-        /// <summary>
-        /// 模拟NPC响应（临时方案，将来接入LLM）
-        /// </summary>
-        private async Task SimulateNPCResponse(string playerMessage)
-        {
-            // 模拟延迟
-            await ToSignal(GetTree().CreateTimer(0.5f), "timeout");
+			_isWaitingResponse = false;
+			_sendButton.Disabled = false;
+			_playerInput.GrabFocus();
+		}
 
-            string response;
-            string lowerMessage = playerMessage.ToLower();
+		private void OnInputSubmitted(string text)
+		{
+			OnSendButtonPressed();
+		}
 
-            // 简单的关键词响应逻辑
-            if (lowerMessage.Contains("筑基丹") || lowerMessage.Contains("突破"))
-            {
-                if (_currentNPC.StoryStage == 2)
-                {
-                    response = "没错！我正是急需筑基丹来突破瓶颈。不知老板这里可有？若有的话，在下愿出高价购买！";
-                    _currentNPC.RelationshipWithPlayer += 5;
-                }
-                else
-                {
-                    response = "筑基丹确实是珍贵之物。虽然我已不需要，但仍有许多道友在寻求。";
-                }
-            }
-            else if (lowerMessage.Contains("价格") || lowerMessage.Contains("多少") || lowerMessage.Contains("钱"))
-            {
-                response = "老板的价格公道与否，在下还需比较一番。不过若质量上乘，价格稍高也无妨。";
-            }
-            else if (lowerMessage.Contains("材料") || lowerMessage.Contains("收购"))
-            {
-                response = "在下手中确实有一些材料。不知老板可收购灵草或矿石？价格合适的话，我愿意出售。";
-            }
-            else if (lowerMessage.Contains("你好") || lowerMessage.Contains("你好"))
-            {
-                response = $"老板客气了。在下{_currentNPC.Name}，初来天衍峰集市，还请多多关照。";
-            }
-            else
-            {
-                // 通用响应
-                string[] genericResponses = {
-                    "有意思。老板此言，倒让我想起了一些往事。",
-                    "修仙之路漫漫，每个人都有自己的机缘。",
-                    "天衍峰的集市果然藏龙卧虎，老板也不是寻常之人。",
+		/// <summary>
+		/// 模拟NPC响应（临时方案，将来接入LLM）
+		/// </summary>
+		private async Task SimulateNPCResponse(string playerMessage)
+		{
+			// 模拟延迟
+			await ToSignal(GetTree().CreateTimer(0.5f), "timeout");
+
+			string response;
+			string lowerMessage = playerMessage.ToLower();
+
+			// 简单的关键词响应逻辑
+			if (lowerMessage.Contains("筑基丹") || lowerMessage.Contains("突破"))
+			{
+				if (_currentNPC.StoryStage == 2)
+				{
+					response = "没错！我正是急需筑基丹来突破瓶颈。不知老板这里可有？若有的话，在下愿出高价购买！";
+					_currentNPC.RelationshipWithPlayer += 5;
+				}
+				else
+				{
+					response = "筑基丹确实是珍贵之物。虽然我已不需要，但仍有许多道友在寻求。";
+				}
+			}
+			else if (lowerMessage.Contains("价格") || lowerMessage.Contains("多少") || lowerMessage.Contains("钱"))
+			{
+				response = "老板的价格公道与否，在下还需比较一番。不过若质量上乘，价格稍高也无妨。";
+			}
+			else if (lowerMessage.Contains("材料") || lowerMessage.Contains("收购"))
+			{
+				response = "在下手中确实有一些材料。不知老板可收购灵草或矿石？价格合适的话，我愿意出售。";
+			}
+			else if (lowerMessage.Contains("你好") || lowerMessage.Contains("你好"))
+			{
+				response = $"老板客气了。在下{_currentNPC.Name}，初来天衍峰集市，还请多多关照。";
+			}
+			else
+			{
+				// 通用响应
+				string[] genericResponses = {
+					"有意思。老板此言，倒让我想起了一些往事。",
+					"修仙之路漫漫，每个人都有自己的机缘。",
+					"天衍峰的集市果然藏龙卧虎，老板也不是寻常之人。",
                     "我自有我的难处，不提也罢。老板若有何物售卖，不妨直说。"
-                };
-                response = genericResponses[GD.RandRange(0, genericResponses.Length - 1)];
-            }
+				};
+				response = genericResponses[GD.RandRange(0, genericResponses.Length - 1)];
+			}
 
-            AddNPCMessage(response);
-            _currentNPC.AddToHistory(_currentNPC.Name, response);
-        }
+			AddNPCMessage(response);
+			_currentNPC.AddToHistory(_currentNPC.Name, response);
+		}
 
-        /// <summary>
-        /// 添加玩家消息气泡
-        /// </summary>
-        private void AddPlayerMessage(string message)
-        {
-            var label = new RichTextLabel
-            {
-                BbcodeEnabled = true,
-                Text = $"[right][color=#88CCFF]你：{message}[/color][/right]",
-                FitContent = true,
-                AutowrapMode = TextServer.AutowrapMode.WordSmart,
-                CustomMinimumSize = new Vector2(0, 30)
-            };
-            HistoryContainer.AddChild(label);
+		/// <summary>
+		/// 添加玩家消息气泡
+		/// </summary>
+		private void AddPlayerMessage(string message)
+		{
+			var label = new RichTextLabel
+			{
+				BbcodeEnabled = true,
+				Text = $"[right][color=#88CCFF]你：{message}[/color][/right]",
+				FitContent = true,
+				AutowrapMode = TextServer.AutowrapMode.WordSmart,
+				CustomMinimumSize = new Vector2(0, 30)
+			};
+			_historyContainer.AddChild(label);
 
-            // 滚动到底部
-            ScrollToBottom();
-        }
+			// 滚动到底部
+			ScrollToBottom();
+		}
 
-        /// <summary>
-        /// 添加NPC消息气泡
-        /// </summary>
-        private void AddNPCMessage(string message)
-        {
-            var label = new RichTextLabel
-            {
-                BbcodeEnabled = true,
-                Text = $"[color=#FFCC88]{_currentNPC.Name}：{message}[/color]",
-                FitContent = true,
-                AutowrapMode = TextServer.AutowrapMode.WordSmart,
-                CustomMinimumSize = new Vector2(0, 30)
-            };
-            HistoryContainer.AddChild(label);
+		/// <summary>
+		/// 添加NPC消息气泡
+		/// </summary>
+		private void AddNPCMessage(string message)
+		{
+			var label = new RichTextLabel
+			{
+				BbcodeEnabled = true,
+				Text = $"[color=#FFCC88]{_currentNPC.Name}：{message}[/color]",
+				FitContent = true,
+				AutowrapMode = TextServer.AutowrapMode.WordSmart,
+				CustomMinimumSize = new Vector2(0, 30)
+			};
+			_historyContainer.AddChild(label);
 
-            ScrollToBottom();
-        }
+			ScrollToBottom();
+		}
 
-        /// <summary>
-        /// 滚动到底部
-        /// </summary>
-        private void ScrollToBottom()
-        {
-            // 使用延迟确保布局更新后再滚动
-            CallDeferred(nameof(DeferredScrollToBottom));
-        }
+		/// <summary>
+		/// 滚动到底部
+		/// </summary>
+		private void ScrollToBottom()
+		{
+			// 使用延迟确保布局更新后再滚动
+			CallDeferred(nameof(DeferredScrollToBottom));
+		}
 
-        private void DeferredScrollToBottom()
-        {
-            if (GetParent() is ScrollContainer scrollContainer)
-            {
-                scrollContainer.ScrollVertical = (int)scrollContainer.GetVScrollBar().MaxValue;
-            }
-        }
+		private void DeferredScrollToBottom()
+		{
+			var scrollContainer = GetNode<ScrollContainer>("DialoguePanel/ScrollContainer");
+			if (scrollContainer != null)
+			{
+				scrollContainer.ScrollVertical = (int)scrollContainer.GetVScrollBar().MaxValue;
+			}
+		}
 
-        /// <summary>
-        /// 交易按钮被按下
-        /// </summary>
-        private void OnTradeButtonPressed()
-        {
-            GD.Print("[DialogueSystem] 打开交易界面");
-            // TODO: 显示交易界面
-        }
+		/// <summary>
+		/// 交易按钮被按下
+		/// </summary>
+		private void OnTradeButtonPressed()
+		{
+			GD.Print("[DialogueSystem] 打开交易界面");
+			// TODO: 显示交易界面
+		}
 
-        /// <summary>
-        /// 关闭按钮被按下
-        /// </summary>
-        private void OnCloseButtonPressed()
-        {
-            GD.Print("[DialogueSystem] 关闭对话");
-            GameManager.Instance.EndDialogue();
-        }
-    }
+		/// <summary>
+		/// 关闭按钮被按下
+		/// </summary>
+		private void OnCloseButtonPressed()
+		{
+			GD.Print("[DialogueSystem] 关闭对话");
+			GameManager.Instance.EndDialogue();
+		}
+	}
 }

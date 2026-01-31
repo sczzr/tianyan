@@ -5,6 +5,10 @@
 # 导入文件夹（会自动重新生成）
 .import/
 
+# Godot 4+ 的缓存文件夹
+.godot/
+*.uid
+
 # 导出时的临时文件
 export.cfg
 export_presets.cfg

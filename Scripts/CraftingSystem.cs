@@ -4,358 +4,385 @@ using System.Collections.Generic;
 
 namespace TianYanShop.Scripts
 {
-    /// <summary>
-    /// 制作系统 - 炼制丹药、符箓等物品
-    /// </summary>
-    public partial class CraftingSystem : Control
-    {
-        [Export] public TabContainer RecipeTabs;
-        [Export] public VBoxContainer RecipeListContainer;
-        [Export] public PackedScene RecipeItemPrefab;
-        [Export] public Control RecipeDetailPanel;
-        [Export] public RichTextLabel RecipeNameLabel;
-        [Export] public RichTextLabel RecipeDescriptionLabel;
-        [Export] public VBoxContainer IngredientsContainer;
-        [Export] public Button CraftButton;
-        [Export] public Button CloseButton;
+	/// <summary>
+	/// 制作系统 - 炼制丹药、符箓等物品
+	/// </summary>
+	public partial class CraftingSystem : Control
+	{
+		// 节点引用
+		private TabContainer _recipeTabs;
+		private VBoxContainer _recipeListContainer;
+		private Control _recipeDetailPanel;
+		private RichTextLabel _recipeNameLabel;
+		private RichTextLabel _recipeDescriptionLabel;
+		private VBoxContainer _ingredientsContainer;
+		private Button _craftButton;
+		private Button _closeButton;
 
-        // 当前选中的配方
-        private RecipeData _selectedRecipe;
+		// 当前选中的配方
+		private RecipeData _selectedRecipe;
 
-        // 配方数据库
-        private Dictionary<string, RecipeData> _recipes = new();
+		// 配方数据库
+		private Dictionary<string, RecipeData> _recipes = new();
 
-        // 玩家背包（简化版）
-        private Dictionary<string, int> _inventory = new();
+		// 玩家背包（简化版）
+		private Dictionary<string, int> _inventory = new();
 
-        public override void _Ready()
-        {
-            // 连接按钮信号
-            CraftButton.Pressed += OnCraftButtonPressed;
-            CloseButton.Pressed += OnCloseButtonPressed;
+		public override void _Ready()
+		{
+			// 获取节点引用
+			_recipeTabs = GetNode<TabContainer>("MainPanel/HBoxContainer/LeftPanel/VBoxContainer/TabContainer");
+			_recipeListContainer = GetNode<VBoxContainer>("MainPanel/HBoxContainer/LeftPanel/VBoxContainer/TabContainer/丹药/MarginContainer/RecipeList");
+			_recipeDetailPanel = GetNode<Control>("MainPanel/HBoxContainer/RightPanel/VBoxContainer/RecipeDetailPanel");
+			_recipeNameLabel = GetNode<RichTextLabel>("MainPanel/HBoxContainer/RightPanel/VBoxContainer/RecipeDetailPanel/VBoxContainer/RecipeNameLabel");
+			_recipeDescriptionLabel = GetNode<RichTextLabel>("MainPanel/HBoxContainer/RightPanel/VBoxContainer/RecipeDetailPanel/VBoxContainer/RecipeDescriptionLabel");
+			_ingredientsContainer = GetNode<VBoxContainer>("MainPanel/HBoxContainer/RightPanel/VBoxContainer/RecipeDetailPanel/VBoxContainer/IngredientsContainer");
+			_craftButton = GetNode<Button>("MainPanel/HBoxContainer/RightPanel/VBoxContainer/CraftButton");
+			_closeButton = GetNode<Button>("MainPanel/CloseButton");
 
-            // 连接标签切换信号
-            RecipeTabs.TabChanged += OnTabChanged;
+			// 连接按钮信号
+			_craftButton.Pressed += OnCraftButtonPressed;
+			_closeButton.Pressed += OnCloseButtonPressed;
 
-            // 初始化数据
-            InitializeRecipes();
-            InitializeInventory();
+			// 连接标签切换信号
+			_recipeTabs.TabChanged += OnTabChanged;
 
-            // 初始隐藏
-            Hide();
+			// 初始化数据
+			InitializeRecipes();
+			InitializeInventory();
 
-            // 监听游戏状态
-            GameManager.Instance.GameStateChanged += OnGameStateChanged;
+			// 初始隐藏
+			Hide();
 
-            GD.Print("[CraftingSystem] 制作系统已初始化");
-        }
+			// 延迟连接信号，等待 GameManager 初始化完成
+			CallDeferred(nameof(DeferredConnectSignals));
 
-        public override void _ExitTree()
-        {
-            if (GameManager.Instance != null)
-            {
-                GameManager.Instance.GameStateChanged -= OnGameStateChanged;
-            }
-        }
+			GD.Print("[CraftingSystem] 制作系统已初始化");
+		}
 
-        private void OnGameStateChanged(GameManager.GameState newState)
-        {
-            if (newState == GameManager.GameState.Crafting)
-            {
-                Show();
-                RefreshRecipeList();
-            }
-            else
-            {
-                Hide();
-            }
-        }
+		/// <summary>
+		/// 延迟连接信号 - 确保 GameManager 已初始化完成
+		/// </summary>
+		private void DeferredConnectSignals()
+		{
+			// 监听游戏状态
+			if (GameManager.Instance != null)
+			{
+				GameManager.Instance.GameStateChanged += OnGameStateChanged;
+				GD.Print("[CraftingSystem] 成功连接到 GameManager 信号");
+			}
+			else
+			{
+				GD.PrintErr("[CraftingSystem] GameManager.Instance 为 null，无法连接信号");
+			}
+		}
 
-        /// <summary>
-        /// 初始化配方数据库
-        /// </summary>
-        private void InitializeRecipes()
-        {
-            // 丹药配方
-            _recipes["qi_gathering_pill"] = new RecipeData
-            {
-                Id = "qi_gathering_pill",
-                Name = "聚气丹",
-                Description = "帮助练气期修士凝聚灵气的丹药，可略微提升修炼速度。",
-                Category = RecipeCategory.Pill,
-                RequiredRealm = 0, // 练气期
-                Ingredients = new Dictionary<string, int>
-                {
-                    { "spirit_grass", 3 },
-                    { "spirit_water", 1 }
-                },
-                BasePrice = 50,
-                SuccessRate = 0.9f
-            };
+		public override void _ExitTree()
+		{
+			if (GameManager.Instance != null)
+			{
+				GameManager.Instance.GameStateChanged -= OnGameStateChanged;
+			}
+		}
 
-            _recipes["foundation_pill"] = new RecipeData
-            {
-                Id = "foundation_pill",
-                Name = "筑基丹",
-                Description = "珍贵的丹药，可帮助练气大圆满修士突破至筑基期。",
-                Category = RecipeCategory.Pill,
-                RequiredRealm = 1, // 筑基期炼制
-                Ingredients = new Dictionary<string, int>
-                {
-                    { "spirit_grass", 10 },
-                    { "moonflower", 3 },
-                    { "beast_core", 1 }
-                },
-                BasePrice = 1000,
-                SuccessRate = 0.6f
-            };
+		private void OnGameStateChanged(GameManager.GameState newState)
+		{
+			if (newState == GameManager.GameState.Crafting)
+			{
+				Show();
+				RefreshRecipeList();
+			}
+			else
+			{
+				Hide();
+			}
+		}
 
-            // 符箓配方
-            _recipes["fire_talisman"] = new RecipeData
-            {
-                Id = "fire_talisman",
-                Name = "火球符",
-                Description = "基础的攻击符箓，激发后可释放火球攻击敌人。",
-                Category = RecipeCategory.Talisman,
-                RequiredRealm = 0,
-                Ingredients = new Dictionary<string, int>
-                {
-                    { "talisman_paper", 1 },
-                    { "cinnabar", 1 }
-                },
-                BasePrice = 30,
-                SuccessRate = 0.95f
-            };
+		/// <summary>
+		/// 初始化配方数据库
+		/// </summary>
+		private void InitializeRecipes()
+		{
+			// 丹药配方
+			_recipes["qi_gathering_pill"] = new RecipeData
+			{
+				Id = "qi_gathering_pill",
+				Name = "聚气丹",
+				Description = "帮助练气期修士凝聚灵气的丹药，可略微提升修炼速度。",
+				Category = RecipeCategory.Pill,
+				RequiredRealm = 0, // 练气期
+				Ingredients = new Dictionary<string, int>
+				{
+					{ "spirit_grass", 3 },
+					{ "spirit_water", 1 }
+				},
+				BasePrice = 50,
+				SuccessRate = 0.9f
+			};
 
-            _recipes["protection_talisman"] = new RecipeData
-            {
-                Id = "protection_talisman",
-                Name = "护身符",
-                Description = "防御型符箓，可抵挡一次不超过筑基期的攻击。",
-                Category = RecipeCategory.Talisman,
-                RequiredRealm = 0,
-                Ingredients = new Dictionary<string, int>
-                {
-                    { "talisman_paper", 2 },
-                    { "cinnabar", 2 },
-                    { "spirit_grass", 1 }
-                },
-                BasePrice = 80,
-                SuccessRate = 0.85f
-            };
+			_recipes["foundation_pill"] = new RecipeData
+			{
+				Id = "foundation_pill",
+				Name = "筑基丹",
+				Description = "珍贵的丹药，可帮助练气大圆满修士突破至筑基期。",
+				Category = RecipeCategory.Pill,
+				RequiredRealm = 1, // 筑基期炼制
+				Ingredients = new Dictionary<string, int>
+				{
+					{ "spirit_grass", 10 },
+					{ "moonflower", 3 },
+					{ "beast_core", 1 }
+				},
+				BasePrice = 1000,
+				SuccessRate = 0.6f
+			};
 
-            GD.Print($"[CraftingSystem] 配方初始化完成，共 {_recipes.Count} 个配方");
-        }
+			// 符箓配方
+			_recipes["fire_talisman"] = new RecipeData
+			{
+				Id = "fire_talisman",
+				Name = "火球符",
+				Description = "基础的攻击符箓，激发后可释放火球攻击敌人。",
+				Category = RecipeCategory.Talisman,
+				RequiredRealm = 0,
+				Ingredients = new Dictionary<string, int>
+				{
+					{ "talisman_paper", 1 },
+					{ "cinnabar", 1 }
+				},
+				BasePrice = 30,
+				SuccessRate = 0.95f
+			};
 
-        /// <summary>
-        /// 初始化玩家背包
-        /// </summary>
-        private void InitializeInventory()
-        {
-            // 初始材料
-            _inventory["spirit_grass"] = 20;
-            _inventory["spirit_water"] = 5;
-            _inventory["talisman_paper"] = 10;
-            _inventory["cinnabar"] = 8;
-            _inventory["moonflower"] = 2;
+			_recipes["protection_talisman"] = new RecipeData
+			{
+				Id = "protection_talisman",
+				Name = "护身符",
+				Description = "防御型符箓，可抵挡一次不超过筑基期的攻击。",
+				Category = RecipeCategory.Talisman,
+				RequiredRealm = 0,
+				Ingredients = new Dictionary<string, int>
+				{
+					{ "talisman_paper", 2 },
+					{ "cinnabar", 2 },
+					{ "spirit_grass", 1 }
+				},
+				BasePrice = 80,
+				SuccessRate = 0.85f
+			};
 
-            GD.Print("[CraftingSystem] 背包初始化完成");
-        }
+			GD.Print($"[CraftingSystem] 配方初始化完成，共 {_recipes.Count} 个配方");
+		}
 
-        /// <summary>
-        /// 标签页切换
-        /// </summary>
-        private void OnTabChanged(long tabIndex)
-        {
-            RefreshRecipeList();
-        }
+		/// <summary>
+		/// 初始化玩家背包
+		/// </summary>
+		private void InitializeInventory()
+		{
+			// 初始材料
+			_inventory["spirit_grass"] = 20;
+			_inventory["spirit_water"] = 5;
+			_inventory["talisman_paper"] = 10;
+			_inventory["cinnabar"] = 8;
+			_inventory["moonflower"] = 2;
 
-        /// <summary>
-        /// 刷新配方列表
-        /// </summary>
-        private void RefreshRecipeList()
-        {
-            // 清除现有列表
-            foreach (Node child in RecipeListContainer.GetChildren())
-            {
-                child.QueueFree();
-            }
+			GD.Print("[CraftingSystem] 背包初始化完成");
+		}
 
-            // 获取当前选中的分类
-            RecipeCategory selectedCategory = RecipeTabs.CurrentTab switch
-            {
-                0 => RecipeCategory.Pill,
-                1 => RecipeCategory.Talisman,
-                2 => RecipeCategory.Formation,
-                3 => RecipeCategory.Puppet,
-                _ => RecipeCategory.Pill
-            };
+		/// <summary>
+		/// 标签页切换
+		/// </summary>
+		private void OnTabChanged(long tabIndex)
+		{
+			RefreshRecipeList();
+		}
 
-            // 添加配方按钮
-            foreach (var recipe in _recipes.Values)
-            {
-                if (recipe.Category == selectedCategory)
-                {
-                    var button = new Button
-                    {
-                        Text = $"{recipe.Name} (成功率: {recipe.SuccessRate:P0})",
-                        SizeFlagsHorizontal = SizeFlags.ExpandFill,
-                        TooltipText = recipe.Description
-                    };
-                    button.Pressed += () => OnRecipeSelected(recipe);
-                    RecipeListContainer.AddChild(button);
-                }
-            }
-        }
+		/// <summary>
+		/// 刷新配方列表
+		/// </summary>
+		private void RefreshRecipeList()
+		{
+			// 清除现有列表
+			foreach (Node child in _recipeListContainer.GetChildren())
+			{
+				child.QueueFree();
+			}
 
-        /// <summary>
-        /// 配方被选中
-        /// </summary>
-        private void OnRecipeSelected(RecipeData recipe)
-        {
-            _selectedRecipe = recipe;
-            RecipeDetailPanel.Show();
+			// 获取当前选中的分类
+			RecipeCategory selectedCategory = _recipeTabs.CurrentTab switch
+			{
+				0 => RecipeCategory.Pill,
+				1 => RecipeCategory.Talisman,
+				2 => RecipeCategory.Formation,
+				3 => RecipeCategory.Puppet,
+				_ => RecipeCategory.Pill
+			};
 
-            RecipeNameLabel.Text = $"[b]{recipe.Name}[/b]";
-            RecipeDescriptionLabel.Text = recipe.Description;
+			// 添加配方按钮
+			foreach (var recipe in _recipes.Values)
+			{
+				if (recipe.Category == selectedCategory)
+				{
+					var button = new Button
+					{
+						Text = $"{recipe.Name} (成功率: {recipe.SuccessRate:P0})",
+						SizeFlagsHorizontal = SizeFlags.ExpandFill,
+						TooltipText = recipe.Description
+					};
+					button.Pressed += () => OnRecipeSelected(recipe);
+					_recipeListContainer.AddChild(button);
+				}
+			}
+		}
 
-            // 清空并重新填充材料列表
-            foreach (Node child in IngredientsContainer.GetChildren())
-            {
-                child.QueueFree();
-            }
+		/// <summary>
+		/// 配方被选中
+		/// </summary>
+		private void OnRecipeSelected(RecipeData recipe)
+		{
+			_selectedRecipe = recipe;
+			_recipeDetailPanel.Show();
 
-            bool hasAllMaterials = true;
-            foreach (var ingredient in recipe.Ingredients)
-            {
-                string itemId = ingredient.Key;
-                int requiredAmount = ingredient.Value;
-                int currentAmount = _inventory.ContainsKey(itemId) ? _inventory[itemId] : 0;
-                bool hasEnough = currentAmount >= requiredAmount;
+			_recipeNameLabel.Text = $"[b]{recipe.Name}[/b]";
+			_recipeDescriptionLabel.Text = recipe.Description;
 
-                if (!hasEnough) hasAllMaterials = false;
+			// 清空并重新填充材料列表
+			foreach (Node child in _ingredientsContainer.GetChildren())
+			{
+				child.QueueFree();
+			}
 
-                var label = new Label
-                {
-                    Text = $"• {GetItemName(itemId)}: {currentAmount}/{requiredAmount}",
-                    Modulate = hasEnough ? new Color(1, 1, 1) : new Color(1, 0.5f, 0.5f)
-                };
-                IngredientsContainer.AddChild(label);
-            }
+			bool hasAllMaterials = true;
+			foreach (var ingredient in recipe.Ingredients)
+			{
+				string itemId = ingredient.Key;
+				int requiredAmount = ingredient.Value;
+				int currentAmount = _inventory.ContainsKey(itemId) ? _inventory[itemId] : 0;
+				bool hasEnough = currentAmount >= requiredAmount;
 
-            CraftButton.Disabled = !hasAllMaterials;
-        }
+				if (!hasEnough) hasAllMaterials = false;
 
-        /// <summary>
-        /// 获取物品名称
-        /// </summary>
-        private string GetItemName(string itemId)
-        {
-            // 简单的映射，实际应该从数据库查询
-            return itemId switch
-            {
-                "spirit_grass" => "灵草",
-                "spirit_water" => "灵泉水",
-                "talisman_paper" => "符纸",
-                "cinnabar" => "朱砂",
-                "moonflower" => "月见花",
-                "beast_core" => "妖兽内丹",
-                _ => itemId
-            };
-        }
+				var label = new Label
+				{
+					Text = $"• {GetItemName(itemId)}: {currentAmount}/{requiredAmount}",
+					Modulate = hasEnough ? new Color(1, 1, 1) : new Color(1, 0.5f, 0.5f)
+				};
+				_ingredientsContainer.AddChild(label);
+			}
 
-        /// <summary>
-        /// 制作按钮被按下
-        /// </summary>
-        private void OnCraftButtonPressed()
-        {
-            if (_selectedRecipe == null) return;
+			_craftButton.Disabled = !hasAllMaterials;
+		}
 
-            // 检查材料
-            foreach (var ingredient in _selectedRecipe.Ingredients)
-            {
-                if (!_inventory.ContainsKey(ingredient.Key) || _inventory[ingredient.Key] < ingredient.Value)
-                {
-                    GD.PrintErr($"[CraftingSystem] 材料不足: {ingredient.Key}");
-                    return;
-                }
-            }
+		/// <summary>
+		/// 获取物品名称
+		/// </summary>
+		private string GetItemName(string itemId)
+		{
+			// 简单的映射，实际应该从数据库查询
+			return itemId switch
+			{
+				"spirit_grass" => "灵草",
+				"spirit_water" => "灵泉水",
+				"talisman_paper" => "符纸",
+				"cinnabar" => "朱砂",
+				"moonflower" => "月见花",
+				"beast_core" => "妖兽内丹",
+				_ => itemId
+			};
+		}
 
-            // 扣除材料
-            foreach (var ingredient in _selectedRecipe.Ingredients)
-            {
-                _inventory[ingredient.Key] -= ingredient.Value;
-            }
+		/// <summary>
+		/// 制作按钮被按下
+		/// </summary>
+		private void OnCraftButtonPressed()
+		{
+			if (_selectedRecipe == null) return;
 
-            // 判定成功率
-            float roll = GD.Randf();
-            bool success = roll <= _selectedRecipe.SuccessRate;
+			// 检查材料
+			foreach (var ingredient in _selectedRecipe.Ingredients)
+			{
+				if (!_inventory.ContainsKey(ingredient.Key) || _inventory[ingredient.Key] < ingredient.Value)
+				{
+					GD.PrintErr($"[CraftingSystem] 材料不足: {ingredient.Key}");
+					return;
+				}
+			}
 
-            if (success)
-            {
-                // 制作成功
-                GD.Print($"[CraftingSystem] 成功制作 {_selectedRecipe.Name}");
-                ShowCraftResult(true, $"成功制作了 {_selectedRecipe.Name}！");
+			// 扣除材料
+			foreach (var ingredient in _selectedRecipe.Ingredients)
+			{
+				_inventory[ingredient.Key] -= ingredient.Value;
+			}
 
-                // 添加到背包（这里简化处理）
-                // 实际应该添加到玩家的物品栏中
-            }
-            else
-            {
-                // 制作失败
-                GD.Print($"[CraftingSystem] 制作 {_selectedRecipe.Name} 失败");
-                ShowCraftResult(false, $"制作 {_selectedRecipe.Name} 失败了...材料已损失。");
-            }
+			// 判定成功率
+			float roll = GD.Randf();
+			bool success = roll <= _selectedRecipe.SuccessRate;
 
-            // 刷新配方详情
-            OnRecipeSelected(_selectedRecipe);
-        }
+			if (success)
+			{
+				// 制作成功
+				GD.Print($"[CraftingSystem] 成功制作 {_selectedRecipe.Name}");
+				ShowCraftResult(true, $"成功制作了 {_selectedRecipe.Name}！");
 
-        /// <summary>
-        /// 显示制作结果
-        /// </summary>
-        private void ShowCraftResult(bool success, string message)
-        {
-            var dialog = new AcceptDialog
-            {
-                Title = success ? "制作成功" : "制作失败",
-                DialogText = message
-            };
-            AddChild(dialog);
-            dialog.PopupCentered();
-        }
+				// 添加到背包（这里简化处理）
+				// 实际应该添加到玩家的物品栏中
+			}
+			else
+			{
+				// 制作失败
+				GD.Print($"[CraftingSystem] 制作 {_selectedRecipe.Name} 失败");
+				ShowCraftResult(false, $"制作 {_selectedRecipe.Name} 失败了...材料已损失。");
+			}
 
-        /// <summary>
-        /// 关闭按钮被按下
-        /// </summary>
-        private void OnCloseButtonPressed()
-        {
-            GameManager.Instance.SetGameState(GameManager.GameState.Playing);
-        }
-    }
+			// 刷新配方详情
+			OnRecipeSelected(_selectedRecipe);
+		}
 
-    /// <summary>
-    /// 配方数据类
-    /// </summary>
-    public class RecipeData
-    {
-        public string Id { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public RecipeCategory Category { get; set; }
-        public int RequiredRealm { get; set; }
-        public Dictionary<string, int> Ingredients { get; set; }
-        public int BasePrice { get; set; }
-        public float SuccessRate { get; set; }
-    }
+		/// <summary>
+		/// 显示制作结果
+		/// </summary>
+		private void ShowCraftResult(bool success, string message)
+		{
+			var dialog = new AcceptDialog
+			{
+				Title = success ? "制作成功" : "制作失败",
+				DialogText = message
+			};
+			AddChild(dialog);
+			dialog.PopupCentered();
+		}
 
-    public enum RecipeCategory
-    {
-        Pill,       // 丹药
-        Talisman,   // 符箓
-        Formation,  // 阵法
-        Puppet,     // 傀儡
-        Weapon,     // 武器
-        Armor       // 防具
-    }
+		/// <summary>
+		/// 关闭按钮被按下
+		/// </summary>
+		private void OnCloseButtonPressed()
+		{
+			GameManager.Instance.SetGameState(GameManager.GameState.Playing);
+		}
+	}
+
+	/// <summary>
+	/// 配方数据类
+	/// </summary>
+	public class RecipeData
+	{
+		public string Id { get; set; }
+		public string Name { get; set; }
+		public string Description { get; set; }
+		public RecipeCategory Category { get; set; }
+		public int RequiredRealm { get; set; }
+		public Dictionary<string, int> Ingredients { get; set; }
+		public int BasePrice { get; set; }
+		public float SuccessRate { get; set; }
+	}
+
+	public enum RecipeCategory
+	{
+		Pill,       // 丹药
+		Talisman,   // 符箓
+		Formation,  // 阵法
+		Puppet,     // 傀儡
+		Weapon,     // 武器
+		Armor       // 防具
+	}
 }

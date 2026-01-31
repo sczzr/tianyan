@@ -1,6 +1,6 @@
-[gd_scene load_steps=3 format=3 uid="uid://d4m5x6y7z8a9b"]
+[gd_scene load_steps=5 format=3 uid="uid://d4m5x6y708bab"]
 
-[ext_resource type="Script" path="res://Scripts/DialogueSystem.cs" id="1_x9y8z"]
+[ext_resource type="Script" uid="uid://di11ql0syqnsh" path="res://Scripts/DialogueSystem.cs" id="1_x9y8z"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_dialogue"]
 bg_color = Color(0.1, 0.12, 0.15, 0.95)
@@ -181,7 +181,7 @@ custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 text = "结束"
 
-[node name="CloseButton" type="Button" parent="DialoguePanel"]
+[node name="CloseButtonTop" type="Button" parent="DialoguePanel"]
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -192,59 +192,3 @@ offset_right = -10.0
 offset_bottom = 50.0
 grow_horizontal = 0
 text = "X"
-
-[node name="DialogueText" type="RichTextLabel" parent="."]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
-
-[node name="NPCNameLabel" type="Label" parent="."]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
-
-[node name="NPCInfoLabel" type="Label" parent="."]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 23.0
-
-[node name="HistoryContainer" type="VBoxContainer" parent="."]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
-
-[node name="PlayerInput" type="LineEdit" parent="."]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_right = 67.0
-offset_bottom = 31.0
-
-[node name="SendButton" type="Button" parent="."]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_right = 8.0
-offset_bottom = 8.0
-
-[node name="TradeButton" type="Button" parent="."]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_right = 8.0
-offset_bottom = 8.0
-
-[node name="CloseButton" type="Button" parent="."]
-unique_name_in_owner = true
-visible = false
-layout_mode = 0
-offset_right = 8.0
-offset_bottom = 8.0
