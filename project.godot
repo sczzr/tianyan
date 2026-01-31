@@ -1,0 +1,38 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="天衍峰：修仙商铺"
+config/description="一款修仙题材的商铺经营游戏"
+run/main_scene="res://Scenes/MainGame.tscn"
+config/features=PackedStringArray("4.5", "Mobile")
+boot_splash/bg_color=Color(0.141176, 0.141176, 0.141176, 1)
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[dotnet]
+
+project/assembly_name="TianYanShop"
+
+[layer_names]
+
+2d_physics/layer_1="UI"
+2d_physics/layer_2="GameWorld"
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter="nearest"
+renderer/rendering_method="mobile"
