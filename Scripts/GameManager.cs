@@ -49,12 +49,23 @@ namespace TianYanShop.Scripts
         // 物品数据库
         public Godot.Collections.Dictionary<string, ItemData> ItemDatabase { get; private set; } = new();
 
+        // 系统引用
+        public DataManager DataMgr { get; private set; }
+        public TimeManager TimeMgr { get; private set; }
+        public InventoryManager InventoryMgr { get; private set; }
+        public TianZhuanManager TianZhuanMgr { get; private set; }
+
         public override void _Ready()
         {
             if (Instance == null)
             {
                 Instance = this;
                 ProcessMode = ProcessModeEnum.Always;
+
+                // 初始化系统引用
+                InitializeSystemReferences();
+
+                // 初始化游戏
                 InitializeGame();
             }
             else
@@ -63,20 +74,55 @@ namespace TianYanShop.Scripts
             }
         }
 
+        /// <summary>
+        /// 初始化系统引用
+        /// </summary>
+        private void InitializeSystemReferences()
+        {
+            DataMgr = DataManager.Instance;
+            TimeMgr = TimeManager.Instance;
+            InventoryMgr = InventoryManager.Instance;
+            TianZhuanMgr = TianZhuanManager.Instance;
+        }
+
         private void InitializeGame()
         {
             GD.Print("[GameManager] 初始化游戏...");
 
-            // 初始化物品数据库
-            InitializeItemDatabase();
+            // 检查 DataManager 是否就绪
+            if (DataMgr == null || DataMgr.Items.Count == 0)
+            {
+                GD.Print("[GameManager] 等待 DataManager 就绪，延迟初始化...");
+                CallDeferred(nameof(InitializeGame));
+                return;
+            }
 
             // 初始化NPC
             InitializeNPCs();
 
+            // 连接时间系统信号
+            if (TimeMgr != null)
+            {
+                TimeMgr.GameDayPassed += OnGameDayPassed;
+            }
+
             // 初始状态
             SetGameState(GameState.Playing);
 
-            GD.Print($"[GameManager] 游戏初始化完成，拥有 {SpiritStones} 灵石");
+            GD.Print($"[GameManager] 游戏初始化完成");
+        }
+
+        /// <summary>
+        /// 游戏天数变化处理
+        /// </summary>
+        private void OnGameDayPassed(int day)
+        {
+            CurrentDay = day;
+            EmitSignal(SignalName.DayChanged, day);
+            GD.Print($"[GameManager] 第 {day} 天开始");
+
+            // 触发每日更新逻辑
+            // 例如：NPC每日行为、商店刷新等
         }
 
         private void InitializeItemDatabase()
@@ -200,8 +246,15 @@ namespace TianYanShop.Scripts
         /// </summary>
         public void AddSpiritStones(int amount)
         {
-            SpiritStones += amount;
-            EmitSignal(SignalName.SpiritStonesChanged, SpiritStones);
+            if (InventoryMgr != null)
+            {
+                InventoryMgr.AddSpiritStones(amount);
+            }
+            else
+            {
+                SpiritStones += amount;
+                EmitSignal(SignalName.SpiritStonesChanged, SpiritStones);
+            }
         }
 
         /// <summary>
@@ -209,13 +262,32 @@ namespace TianYanShop.Scripts
         /// </summary>
         public bool SpendSpiritStones(int amount)
         {
-            if (SpiritStones >= amount)
+            if (InventoryMgr != null)
             {
-                SpiritStones -= amount;
-                EmitSignal(SignalName.SpiritStonesChanged, SpiritStones);
-                return true;
+                return InventoryMgr.TrySpendSpiritStones(amount);
             }
-            return false;
+            else
+            {
+                if (SpiritStones >= amount)
+                {
+                    SpiritStones -= amount;
+                    EmitSignal(SignalName.SpiritStonesChanged, SpiritStones);
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 检查是否有足够灵石
+        /// </summary>
+        public bool HasEnoughSpiritStones(int amount)
+        {
+            if (InventoryMgr != null)
+            {
+                return InventoryMgr.HasEnoughSpiritStones(amount);
+            }
+            return SpiritStones >= amount;
         }
 
         /// <summary>

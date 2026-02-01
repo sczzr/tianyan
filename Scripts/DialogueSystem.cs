@@ -43,6 +43,9 @@ namespace TianYanShop.Scripts
 
 			// 延迟连接信号，等待 GameManager 初始化完成
 			CallDeferred(nameof(DeferredConnectSignals));
+
+			// 延迟检查当前游戏状态，确保UI可见性正确
+			CallDeferred(nameof(DeferredCheckVisibility));
 		}
 
 		/// <summary>
@@ -67,6 +70,34 @@ namespace TianYanShop.Scripts
 			if (GameManager.Instance != null)
 			{
 				GameManager.Instance.GameStateChanged -= OnGameStateChanged;
+			}
+		}
+
+		/// <summary>
+		/// 延迟检查可见性 - 确保在初始化时根据当前游戏状态正确显示/隐藏
+		/// </summary>
+		private void DeferredCheckVisibility()
+		{
+			if (GameManager.Instance != null)
+			{
+				// 根据当前游戏状态设置可见性
+				if (GameManager.Instance.CurrentState == GameManager.GameState.Dialogue)
+				{
+					_currentNPC = GameManager.Instance.CurrentNPC;
+					if (_currentNPC != null)
+					{
+						ShowDialogue();
+						GD.Print("[DialogueSystem] 初始化时检测到当前状态为 Dialogue，显示UI");
+					}
+				}
+				else
+				{
+					Hide();
+				}
+			}
+			else
+			{
+				GD.PrintErr("[DialogueSystem] GameManager.Instance 为 null，无法检查可见性");
 			}
 		}
 

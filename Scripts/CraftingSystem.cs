@@ -25,8 +25,8 @@ namespace TianYanShop.Scripts
 		// 配方数据库
 		private Dictionary<string, RecipeData> _recipes = new();
 
-		// 玩家背包（简化版）
-		private Dictionary<string, int> _inventory = new();
+		// 背包管理器引用
+		private InventoryManager _inventory => InventoryManager.Instance;
 
 		public override void _Ready()
 		{
@@ -49,13 +49,15 @@ namespace TianYanShop.Scripts
 
 			// 初始化数据
 			InitializeRecipes();
-			InitializeInventory();
 
 			// 初始隐藏
 			Hide();
 
 			// 延迟连接信号，等待 GameManager 初始化完成
 			CallDeferred(nameof(DeferredConnectSignals));
+
+			// 延迟检查当前游戏状态，确保UI可见性正确
+			CallDeferred(nameof(DeferredCheckVisibility));
 
 			GD.Print("[CraftingSystem] 制作系统已初始化");
 		}
@@ -74,6 +76,31 @@ namespace TianYanShop.Scripts
 			else
 			{
 				GD.PrintErr("[CraftingSystem] GameManager.Instance 为 null，无法连接信号");
+			}
+		}
+
+		/// <summary>
+		/// 延迟检查可见性 - 确保在初始化时根据当前游戏状态正确显示/隐藏
+		/// </summary>
+		private void DeferredCheckVisibility()
+		{
+			if (GameManager.Instance != null)
+			{
+				// 根据当前游戏状态设置可见性
+				if (GameManager.Instance.CurrentState == GameManager.GameState.Crafting)
+				{
+					Show();
+					RefreshRecipeList();
+					GD.Print("[CraftingSystem] 初始化时检测到当前状态为 Crafting，显示UI");
+				}
+				else
+				{
+					Hide();
+				}
+			}
+			else
+			{
+				GD.PrintErr("[CraftingSystem] GameManager.Instance 为 null，无法检查可见性");
 			}
 		}
 
@@ -174,20 +201,6 @@ namespace TianYanShop.Scripts
 			GD.Print($"[CraftingSystem] 配方初始化完成，共 {_recipes.Count} 个配方");
 		}
 
-		/// <summary>
-		/// 初始化玩家背包
-		/// </summary>
-		private void InitializeInventory()
-		{
-			// 初始材料
-			_inventory["spirit_grass"] = 20;
-			_inventory["spirit_water"] = 5;
-			_inventory["talisman_paper"] = 10;
-			_inventory["cinnabar"] = 8;
-			_inventory["moonflower"] = 2;
-
-			GD.Print("[CraftingSystem] 背包初始化完成");
-		}
 
 		/// <summary>
 		/// 标签页切换
@@ -257,7 +270,7 @@ namespace TianYanShop.Scripts
 			{
 				string itemId = ingredient.Key;
 				int requiredAmount = ingredient.Value;
-				int currentAmount = _inventory.ContainsKey(itemId) ? _inventory[itemId] : 0;
+				int currentAmount = _inventory?.GetItemCount(itemId) ?? 0;
 				bool hasEnough = currentAmount >= requiredAmount;
 
 				if (!hasEnough) hasAllMaterials = false;
@@ -278,7 +291,14 @@ namespace TianYanShop.Scripts
 		/// </summary>
 		private string GetItemName(string itemId)
 		{
-			// 简单的映射，实际应该从数据库查询
+			// 优先从DataManager查询
+			var itemData = DataManager.Instance?.GetItem(itemId);
+			if (itemData != null)
+			{
+				return itemData.Name;
+			}
+
+			// 后备映射表
 			return itemId switch
 			{
 				"spirit_grass" => "灵草",
@@ -299,20 +319,20 @@ namespace TianYanShop.Scripts
 			if (_selectedRecipe == null) return;
 
 			// 检查材料
-			foreach (var ingredient in _selectedRecipe.Ingredients)
+			if (_inventory == null)
 			{
-				if (!_inventory.ContainsKey(ingredient.Key) || _inventory[ingredient.Key] < ingredient.Value)
-				{
-					GD.PrintErr($"[CraftingSystem] 材料不足: {ingredient.Key}");
-					return;
-				}
+				GD.PrintErr("[CraftingSystem] InventoryManager 未初始化");
+				return;
+			}
+
+			if (!_inventory.HasItems(_selectedRecipe.Ingredients))
+			{
+				GD.PrintErr("[CraftingSystem] 材料不足");
+				return;
 			}
 
 			// 扣除材料
-			foreach (var ingredient in _selectedRecipe.Ingredients)
-			{
-				_inventory[ingredient.Key] -= ingredient.Value;
-			}
+			_inventory.TryRemoveItems(_selectedRecipe.Ingredients);
 
 			// 判定成功率
 			float roll = GD.Randf();
@@ -324,8 +344,8 @@ namespace TianYanShop.Scripts
 				GD.Print($"[CraftingSystem] 成功制作 {_selectedRecipe.Name}");
 				ShowCraftResult(true, $"成功制作了 {_selectedRecipe.Name}！");
 
-				// 添加到背包（这里简化处理）
-				// 实际应该添加到玩家的物品栏中
+				// 添加到背包
+				_inventory.TryAddItem(_selectedRecipe.Id, 1);
 			}
 			else
 			{
