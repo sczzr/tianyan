@@ -12,7 +12,7 @@ config_version=5
 
 config/name="天衍峰：修仙商铺"
 config/description="一款修仙题材的商铺经营游戏"
-run/main_scene="uid://c8m4x2q2v2x7y"
+run/main_scene="uid://c04wv83x353p"
 config/features=PackedStringArray("4.5", "C#", "Mobile")
 boot_splash/bg_color=Color(0.141176, 0.141176, 0.141176, 1)
 
