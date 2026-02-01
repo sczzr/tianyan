@@ -17,6 +17,7 @@ namespace TianYanShop
         private Button _regenButton;
 
         private WorldMapCamera _camera;
+        private MiniMap _miniMap;
 
         public override void _Ready()
         {
@@ -45,15 +46,60 @@ namespace TianYanShop
             {
                 _camera = MapManager.MapCamera;
                 _seedLabel.Text = $"种子: {MapManager.Generator.Seed}";
+
+                // 创建并初始化小地图
+                CreateMiniMap();
+
+                // 连接地图生成信号，当地图重新生成时更新小地图
+                MapManager.MapGenerated += OnMapGenerated;
             }
+        }
+
+        /// <summary>
+        /// 地图重新生成时的回调
+        /// </summary>
+        private void OnMapGenerated()
+        {
+            if (_miniMap != null && MapManager != null)
+            {
+                // 更新小地图纹理（使用小地图的实际尺寸）
+                var mapTexture = MapManager.GenerateMapOverviewTexture(_miniMap.MiniMapWidth, _miniMap.MiniMapHeight);
+                _miniMap.SetMapTexture(mapTexture);
+            }
+        }
+
+        /// <summary>
+        /// 创建小地图
+        /// </summary>
+        private void CreateMiniMap()
+        {
+            if (_miniMap != null) return;
+
+            _miniMap = new MiniMap();
+            _miniMap.Name = "MiniMap";
+            AddChild(_miniMap);
+
+            // 设置主相机
+            _miniMap.SetMainCamera(_camera);
+
+            // 设置地图边界
+            _miniMap.SetMapBounds(MapManager.MapWidth * MapManager.TileSize, MapManager.MapHeight * MapManager.TileSize);
+
+            // 生成并设置地图纹理（使用小地图的实际尺寸）
+            var mapTexture = MapManager.GenerateMapOverviewTexture(_miniMap.MiniMapWidth, _miniMap.MiniMapHeight);
+            _miniMap.SetMapTexture(mapTexture);
         }
 
         public override void _Process(double delta)
         {
             if (_camera == null || MapManager == null) return;
 
+            // 获取鼠标位置并转换为世界坐标
+            Vector2 mouseScreenPos = GetViewport().GetMousePosition();
+            Vector2 worldPos = _camera.ScreenToWorld(mouseScreenPos);
+            Vector2I tilePos = _camera.WorldToTile(worldPos);
+
             // 更新位置显示
-            Vector2I tilePos = _camera.WorldToTile(_camera.GlobalPosition);
             _positionLabel.Text = $"位置: ({tilePos.X}, {tilePos.Y})";
 
             // 更新生物群系显示

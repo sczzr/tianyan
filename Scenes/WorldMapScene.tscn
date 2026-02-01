@@ -1,32 +1,30 @@
-[gd_scene load_steps=3 format=3 uid="uid://c52in1ybiweey"]
+[gd_scene load_steps=4 format=3 uid="uid://ht8mxcxs4rse"]
 
-[ext_resource type="Script" uid="uid://c8m4x2q2v2x7z" path="res://Scripts/WorldMapManager.cs" id="1_7p4s8"]
-[ext_resource type="Script" uid="uid://c8m4x2q2v2x8a" path="res://Scripts/WorldMapCamera.cs" id="2_v8k3m"]
-[ext_resource type="Script" uid="uid://c8m4x2q2v2x8b" path="res://Scripts/WorldMapUI.cs" id="3_ui8b"]
+[ext_resource type="Script" uid="uid://dobg5kjoxf26f" path="res://Scripts/WorldMapManager.cs" id="1_7p4s8"]
+[ext_resource type="Script" uid="uid://bg6vstlg4mjkw" path="res://Scripts/WorldMapCamera.cs" id="2_v8k3m"]
+[ext_resource type="Script" uid="uid://djdoue2usi4sg" path="res://Scripts/WorldMapUI.cs" id="3_ui8b"]
 
 [node name="WorldMapScene" type="Node2D"]
 
 [node name="WorldMapManager" type="Node2D" parent="."]
 script = ExtResource("1_7p4s8")
-MapWidth = 256
-MapHeight = 256
-RandomSeed = true
+MapWidth = 512
+MapHeight = 512
 
 [node name="WorldMapCamera" type="Camera2D" parent="."]
 script = ExtResource("2_v8k3m")
-MoveSpeed = 500.0
-FastMoveSpeed = 1000.0
-ZoomSpeed = 0.15
-MinZoom = 0.15
-MaxZoom = 4.0
-EnableSmoothZoom = true
-SmoothZoomSpeed = 12.0
+ZoomSpeed = 0.2
+MinZoom = 0.05
+MaxZoom = 1.5
+SmoothZoomSpeed = 13.0
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]
 
 [node name="UI" type="Control" parent="CanvasLayer"]
 layout_mode = 3
 anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("3_ui8b")
@@ -34,27 +32,25 @@ script = ExtResource("3_ui8b")
 [node name="InfoPanel" type="Panel" parent="CanvasLayer/UI"]
 layout_mode = 1
 anchors_preset = 1
-offset_left = 10.0
-offset_top = 10.0
-offset_right = 300.0
-offset_bottom = 150.0
-grow_horizontal = 2
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -1273.0
+offset_top = 564.0
+offset_right = -973.0
+offset_bottom = 664.0
+grow_horizontal = 0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer/UI/InfoPanel"]
 layout_mode = 1
 anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 offset_left = 10.0
 offset_top = 10.0
-offset_right = 280.0
-offset_bottom = 130.0
-
+offset_right = -13.0
+offset_bottom = 36.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="TitleLabel" type="Label" parent="CanvasLayer/UI/InfoPanel/VBoxContainer"]
-layout_mode = 2
-text = "世界地图"
-horizontal_alignment = 1
 
 [node name="SeedLabel" type="Label" parent="CanvasLayer/UI/InfoPanel/VBoxContainer"]
 layout_mode = 2
