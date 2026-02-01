@@ -113,14 +113,19 @@ namespace TianYanShop
 				return;
 			}
 
-			// 尝试从父节点查找相机
-			_mainCamera = GetTree().Root.GetNodeOrNull<Camera2D>("./WorldMap/WorldMapCamera"); // 假设相机路径
+			// 尝试从 WorldMapManager 获取相机引用
+			var worldMapManager = GetTree().Root.GetNodeOrNull<WorldMapManager>("WorldMapScene/MainMap");
+			if (worldMapManager != null)
+			{
+				_mainCamera = worldMapManager.MapCamera;
+				if (_mainCamera != null)
+				{
+					return;
+				}
+			}
 
 			// 如果没找到，遍历场景树寻找
-			if (_mainCamera == null)
-			{
-				_mainCamera = FindCameraInTree(GetTree().Root);
-			}
+			_mainCamera = FindCameraInTree(GetTree().Root);
 		}
 
 		/// <summary>

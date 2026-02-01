@@ -415,5 +415,6 @@ namespace TianYanShop.Scripts
 		public List<string> PotentialRisks { get; set; } = new();
 		public string PredictedEffectDescription { get; set; }
 	}
+
+	#endregion
 }
-#endregion

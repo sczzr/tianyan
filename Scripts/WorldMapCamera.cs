@@ -14,12 +14,15 @@ namespace TianYanShop
 		[Export] public float ZoomSpeed = 0.2f;        // 增加缩放速度，一次滚轮可以跨越较大范围
 		[Export] public float MinZoom = 0.05f;
 		[Export] public float MaxZoom = 1.5f;
-		[Export] public bool EnableSmoothZoom = true;    
+		[Export] public bool EnableSmoothZoom = true;
 		[Export] public float SmoothZoomSpeed = 13.0f;   // 如果启用平滑，也加快速度
+		[Export] public int TileSize = 64;              // 瓦片尺寸，应与 WorldMapManager.TileSize 匹配
 
 		// 地图边界
-		private float _mapWidth = 8192;
-		private float _mapHeight = 8192;
+		private float _mapWidth = 0;
+		private float _mapHeight = 0;
+		private bool _hasMapBounds = false;
+
 		// 目标缩放值 (用于平滑缩放)
 		private Vector2 _targetZoom;
 
@@ -44,8 +47,8 @@ namespace TianYanShop
 			// 确保进程模式始终运行
 			ProcessMode = ProcessModeEnum.Always;
 
-			// 将相机位置设置为地图中心
-			GlobalPosition = new Vector2(_mapWidth / 2, _mapHeight / 2);
+			// 相机初始位置保持为 (0, 0)，地图从左上角开始显示
+			// 不再自动设置为地图中心
 
 			GD.Print("世界地图相机已初始化");
 		}
@@ -164,12 +167,13 @@ namespace TianYanShop
 		/// </summary>
 		private void HandleMouseMotion(InputEventMouseMotion mouseMotion)
 		{
-			if (_isDragging)
-			{
-				Vector2 currentMousePos = GetViewport().GetMousePosition();
-				Vector2 delta = _dragStartPos - currentMousePos;
-				GlobalPosition = _dragStartCameraPos + delta / Zoom.X;
-			}
+            if (_isDragging)
+            {
+                Vector2 currentMousePos = GetViewport().GetMousePosition();
+                Vector2 delta = _dragStartPos - currentMousePos;
+                GlobalPosition = _dragStartCameraPos + delta / Zoom.X;
+            }
+            GD.Print(mouseMotion.Position);
 		}
 
 		/// <summary>
@@ -298,6 +302,9 @@ namespace TianYanShop
 		{
 			_mapWidth = width;
 			_mapHeight = height;
+			_hasMapBounds = true;
+
+			// 相机位置保持不变，地图从左上角开始显示
 		}
 
 		/// <summary>
@@ -329,11 +336,22 @@ namespace TianYanShop
 		}
 
 		/// <summary>
+		/// 将世界坐标的左上角 (0,0) 对齐到屏幕左上角
+		/// </summary>
+		public void AlignTopLeftToZero()
+		{
+			Vector2 viewportSize = GetViewportRect().Size;
+			GlobalPosition = viewportSize / 2.0f / Zoom.X;
+		}
+
+		/// <summary>
 		/// 将屏幕坐标转换为世界坐标
 		/// </summary>
 		public Vector2 ScreenToWorld(Vector2 screenPos)
 		{
-			return ToGlobal(screenPos);
+			// 世界坐标 = 相机位置 + (屏幕坐标坐标 - 视口中心) / 缩放
+			Vector2 viewportCenter = GetViewportRect().Size / 2;
+			return GlobalPosition + (screenPos - viewportCenter) / Zoom.X;
 		}
 
 		/// <summary>
@@ -342,8 +360,8 @@ namespace TianYanShop
 		public Vector2I WorldToTile(Vector2 worldPos)
 		{
 			return new Vector2I(
-				Mathf.FloorToInt(worldPos.X / 64),
-				Mathf.FloorToInt(worldPos.Y / 64)
+				Mathf.FloorToInt(worldPos.X / TileSize),
+				Mathf.FloorToInt(worldPos.Y / TileSize)
 			);
 		}
 
