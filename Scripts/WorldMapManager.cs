@@ -114,10 +114,22 @@ namespace TianYanShop
 		/// </summary>
 		private void SetupCamera()
 		{
-			_camera = GetNodeOrNull<WorldMapCamera>("WorldMapCamera");
+			// 先尝试从父节点获取相机（相机是MainMap的兄弟节点）
+			var parentNode = GetParent();
+			if (parentNode != null)
+			{
+				_camera = parentNode.GetNodeOrNull<WorldMapCamera>("WorldMapCamera");
+			}
+
+			// 如果还没找到，再尝试从MainMap内部查找
+			if (_camera == null)
+			{
+				_camera = GetNodeOrNull<WorldMapCamera>("WorldMapCamera");
+			}
 
 			if (_camera == null)
 			{
+				GD.PrintErr("警告：未找到 WorldMapCamera，将创建新相机");
 				_camera = new WorldMapCamera();
 				_camera.Name = "WorldMapCamera";
 				AddChild(_camera);
@@ -125,6 +137,8 @@ namespace TianYanShop
 
 			// 设置地图边界
 			_camera.SetMapBounds(MapWidth * TileSize, MapHeight * TileSize);
+
+			GD.Print($"WorldMapManager: 找到相机 {_camera.Name}, 路径: {_camera.GetPath()}");
 		}
 
 		/// <summary>

@@ -19,6 +19,12 @@ namespace TianYanShop
 		private WorldMapCamera _camera;
 		private MiniMap _miniMap;
 
+		// 小地图渲染相关
+		private SubViewportContainer? _miniMapViewPortContainer;
+		private SubViewport? _miniMapViewPort;
+		private Camera2D? _miniMapCamera;
+		private TileMapLayer? _miniMapTileMapLayer;
+
 		public override void _Ready()
 		{
 			// 获取UI组件引用
@@ -60,11 +66,10 @@ namespace TianYanShop
 		/// </summary>
 		private void OnMapGenerated()
 		{
-			if (_miniMap != null && MapManager != null)
+			if (_miniMap != null && MapManager != null && _miniMapViewPort != null)
 			{
-				// 更新小地图纹理（使用小地图的实际尺寸）
-				var mapTexture = MapManager.GenerateMapOverviewTexture(_miniMap.MiniMapWidth, _miniMap.MiniMapHeight);
-				_miniMap.SetMapTexture(mapTexture);
+				// 重新创建小地图的 TileMapLayer
+				RecreateMiniMapTileMap();
 			}
 		}
 
@@ -89,9 +94,104 @@ namespace TianYanShop
 			// 设置地图边界
 			_miniMap.SetMapBounds(MapManager.MapWidth * MapManager.TileSize, MapManager.MapHeight * MapManager.TileSize);
 
-			// 生成并设置地图纹理（使用小地图的实际尺寸）
-			var mapTexture = MapManager.GenerateMapOverviewTexture(_miniMap.MiniMapWidth, _miniMap.MiniMapHeight);
-			_miniMap.SetMapTexture(mapTexture);
+			// 创建小地图视口容器
+			CreateMiniMapViewPort();
+		}
+
+		/// <summary>
+		/// 创建小地图视口用于实时渲染
+		/// </summary>
+		private void CreateMiniMapViewPort()
+		{
+			// 创建 SubViewportContainer
+			_miniMapViewPortContainer = new SubViewportContainer();
+			_miniMapViewPortContainer.Name = "MiniMapViewPortContainer";
+			// 隐藏，不直接显示，只作为纹理源
+			_miniMapViewPortContainer.Visible = false;
+			AddChild(_miniMapViewPortContainer);
+
+			// 创建 SubViewport
+			_miniMapViewPort = new SubViewport();
+			_miniMapViewPort.Name = "MiniMapViewPort";
+			_miniMapViewPort.Size = new Vector2I(_miniMap.MiniMapWidth, _miniMap.MiniMapHeight);
+			_miniMapViewPort.RenderTargetUpdateMode = SubViewport.UpdateMode.Always; // 始终更新
+			_miniMapViewPort.TransparentBg = false; // 不透明背景
+			_miniMapViewPortContainer.AddChild(_miniMapViewPort);
+
+			// 创建小地图专用相机
+			_miniMapCamera = new Camera2D();
+			_miniMapCamera.Name = "MiniMapCamera";
+			_miniMapViewPort.AddChild(_miniMapCamera);
+
+			// 计算地图实际尺寸
+			float mapPixelWidth = MapManager.MapWidth * MapManager.TileSize;
+			float mapPixelHeight = MapManager.MapHeight * MapManager.TileSize;
+
+			// 设置相机缩放以显示整个地图
+			float zoomX = (float)_miniMap.MiniMapWidth / mapPixelWidth;
+			float zoomY = (float)_miniMap.MiniMapHeight / mapPixelHeight;
+			float zoom = Mathf.Min(zoomX, zoomY); // 使用较小的缩放比例以保持宽高比
+			_miniMapCamera.Zoom = new Vector2(zoom, zoom);
+
+			// 设置相机位置到地图中心
+			_miniMapCamera.GlobalPosition = new Vector2(mapPixelWidth / 2, mapPixelHeight / 2);
+			_miniMapCamera.PositionSmoothingEnabled = false;
+
+			// 创建 TileMapLayer 副本
+			RecreateMiniMapTileMap();
+
+			// 创建 ViewportTexture 并设置到 MiniMap
+			var viewportTexture = _miniMapViewPort.GetTexture();
+			_miniMap.SetMapTexture(viewportTexture);
+		}
+
+		/// <summary>
+		/// 重新创建小地图的 TileMapLayer
+		/// </summary>
+		private void RecreateMiniMapTileMap()
+		{
+			// 如果已有旧的小地图 TileMap，先删除
+			if (_miniMapTileMapLayer != null && _miniMapTileMapLayer.IsInsideTree())
+			{
+				_miniMapTileMapLayer.QueueFree();
+			}
+
+			// 获取原始的 TileMapLayer
+			var originalTileMap = GetTree().Root.GetNodeOrNull<TileMapLayer>("WorldMapScene/MainMap/WorldMapTileLayer");
+			if (originalTileMap == null)
+			{
+				GD.PrintErr("无法找到原始的 TileMapLayer");
+				return;
+			}
+
+			// 创建新的 TileMapLayer 作为副本
+			_miniMapTileMapLayer = new TileMapLayer();
+			_miniMapTileMapLayer.Name = "MiniMapTileLayer";
+			_miniMapTileMapLayer.TileSet = originalTileMap.TileSet;
+			_miniMapViewPort.AddChild(_miniMapTileMapLayer);
+
+			// 复制所有瓦片数据
+			CopyTileMapData(originalTileMap, _miniMapTileMapLayer);
+		}
+
+		/// <summary>
+		/// 复制 TileMap 数据
+		/// </summary>
+		private void CopyTileMapData(TileMapLayer source, TileMapLayer destination)
+		{
+			// 获取源 TileMap 的所有已使用的单元格
+			var usedCells = source.GetUsedCells();
+
+			foreach (var cell in usedCells)
+			{
+				// 获取源的图集ID、图集坐标和替代图集坐标
+				var sourceId = source.GetCellSourceId(cell);
+				var atlasCoords = source.GetCellAtlasCoords(cell);
+				var alternativeTile = source.GetCellAlternativeTile(cell);
+
+				// 设置到目标 TileMap
+				destination.SetCell(cell, sourceId, atlasCoords, alternativeTile);
+			}
 		}
 
 		public override void _Process(double delta)

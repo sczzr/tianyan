@@ -15,6 +15,8 @@ Seed = 45452
 
 [node name="WorldMapCamera" type="Camera2D" parent="."]
 anchor_mode = 0
+position_smoothing_enabled = false
+position = Vector2(0, 0)
 script = ExtResource("2_v8k3m")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="."]

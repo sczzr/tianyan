@@ -18,11 +18,15 @@ namespace TianYanShop
 		[Export] public bool EnableSmoothZoom = true;
 		[Export] public float SmoothZoomSpeed = 13.0f;
 		[Export] public int TileSize = 64;
+		[Export] public float BoundaryMargin = 100.0f; // 边界边距（像素）
 
 		// 地图边界
 		private float _mapWidth = 0;
 		private float _mapHeight = 0;
 		private bool _hasMapBounds = false;
+
+		// 视口尺寸
+		private Vector2 _viewportSize;
 
 		// 目标缩放值 (用于平滑缩放)
 		private Vector2 _targetZoom;
@@ -52,12 +56,26 @@ namespace TianYanShop
 			// 确保进程模式始终运行
 			ProcessMode = ProcessModeEnum.Always;
 
-			GD.Print("世界地图相机已初始化 (Fixed Top Left 模式)");
+			// 禁用位置平滑，防止自动调整
+			PositionSmoothingEnabled = false;
+
+			// 初始化视口尺寸
+			_viewportSize = GetViewportRect().Size;
+
+			GD.Print($"世界地图相机已初始化 (Fixed Top Left 模式), 位置平滑: {PositionSmoothingEnabled}, 当前位置: {GlobalPosition}, 视口尺寸: {_viewportSize}");
 		}
 
 		public override void _Process(double delta)
 		{
 			float dt = (float)delta;
+
+			Vector2 prevPos = GlobalPosition;
+
+			// 调试：每60帧打印一次位置
+			if (Engine.GetProcessFrames() % 60 == 0)
+			{
+				var parentPos = GetParent() is Node2D parent2D ? parent2D.GlobalPosition : Vector2.Zero;
+			}
 
 			// 处理移动
 			HandleMovement(dt);
@@ -114,6 +132,12 @@ namespace TianYanShop
 			// 应用移动 (考虑缩放级别)
 			Vector2 movement = direction * speed * delta / Zoom.X;
 			GlobalPosition += movement;
+
+			// 应用边界限制
+			if (_hasMapBounds)
+			{
+				ApplyBounds();
+			}
 		}
 
 		/// <summary>
@@ -172,6 +196,12 @@ namespace TianYanShop
 				Vector2 delta = _dragStartPos - currentMousePos;
 				// 在 Fixed Top Left 模式下，拖拽方向就是相机移动方向
 				GlobalPosition = _dragStartCameraPos + delta / Zoom.X;
+
+				// 应用边界限制
+				if (_hasMapBounds)
+				{
+					ApplyBounds();
+				}
 			}
 		}
 
@@ -190,28 +220,41 @@ namespace TianYanShop
 				if (_zoomMouseScreenPos != Vector2.Zero)
 				{
 					AdjustPositionForZoom(_zoomMouseScreenPos, prevZoom, newZoomX);
-				}
 			}
-		}
-
-		/// <summary>
-		/// 缩小
-		/// </summary>
-		public void ZoomOut()
-		{
-			float prevZoom = Zoom.X;
-			float newZoomX = Mathf.Max(prevZoom - ZoomSpeed, MinZoom);
-			_targetZoom = new Vector2(newZoomX, newZoomX);
-
-			if (!EnableSmoothZoom)
+			// 应用边界限制
+			if (_hasMapBounds)
 			{
-				Zoom = _targetZoom;
-				if (_zoomMouseScreenPos != Vector2.Zero)
-				{
-					AdjustPositionForZoom(_zoomMouseScreenPos, prevZoom, newZoomX);
-				}
+				ApplyBounds();
 			}
 		}
+	}
+
+	/// <summary>
+	/// 缩小
+	/// </summary>
+	public void ZoomOut()
+	{
+		float prevZoom = Zoom.X;
+		// 计算最小缩放以确保地图占据至少 1/2 视口面积
+		float minZoomForHalfCoverage = CalculateMinZoomForHalfCoverage();
+		float effectiveMinZoom = Mathf.Max(MinZoom, minZoomForHalfCoverage);
+		float newZoomX = Mathf.Max(prevZoom - ZoomSpeed, effectiveMinZoom);
+		_targetZoom = new Vector2(newZoomX, newZoomX);
+
+		if (!EnableSmoothZoom)
+		{
+			Zoom = _targetZoom;
+			if (_zoomMouseScreenPos != Vector2.Zero)
+			{
+				AdjustPositionForZoom(_zoomMouseScreenPos, prevZoom, newZoomX);
+			}
+			// 应用边界限制
+			if (_hasMapBounds)
+			{
+				ApplyBounds();
+			}
+		}
+	}
 
 		/// <summary>
 		/// 处理平滑缩放
@@ -235,6 +278,11 @@ namespace TianYanShop
 				if (prevZoom != Zoom.X && _zoomMouseScreenPos != Vector2.Zero)
 				{
 					AdjustPositionForZoom(_zoomMouseScreenPos, prevZoom, Zoom.X);
+				}
+				// 应用边界限制
+				if (_hasMapBounds)
+				{
+					ApplyBounds();
 				}
 			}
 		}
@@ -286,30 +334,91 @@ namespace TianYanShop
 			_hasMapBounds = true;
 		}
 
-		/// <summary>
-		/// 应用边界限制
-		/// </summary>
-		private void ApplyBounds()
-		{
-			float borderPadding = 100.0f / Zoom.X;
-			float minX = -borderPadding;
-			float maxX = _mapWidth + borderPadding;
-			float minY = -borderPadding;
-			float maxY = _mapHeight + borderPadding;
+	/// <summary>
+	/// 应用边界限制 - 确保地图始终在视口内可见
+	/// 在 Fixed Top Left 模式下：
+	/// - GlobalPosition 是屏幕左上角对应的世界坐标
+	/// - 可见世界区域 = GlobalPosition 到 GlobalPosition + viewportSize / Zoom
+	/// </summary>
+	private void ApplyBounds()
+	{
+		// 计算当前视口在世界坐标中的尺寸
+		float visibleWorldWidth = _viewportSize.X / Zoom.X;
+		float visibleWorldHeight = _viewportSize.Y / Zoom.Y;
 
-			GlobalPosition = new Vector2(
-				Mathf.Clamp(GlobalPosition.X, minX, maxX),
-				Mathf.Clamp(GlobalPosition.Y, minY, maxY)
-			);
+		// 计算边距（世界坐标）
+		float marginWorld = BoundaryMargin / Zoom.X;
+
+		float newX = GlobalPosition.X;
+		float newY = GlobalPosition.Y;
+
+		// 水平边界约束
+		if (_mapWidth < visibleWorldWidth)
+		{
+			// 地图宽度小于视口，居中显示
+			newX = (_mapWidth - visibleWorldWidth) / 2.0f;
+		}
+		else
+		{
+			// 地图宽度大于视口，限制边界（带边距）
+			// 左边界：允许地图左边缘超出屏幕左侧一个 margin 的距离
+			// 右边界：允许地图右边缘超出屏幕右侧一个 margin 的距离
+			float minX = -marginWorld;
+			float maxX = _mapWidth - visibleWorldWidth + marginWorld;
+			newX = Mathf.Clamp(GlobalPosition.X, minX, maxX);
 		}
 
-		/// <summary>
-		/// 将相机移动到指定位置
-		/// </summary>
-		public void CenterOnPosition(Vector2 worldPos)
+		// 垂直边界约束
+		if (_mapHeight < visibleWorldHeight)
 		{
-			GlobalPosition = worldPos;
+			// 地图高度小于视口，居中显示
+			newY = (_mapHeight - visibleWorldHeight) / 2.0f;
 		}
+		else
+		{
+			// 地图高度大于视口，限制边界（带边距）
+			float minY = -marginWorld;
+			float maxY = _mapHeight - visibleWorldHeight + marginWorld;
+			newY = Mathf.Clamp(GlobalPosition.Y, minY, maxY);
+		}
+
+		GlobalPosition = new Vector2(newX, newY);
+	}
+
+	/// <summary>
+	/// 计算最小缩放级别以确保地图占据至少 1/2 视口面积
+	/// 地图在屏幕上的面积 = (mapWidth * Zoom) * (mapHeight * Zoom) = mapArea * Zoom²
+	/// 要求：mapArea * Zoom² >= viewportArea / 2
+	/// 因此：Zoom >= sqrt(viewportArea / (2 * mapArea))
+	/// </summary>
+	private float CalculateMinZoomForHalfCoverage()
+	{
+		if (!_hasMapBounds || _mapWidth <= 0 || _mapHeight <= 0)
+		{
+			return MinZoom;
+		}
+
+		float mapArea = _mapWidth * _mapHeight;
+		float viewportArea = _viewportSize.X * _viewportSize.Y;
+
+		// 计算使地图占据 1/2 视口面积的最小缩放
+		float minZoomForHalf = Mathf.Sqrt(viewportArea / (2.0f * mapArea));
+
+		// 确保不会返回过小的值
+		return Mathf.Max(minZoomForHalf, 0.01f);
+	}
+
+	/// <summary>
+	/// 将相机移动到指定位置
+	/// </summary>
+	public void CenterOnPosition(Vector2 worldPos)
+	{
+		GlobalPosition = worldPos;
+		if (_hasMapBounds)
+		{
+			ApplyBounds();
+		}
+	}
 
 		/// <summary>
 		/// 将世界坐标的左上角 (0,0) 对齐到屏幕左上角
