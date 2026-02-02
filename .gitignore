@@ -6,7 +6,7 @@
 .import/
 
 # Godot 4+ 的缓存文件夹
-.godot/*
+.godot/
 *.uid
 
 # 导出时的临时文件

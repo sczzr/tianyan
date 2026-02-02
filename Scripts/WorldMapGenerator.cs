@@ -65,14 +65,35 @@ namespace TianYanShop
         public float Temperature;
         public float Rainfall;
         public float Fertility;
+        // 混合参数 - 用于平滑过渡
+        public float BlendFactor;
+        public BiomeType SecondaryBiome;
 
-        public MapTile(BiomeType biome, float elevation, float temperature, float rainfall, float fertility)
+        public MapTile(BiomeType biome, float elevation, float temperature, float rainfall, float fertility,
+            float blendFactor = 0f, BiomeType secondaryBiome = BiomeType.Ocean)
         {
             Biome = biome;
             Elevation = elevation;
             Temperature = temperature;
             Rainfall = rainfall;
             Fertility = fertility;
+            BlendFactor = blendFactor;
+            SecondaryBiome = secondaryBiome;
+        }
+    }
+
+    /// <summary>
+    /// 生物群系候选 - 用于过渡计算
+    /// </summary>
+    public struct BiomeCandidate
+    {
+        public BiomeType Type;
+        public float Score;
+
+        public BiomeCandidate(BiomeType type, float score)
+        {
+            Type = type;
+            Score = score;
         }
     }
 
@@ -254,18 +275,152 @@ namespace TianYanShop
                 rainfall = Mathf.Max(rainfall, 0.6f);
             }
 
-            // 确定生物群系
-            BiomeType biome = DetermineBiome(elevationNoise, temperature, rainfall);
+            // 确定生物群系（带平滑过渡）
+            var (biome, blendFactor, secondaryBiome) = DetermineBiomeWithBlend(elevationNoise, temperature, rainfall);
 
-            // 计算肥沃度
-            float fertility = CalculateFertility(biome, fertilityNoise, elevationNoise, rainfall);
+            // 计算肥沃度（考虑混合）
+            float fertility = CalculateFertilityWithBlend(biome, secondaryBiome, blendFactor,
+                fertilityNoise, elevationNoise, rainfall);
 
-            return new MapTile(biome, elevationNoise, temperature, rainfall, fertility);
+            return new MapTile(biome, elevationNoise, temperature, rainfall, fertility, blendFactor, secondaryBiome);
         }
 
         private float ApplyVariation(float baseValue, float variation, float strength)
         {
             return Mathf.Clamp(baseValue + (variation - 0.5f) * strength, 0.0f, 1.0f);
+        }
+
+        /// <summary>
+        /// 确定生物群系并计算混合参数（用于平滑过渡）
+        /// </summary>
+        private (BiomeType primary, float blendFactor, BiomeType secondary) DetermineBiomeWithBlend(
+            float elevation, float temperature, float rainfall)
+        {
+            // 水域特殊处理（不需要过渡）
+            if (elevation < WaterLevel)
+            {
+                if (temperature < 0.15f)
+                    return (BiomeType.IceSheetOcean, 0f, BiomeType.IceSheetOcean);
+                return (BiomeType.Ocean, 0f, BiomeType.Ocean);
+            }
+
+            // 计算所有生物群系的匹配分数
+            var candidates = CalculateBiomeScores(elevation, temperature, rainfall);
+
+            // 如果没有候选，默认温带森林
+            if (candidates.Count == 0)
+                return (BiomeType.TemperateForest, 0f, BiomeType.TemperateForest);
+
+            // 只有一个候选，无需混合
+            if (candidates.Count == 1)
+                return (candidates[0].Type, 0f, candidates[0].Type);
+
+            // 计算混合因子（基于前两个候选的分数差异）
+            float primaryScore = candidates[0].Score;
+            float secondaryScore = candidates[1].Score;
+            float totalScore = primaryScore + secondaryScore;
+
+            // 混合因子：0 = 完全主群系, 1 = 完全次群系
+            float blendFactor = secondaryScore / totalScore;
+
+            // 只在分数接近时才启用混合（避免所有边界都模糊）
+            float scoreRatio = secondaryScore / primaryScore;
+            if (scoreRatio < 0.6f)
+            {
+                // 主次差异太大，不混合
+                blendFactor = 0f;
+            }
+            else
+            {
+                // 平滑过渡混合因子
+                blendFactor = Mathf.SmoothStep(0f, 1f, blendFactor);
+            }
+
+            return (candidates[0].Type, blendFactor, candidates[1].Type);
+        }
+
+        /// <summary>
+        /// 计算所有生物群系对当前条件的匹配分数
+        /// </summary>
+        private List<BiomeCandidate> CalculateBiomeScores(float elevation, float temperature, float rainfall)
+        {
+            var candidates = new List<BiomeCandidate>();
+
+            // 冰架
+            float iceSheetScore = ScoreBiome(elevation > WaterLevel + 0.05f && temperature < 0.1f,
+                new[] { temperature < 0.1f ? 1f : 0f, 1f - temperature * 10f });
+            if (iceSheetScore > 0) candidates.Add(new BiomeCandidate(BiomeType.IceSheet, iceSheetScore));
+
+            // 苔原
+            float tundraScore = ScoreBiome(temperature < 0.25f && rainfall < 0.5f,
+                new[] { 1f - temperature * 4f, (0.5f - rainfall) * 2f });
+            if (tundraScore > 0) candidates.Add(new BiomeCandidate(BiomeType.Tundra, tundraScore));
+
+            // 寒冷沼泽
+            float coldBogScore = ScoreBiome(temperature < 0.3f && rainfall > 0.6f,
+                new[] { 1f - temperature * 3.33f, (rainfall - 0.6f) * 2.5f });
+            if (coldBogScore > 0) candidates.Add(new BiomeCandidate(BiomeType.ColdBog, coldBogScore));
+
+            // 北方针叶林
+            float borealScore = ScoreBiome(temperature < 0.4f && rainfall > 0.3f,
+                new[] { 1f - temperature * 2.5f, (rainfall - 0.3f) * 1.43f });
+            if (borealScore > 0) candidates.Add(new BiomeCandidate(BiomeType.BorealForest, borealScore));
+
+            // 温带森林
+            float temperateForestScore = ScoreBiome(
+                temperature >= 0.35f && temperature < 0.65f && rainfall > 0.35f && rainfall < 0.75f,
+                new[] { 1f - Mathf.Abs(temperature - 0.5f) * 3.33f, 1f - Mathf.Abs(rainfall - 0.55f) * 2.5f });
+            if (temperateForestScore > 0) candidates.Add(new BiomeCandidate(BiomeType.TemperateForest, temperateForestScore));
+
+            // 温带沼泽
+            float temperateSwampScore = ScoreBiome(temperature >= 0.35f && temperature < 0.7f && rainfall >= 0.7f,
+                new[] { 1f - Mathf.Abs(temperature - 0.525f) * 2.86f, (rainfall - 0.7f) * 3.33f });
+            if (temperateSwampScore > 0) candidates.Add(new BiomeCandidate(BiomeType.TemperateSwamp, temperateSwampScore));
+
+            // 干旱灌木地
+            float aridScore = ScoreBiome(temperature >= 0.4f && temperature < 0.75f && rainfall < 0.35f,
+                new[] { 1f - Mathf.Abs(temperature - 0.575f) * 2.86f, (0.35f - rainfall) * 2.86f });
+            if (aridScore > 0) candidates.Add(new BiomeCandidate(BiomeType.AridShrubland, aridScore));
+
+            // 沙漠
+            float desertScore = ScoreBiome(temperature >= 0.5f && temperature < 0.8f && rainfall < 0.2f,
+                new[] { 1f - Mathf.Abs(temperature - 0.65f) * 3.33f, (0.2f - rainfall) * 5f });
+            if (desertScore > 0) candidates.Add(new BiomeCandidate(BiomeType.Desert, desertScore));
+
+            // 极端沙漠
+            float extremeDesertScore = ScoreBiome(temperature >= 0.7f && rainfall < 0.15f,
+                new[] { (temperature - 0.7f) * 3.33f, (0.15f - rainfall) * 6.67f });
+            if (extremeDesertScore > 0) candidates.Add(new BiomeCandidate(BiomeType.ExtremeDesert, extremeDesertScore));
+
+            // 热带雨林
+            float tropicalRainforestScore = ScoreBiome(temperature >= 0.65f && rainfall >= 0.6f,
+                new[] { (temperature - 0.65f) * 2.86f, (rainfall - 0.6f) * 2.5f });
+            if (tropicalRainforestScore > 0) candidates.Add(new BiomeCandidate(BiomeType.TropicalRainforest, tropicalRainforestScore));
+
+            // 热带沼泽
+            float tropicalSwampScore = ScoreBiome(temperature >= 0.7f && rainfall >= 0.75f,
+                new[] { (temperature - 0.7f) * 3.33f, (rainfall - 0.75f) * 4f });
+            if (tropicalSwampScore > 0) candidates.Add(new BiomeCandidate(BiomeType.TropicalSwamp, tropicalSwampScore));
+
+            // 按分数排序（降序）
+            candidates.Sort((a, b) => b.Score.CompareTo(a.Score));
+
+            return candidates;
+        }
+
+        /// <summary>
+        /// 计算生物群系的匹配分数
+        /// </summary>
+        private float ScoreBiome(bool baseCondition, float[] factors)
+        {
+            if (!baseCondition) return 0f;
+
+            float score = 1f;
+            foreach (var factor in factors)
+            {
+                score *= Mathf.Clamp(factor, 0f, 1f);
+            }
+            return score;
         }
 
         private BiomeType DetermineBiome(float elevation, float temperature, float rainfall)
@@ -350,6 +505,25 @@ namespace TianYanShop
                 baseFertility *= Mathf.Clamp(rainfall + 0.3f, 0.3f, 1.2f);
 
             return Mathf.Clamp(baseFertility, 0.0f, 1.0f);
+        }
+
+        /// <summary>
+        /// 计算混合区域的肥沃度
+        /// </summary>
+        private float CalculateFertilityWithBlend(BiomeType primaryBiome, BiomeType secondaryBiome,
+            float blendFactor, float noise, float elevation, float rainfall)
+        {
+            // 如果无混合，使用标准计算
+            if (blendFactor <= 0.01f || primaryBiome == secondaryBiome)
+                return CalculateFertility(primaryBiome, noise, elevation, rainfall);
+
+            // 计算两个群系的肥沃度
+            float primaryFertility = CalculateFertility(primaryBiome, noise, elevation, rainfall);
+            float secondaryFertility = CalculateFertility(secondaryBiome, noise, elevation, rainfall);
+
+            // 使用平滑步进进行混合
+            float smoothBlend = Mathf.SmoothStep(0f, 1f, blendFactor);
+            return Mathf.Lerp(primaryFertility, secondaryFertility, smoothBlend);
         }
 
         public void Regenerate(int newSeed = -1)

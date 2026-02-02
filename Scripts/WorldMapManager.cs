@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Collections.Generic;
 
 namespace TianYanShop
 {
@@ -177,24 +178,179 @@ namespace TianYanShop
 			int textureTileCountX = _textureSize.X / TileSize;
 			int textureTileCountY = _textureSize.Y / TileSize;
 
+			// 创建随机数生成器用于混合区域的纹理选择
+			var rand = new Random(Seed);
+
+			// 使用字典来存储混合瓦片数据
+			var blendTiles = new Dictionary<Vector2I, (BiomeType secondary, float factor)>();
+
 			for (int x = 0; x < MapWidth; x++)
 			{
 				for (int y = 0; y < MapHeight; y++)
 				{
 					var tile = _generator.MapTiles[x, y];
-					int atlasId = (int)tile.Biome;
 
-					// 使用取模运算实现纹理平铺效果
-					// 每个单元格根据其在地图中的位置映射到纹理的对应坐标
-					int textureTileX = x % textureTileCountX;
-					int textureTileY = y % textureTileCountY;
-					Vector2I atlasCoords = new Vector2I(textureTileX, textureTileY);
+					// 确定要渲染的生物群系和纹理选择
+					(BiomeType renderBiome, Vector2I atlasCoords, bool isBlend) = DetermineRenderTile(
+						tile, x, y, textureTileCountX, textureTileCountY, rand);
 
-					_tileMapLayer.SetCell(new Vector2I(x, y), atlasId, atlasCoords);
+					int atlasId = (int)renderBiome;
+					Vector2I cellPos = new Vector2I(x, y);
+
+					_tileMapLayer.SetCell(cellPos, atlasId, atlasCoords);
+
+					// 记录混合信息以便后续处理
+					if (isBlend && tile.BlendFactor > 0.1f && tile.SecondaryBiome != tile.Biome)
+					{
+						blendTiles[cellPos] = (tile.SecondaryBiome, tile.BlendFactor);
+					}
 				}
 			}
 
-			GD.Print($"地图渲染完成: {MapWidth}x{MapHeight} 瓦片");
+			// 应用混合效果（使用透明度或混合瓦片）
+			ApplyBlendEffects(blendTiles, textureTileCountX, textureTileCountY, rand);
+
+			GD.Print($"地图渲染完成: {MapWidth}x{MapHeight} 瓦片, 混合区域: {blendTiles.Count}");
+		}
+
+		/// <summary>
+		/// 应用混合效果 - 在边界区域添加次群系的视觉元素
+		/// </summary>
+		private void ApplyBlendEffects(Dictionary<Vector2I, (BiomeType secondary, float factor)> blendTiles,
+			int textureTileCountX, int textureTileCountY, Random rand)
+		{
+			foreach (var kvp in blendTiles)
+			{
+				Vector2I pos = kvp.Key;
+				var (secondaryBiome, factor) = kvp.Value;
+
+				// 使用噪声决定是否在此位置放置次群系元素
+				float noiseValue = GetSpatialNoise(pos.X, pos.Y, Seed);
+
+				// 根据混合因子调整阈值
+				float threshold = 1f - (factor * 0.7f); // factor越高，越容易显示次群系
+
+				if (noiseValue > threshold)
+				{
+					// 使用次群系的纹理
+					int secondaryAtlasId = (int)secondaryBiome;
+
+					// 为次群系选择纹理坐标
+					int texX = (pos.X * 7 + pos.Y * 13) % textureTileCountX;
+					int texY = (pos.X * 11 + pos.Y * 7) % textureTileCountY;
+					Vector2I atlasCoords = new Vector2I(texX, texY);
+
+					// 创建带有次群系视觉的混合效果
+					// 使用交替模式：主群系作为基础，次群系作为点缀
+					_tileMapLayer.SetCell(pos, secondaryAtlasId, atlasCoords);
+				}
+			}
+		}
+
+		/// <summary>
+		/// 获取空间噪声值（确定性随机）
+		/// </summary>
+		private float GetSpatialNoise(int x, int y, int seed)
+		{
+			int hash = x * 374761 + y * 668265 + seed;
+			hash = (hash ^ (hash >> 13)) * 1274126177;
+			return ((hash & 0x7fffffff) / (float)int.MaxValue);
+		}
+
+		/// <summary>
+		/// 确定渲染瓦片的生物群系和纹理坐标（处理过渡效果）
+		/// </summary>
+		private (BiomeType biome, Vector2I coords, bool isBlend) DetermineRenderTile(MapTile tile, int x, int y,
+			int textureTileCountX, int textureTileCountY, Random rand)
+		{
+			// 基础纹理坐标 - 基于位置
+			int baseTileX = x % textureTileCountX;
+			int baseTileY = y % textureTileCountY;
+
+			// 如果不是混合区域，直接使用主群系
+			if (tile.BlendFactor <= 0.01f || tile.Biome == tile.SecondaryBiome)
+			{
+				return (tile.Biome, new Vector2I(baseTileX, baseTileY), false);
+			}
+
+			// 混合区域：根据混合因子决定渲染哪个群系
+			// 使用空间噪声模式来决定混合边界
+			float noiseValue = GetBlendNoise(x, y, tile.BlendFactor);
+
+			// 根据噪声值选择群系
+			BiomeType selectedBiome = noiseValue < tile.BlendFactor ? tile.SecondaryBiome : tile.Biome;
+
+			// 为混合区域选择纹理坐标
+			// 使用不同的偏移来创造更多变化
+			Vector2I coords = GetVariedTileCoords(baseTileX, baseTileY, textureTileCountX, textureTileCountY,
+				selectedBiome, x, y, rand);
+
+			return (selectedBiome, coords, true);
+		}
+
+		/// <summary>
+		/// 获取混合噪声值（用于创造自然的混合边界）
+		/// </summary>
+		private float GetBlendNoise(int x, int y, float blendFactor)
+		{
+			// 使用简单的哈希函数生成空间噪声
+			int hash = x * 374761 + y * 668265 + Seed;
+			hash = (hash ^ (hash >> 13)) * 1274126177;
+			float noise = (hash & 0x7fffffff) / (float)int.MaxValue;
+
+			// 添加基于位置的低频变化
+			float lowFreqNoise = Mathf.Sin(x * 0.1f + y * 0.07f + Seed * 0.01f) * 0.5f + 0.5f;
+
+			// 混合两种噪声
+			return Mathf.Lerp(noise, lowFreqNoise, 0.3f);
+		}
+
+		/// <summary>
+		/// 获取变化的纹理坐标（增加视觉多样性）
+		/// </summary>
+		private Vector2I GetVariedTileCoords(int baseX, int baseY, int countX, int countY,
+			BiomeType biome, int worldX, int worldY, Random rand)
+		{
+			// 基于群系和位置计算偏移
+			int offsetX = 0;
+			int offsetY = 0;
+
+			// 使用群系特定偏移（让每个群系有自己的纹理模式）
+			switch (biome)
+			{
+				case BiomeType.BorealForest:
+				case BiomeType.TemperateForest:
+				case BiomeType.TropicalRainforest:
+					// 森林使用更多垂直变化
+					offsetY = (worldY % 3);
+					break;
+
+				case BiomeType.Desert:
+				case BiomeType.ExtremeDesert:
+				case BiomeType.AridShrubland:
+					// 沙漠使用更多水平变化
+					offsetX = (worldX % 3);
+					break;
+
+				case BiomeType.Tundra:
+				case BiomeType.IceSheet:
+					// 冰原使用对角线变化
+					offsetX = ((worldX + worldY) % 2);
+					offsetY = ((worldX + worldY) % 2);
+					break;
+
+				default:
+					// 其他使用随机变化
+					offsetX = ((worldX * 7 + worldY * 13) % 2);
+					offsetY = ((worldX * 11 + worldY * 7) % 2);
+					break;
+			}
+
+			// 计算最终坐标
+			int finalX = ((baseX + offsetX) % countX + countX) % countX;
+			int finalY = ((baseY + offsetY) % countY + countY) % countY;
+
+			return new Vector2I(finalX, finalY);
 		}
 
 		/// <summary>
