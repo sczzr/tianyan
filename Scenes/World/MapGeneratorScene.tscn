@@ -1,0 +1,188 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Scripts/World/Map/WorldMapRenderer.cs" id="1_renderer"]
+[ext_resource type="Script" path="res://Scripts/World/Map/MapGeneratorSceneController.cs" id="2_controller"]
+
+[node name="MapGeneratorScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_controller")
+
+[node name="WorldMapRenderer" type="Node2D" parent="."]
+script = ExtResource("1_renderer")
+MapWidth = 256
+MapHeight = 256
+RandomSeed = true
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="TerrainInfoPanel" type="PanelContainer" parent="UI"]
+anchors_preset = 0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = 340.0
+offset_bottom = 180.0
+
+[node name="TerrainInfoLabel" type="RichTextLabel" parent="UI/TerrainInfoPanel"]
+layout_mode = 2
+bbcode_enabled = true
+text = "[b]地形介绍[/b]
+
+选择省份或调整参数查看地形特征"
+fit_content = true
+max_lines_visible = 8
+
+[node name="ControlPanel" type="PanelContainer" parent="UI"]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -300.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 520.0
+grow_horizontal = 0
+theme_override_styles/panel = null
+
+[node name="VBoxContainer" type="VBoxContainer" parent="UI/ControlPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "地图生成器"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="ProvinceLabel" type="Label" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+text = "省份数据:"
+
+[node name="ProvinceOption" type="OptionButton" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="HSeparator0" type="HSeparator" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="SeedLabel" type="Label" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+text = "种子 (数字/文字):"
+
+[node name="SeedInput" type="LineEdit" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+placeholder_text = "例如: 天衍峰 或 12345"
+
+[node name="HSeparator1" type="HSeparator" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="SizeLabel" type="Label" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+text = "地图尺寸:"
+
+[node name="SizeContainer" type="HBoxContainer" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="WidthSpin" type="SpinBox" parent="UI/ControlPanel/VBoxContainer/SizeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 64.0
+max_value = 512.0
+value = 256.0
+step = 64.0
+
+[node name="XLabel" type="Label" parent="UI/ControlPanel/VBoxContainer/SizeContainer"]
+layout_mode = 2
+text = "x"
+
+[node name="HeightSpin" type="SpinBox" parent="UI/ControlPanel/VBoxContainer/SizeContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 64.0
+max_value = 512.0
+value = 256.0
+step = 64.0
+
+[node name="HSeparator2" type="HSeparator" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="TerrainLabel" type="Label" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+text = "地形参数:"
+
+[node name="WaterLevelLabel" type="Label" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+text = "水位高度:"
+
+[node name="WaterLevelSlider" type="HSlider" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+min_value = 0.1
+max_value = 0.6
+step = 0.05
+value = 0.35
+
+[node name="ForestLabel" type="Label" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+text = "森林密度:"
+
+[node name="ForestSlider" type="HSlider" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+min_value = 0.0
+max_value = 2.0
+step = 0.1
+value = 1.0
+
+[node name="DesertLabel" type="Label" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+text = "沙漠密度:"
+
+[node name="DesertSlider" type="HSlider" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+min_value = 0.0
+max_value = 2.0
+step = 0.1
+value = 1.0
+
+[node name="LakeLabel" type="Label" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+text = "湖泊密度:"
+
+[node name="LakeSlider" type="HSlider" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+min_value = 0.0
+max_value = 2.0
+step = 0.1
+value = 1.0
+
+[node name="HSeparator3" type="HSeparator" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="GenerateButton" type="Button" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+text = "生成地图"
+
+[node name="RegenerateButton" type="Button" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+text = "重新生成"
+
+[node name="HSeparator4" type="HSeparator" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="InfoLabel" type="Label" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "操作说明:"
+
+[node name="ControlsLabel" type="RichTextLabel" parent="UI/ControlPanel/VBoxContainer"]
+layout_mode = 2
+bbcode_enabled = true
+text = "[color=#AAAAAA]WASD - 移动视角[/color]
+[color=#AAAAAA]鼠标滚轮 - 缩放[/color]
+[color=#AAAAAA]中键拖拽 - 平移[/color]
+[color=#AAAAAA]Shift - 加速移动[/color]"

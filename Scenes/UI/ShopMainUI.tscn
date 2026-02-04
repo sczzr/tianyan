@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://cavfhkukvovlp"]
+[gd_scene load_steps=5 format=3 uid="uid://c8m4x2q2v2x7y"]
 
-[ext_resource type="Script" uid="uid://b0gxpv315kbgr" path="res://Scripts/UI/UIShopMain.cs" id="1_j8v4n"]
+[ext_resource type="Script" uid="uid://cl3w0fja7wqfw" path="res://Scripts/UI/UIShopMain.cs" id="1_j8v4n"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
 bg_color = Color(0.15, 0.15, 0.18, 1)
@@ -38,7 +38,7 @@ corner_radius_top_right = 4
 corner_radius_bottom_right = 4
 corner_radius_bottom_left = 4
 
-[node name="ShopMainUI" type="Control" unique_id=1159655787]
+[node name="ShopMainUI" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -47,7 +47,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_j8v4n")
 
-[node name="Background" type="ColorRect" parent="." unique_id=1857147526]
+[node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -56,7 +56,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.08, 0.08, 0.1, 1)
 
-[node name="TopBar" type="Panel" parent="." unique_id=181220737]
+[node name="TopBar" type="Panel" parent="."]
 layout_mode = 1
 anchors_preset = -1
 anchor_right = 1.0
@@ -66,7 +66,7 @@ offset_bottom = 0.23999786
 grow_horizontal = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_1")
 
-[node name="TitleLabel" type="Label" parent="TopBar" unique_id=1079988871]
+[node name="TitleLabel" type="Label" parent="TopBar"]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.42200002
@@ -84,7 +84,7 @@ text = "天衍峰 · 修仙商铺"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="DayLabel" type="Label" parent="TopBar" unique_id=1494987745]
+[node name="DayLabel" type="Label" parent="TopBar"]
 layout_mode = 1
 anchors_preset = 4
 anchor_top = 0.5
@@ -96,7 +96,7 @@ offset_bottom = 13.0
 grow_vertical = 2
 text = "第 1 天"
 
-[node name="SpiritStoneLabel" type="Label" parent="TopBar" unique_id=1546429953]
+[node name="SpiritStoneLabel" type="Label" parent="TopBar"]
 layout_mode = 1
 anchors_preset = 6
 anchor_left = 1.0
@@ -112,7 +112,7 @@ grow_vertical = 2
 text = "灵石: 1000"
 horizontal_alignment = 2
 
-[node name="MainContent" type="HBoxContainer" parent="." unique_id=1758655767]
+[node name="MainContent" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -125,12 +125,12 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 10
 
-[node name="LeftPanel" type="Panel" parent="MainContent" unique_id=1157999211]
+[node name="LeftPanel" type="Panel" parent="MainContent"]
 custom_minimum_size = Vector2(250, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_2")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MainContent/LeftPanel" unique_id=1986651508]
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContent/LeftPanel"]
 layout_mode = 1
 anchors_preset = -1
 anchor_left = 0.040000003
@@ -144,27 +144,27 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 5
 
-[node name="Label" type="Label" parent="MainContent/LeftPanel/VBoxContainer" unique_id=2129949206]
+[node name="Label" type="Label" parent="MainContent/LeftPanel/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "今日访客"
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="MainContent/LeftPanel/VBoxContainer" unique_id=1763837708]
+[node name="HSeparator" type="HSeparator" parent="MainContent/LeftPanel/VBoxContainer"]
 layout_mode = 2
 
-[node name="NPCListContainer" type="VBoxContainer" parent="MainContent/LeftPanel/VBoxContainer" unique_id=1616503552]
+[node name="NPCListContainer" type="VBoxContainer" parent="MainContent/LeftPanel/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 5
 
-[node name="CenterPanel" type="Panel" parent="MainContent" unique_id=623041221]
+[node name="CenterPanel" type="Panel" parent="MainContent"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_styles/panel = SubResource("StyleBoxFlat_2")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MainContent/CenterPanel" unique_id=573710066]
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContent/CenterPanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -176,7 +176,7 @@ offset_bottom = -15.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ShopInfoLabel" type="RichTextLabel" parent="MainContent/CenterPanel/VBoxContainer" unique_id=1814878922]
+[node name="ShopInfoLabel" type="RichTextLabel" parent="MainContent/CenterPanel/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/normal_font_size = 16
 bbcode_enabled = true
@@ -186,10 +186,10 @@ text = "[center][color=#FFD700]天衍峰集市 · 第壹号商铺[/color][/cente
 [color=#AAAAAA]今日收入：[/color] 0 灵石"
 fit_content = true
 
-[node name="HSeparator" type="HSeparator" parent="MainContent/CenterPanel/VBoxContainer" unique_id=429259455]
+[node name="HSeparator" type="HSeparator" parent="MainContent/CenterPanel/VBoxContainer"]
 layout_mode = 2
 
-[node name="MessageLabel" type="RichTextLabel" parent="MainContent/CenterPanel/VBoxContainer" unique_id=815542131]
+[node name="MessageLabel" type="RichTextLabel" parent="MainContent/CenterPanel/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 bbcode_enabled = true
@@ -197,12 +197,12 @@ text = "[color=#88CCFF][系统][/color] 欢迎来到天衍峰集市！
 [color=#88CCFF][系统][/color] 今日有 {NPC数量} 位修士前来拜访。
 [color=#88CCFF][系统][/color] 点击左侧列表与NPC交流，或点击下方按钮进行其他操作。"
 
-[node name="RightPanel" type="Panel" parent="MainContent" unique_id=504142780]
+[node name="RightPanel" type="Panel" parent="MainContent"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_2")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MainContent/RightPanel" unique_id=1534187362]
+[node name="VBoxContainer" type="VBoxContainer" parent="MainContent/RightPanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -215,49 +215,49 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 10
 
-[node name="Label" type="Label" parent="MainContent/RightPanel/VBoxContainer" unique_id=839841413]
+[node name="Label" type="Label" parent="MainContent/RightPanel/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "店铺信息"
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="MainContent/RightPanel/VBoxContainer" unique_id=640339882]
+[node name="HSeparator" type="HSeparator" parent="MainContent/RightPanel/VBoxContainer"]
 layout_mode = 2
 
-[node name="ShopLevelLabel" type="Label" parent="MainContent/RightPanel/VBoxContainer" unique_id=741623946]
+[node name="ShopLevelLabel" type="Label" parent="MainContent/RightPanel/VBoxContainer"]
 layout_mode = 2
 text = "店铺等级: 1级"
 
-[node name="ShopExpLabel" type="Label" parent="MainContent/RightPanel/VBoxContainer" unique_id=1825669832]
+[node name="ShopExpLabel" type="Label" parent="MainContent/RightPanel/VBoxContainer"]
 layout_mode = 2
 text = "经验: 0/100"
 
-[node name="ShopReputationLabel" type="Label" parent="MainContent/RightPanel/VBoxContainer" unique_id=2129625671]
+[node name="ShopReputationLabel" type="Label" parent="MainContent/RightPanel/VBoxContainer"]
 layout_mode = 2
 text = "声誉: 50"
 
-[node name="VSeparator" type="VSeparator" parent="MainContent/RightPanel/VBoxContainer" unique_id=1514326722]
+[node name="VSeparator" type="VSeparator" parent="MainContent/RightPanel/VBoxContainer"]
 layout_mode = 2
 
-[node name="StatisticsLabel" type="Label" parent="MainContent/RightPanel/VBoxContainer" unique_id=694467961]
+[node name="StatisticsLabel" type="Label" parent="MainContent/RightPanel/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 16
 text = "今日统计"
 horizontal_alignment = 1
 
-[node name="TotalSalesLabel" type="Label" parent="MainContent/RightPanel/VBoxContainer" unique_id=430380786]
+[node name="TotalSalesLabel" type="Label" parent="MainContent/RightPanel/VBoxContainer"]
 layout_mode = 2
 text = "总销售额: 0"
 
-[node name="TotalCraftsLabel" type="Label" parent="MainContent/RightPanel/VBoxContainer" unique_id=1845095081]
+[node name="TotalCraftsLabel" type="Label" parent="MainContent/RightPanel/VBoxContainer"]
 layout_mode = 2
 text = "制作次数: 0"
 
-[node name="NPCsMetLabel" type="Label" parent="MainContent/RightPanel/VBoxContainer" unique_id=209656166]
+[node name="NPCsMetLabel" type="Label" parent="MainContent/RightPanel/VBoxContainer"]
 layout_mode = 2
 text = "结识修士: 0"
 
-[node name="BottomBar" type="Panel" parent="." unique_id=1184350954]
+[node name="BottomBar" type="Panel" parent="."]
 layout_mode = 1
 anchors_preset = 12
 anchor_top = 1.0
@@ -268,7 +268,7 @@ grow_horizontal = 2
 grow_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_3")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="BottomBar" unique_id=123698944]
+[node name="HBoxContainer" type="HBoxContainer" parent="BottomBar"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -280,29 +280,29 @@ grow_vertical = 2
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="CraftButton" type="Button" parent="BottomBar/HBoxContainer" unique_id=1899442838]
+[node name="CraftButton" type="Button" parent="BottomBar/HBoxContainer"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 40)
 layout_mode = 2
 text = "炼丹/制符"
 
-[node name="InventoryButton" type="Button" parent="BottomBar/HBoxContainer" unique_id=1447795683]
+[node name="InventoryButton" type="Button" parent="BottomBar/HBoxContainer"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 40)
 layout_mode = 2
 text = "物品栏"
 
-[node name="StudyButton" type="Button" parent="BottomBar/HBoxContainer" unique_id=490330224]
+[node name="StudyButton" type="Button" parent="BottomBar/HBoxContainer"]
 custom_minimum_size = Vector2(120, 40)
 layout_mode = 2
 text = "研读功法"
 
-[node name="RestButton" type="Button" parent="BottomBar/HBoxContainer" unique_id=568284280]
+[node name="RestButton" type="Button" parent="BottomBar/HBoxContainer"]
 custom_minimum_size = Vector2(120, 40)
 layout_mode = 2
 text = "打坐休息"
 
-[node name="NextDayButton" type="Button" parent="BottomBar/HBoxContainer" unique_id=157112778]
+[node name="NextDayButton" type="Button" parent="BottomBar/HBoxContainer"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(120, 40)
 layout_mode = 2
