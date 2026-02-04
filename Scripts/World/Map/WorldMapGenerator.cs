@@ -66,11 +66,17 @@ namespace TianYanShop.World.Map
         public float Temperature;
         public float Rainfall;
         public float Fertility;
+        public float Spirit;
+        public bool HasSpiritVein;
+        public bool HasSpecialRegion;
+        public SpecialRegionType SpecialRegionType;
         // 混合参数 - 用于平滑过渡
         public float BlendFactor;
         public BiomeType SecondaryBiome;
 
         public MapTile(BiomeType biome, float elevation, float temperature, float rainfall, float fertility,
+            float spirit = 0.5f, bool hasSpiritVein = false, bool hasSpecialRegion = false,
+            SpecialRegionType specialRegionType = SpecialRegionType.None,
             float blendFactor = 0f, BiomeType secondaryBiome = BiomeType.Ocean)
         {
             Biome = biome;
@@ -78,6 +84,10 @@ namespace TianYanShop.World.Map
             Temperature = temperature;
             Rainfall = rainfall;
             Fertility = fertility;
+            Spirit = spirit;
+            HasSpiritVein = hasSpiritVein;
+            HasSpecialRegion = hasSpecialRegion;
+            SpecialRegionType = specialRegionType;
             BlendFactor = blendFactor;
             SecondaryBiome = secondaryBiome;
         }
@@ -109,6 +119,7 @@ namespace TianYanShop.World.Map
         private FastNoiseLite _rainfallNoise;
         private FastNoiseLite _fertilityNoise;
         private FastNoiseLite _variationNoise;
+        private FastNoiseLite _spiritNoise;
 
         // 地图参数
         public int MapWidth { get; private set; }
@@ -257,6 +268,14 @@ namespace TianYanShop.World.Map
             _variationNoise.Seed = Seed + 4;
             _variationNoise.NoiseType = FastNoiseLite.NoiseTypeEnum.Cellular;
             _variationNoise.Frequency = 0.02f;
+
+            // 灵气噪声 - 用于生成灵气分布
+            _spiritNoise = new FastNoiseLite();
+            _spiritNoise.Seed = Seed + 100;
+            _spiritNoise.NoiseType = FastNoiseLite.NoiseTypeEnum.Simplex;
+            _spiritNoise.FractalType = FastNoiseLite.FractalTypeEnum.Fbm;
+            _spiritNoise.FractalOctaves = 5;
+            _spiritNoise.Frequency = 0.012f;
         }
 
         /// <summary>
@@ -365,7 +384,95 @@ namespace TianYanShop.World.Map
             float fertility = CalculateFertilityWithBlend(biome, secondaryBiome, blendFactor,
                 fertilityNoise, elevationNoise, rainfall);
 
-            return new MapTile(biome, elevationNoise, temperature, rainfall, fertility, blendFactor, secondaryBiome);
+            // 计算灵气值
+            float spirit = CalculateSpirit(elevationNoise, temperature, rainfall, fertilityNoise, x, y);
+
+            // 检查是否为特殊区域
+            bool hasSpecialRegion = false;
+            SpecialRegionType specialType = SpecialRegionType.None;
+            if (_provinceConfig != null)
+            {
+                // 根据省份类型生成特殊区域
+                hasSpecialRegion = CheckSpecialRegion(x, y, (SpecialRegionType)_provinceConfig.SpecialRegionType);
+                if (hasSpecialRegion)
+                {
+                    specialType = (SpecialRegionType)_provinceConfig.SpecialRegionType;
+                }
+            }
+
+            // 检查是否为灵脉
+            bool hasSpiritVein = CheckSpiritVein(x, y);
+
+            return new MapTile(biome, elevationNoise, temperature, rainfall, fertility,
+                spirit, hasSpiritVein, hasSpecialRegion, specialType, blendFactor, secondaryBiome);
+        }
+
+        /// <summary>
+        /// 计算灵气值
+        /// </summary>
+        private float CalculateSpirit(float elevation, float temperature, float rainfall, float noise, int x, int y)
+        {
+            float baseSpirit = _spiritNoise.GetNoise2D(x, y) * 0.5f + 0.5f;
+
+            // 地形对灵气的影响
+            float elevationEffect = elevation > WaterLevel ? elevation : 0.3f;
+            elevationEffect = Mathf.Pow(elevationEffect, 1.5f);
+
+            // 温度对灵气的影响（温和温度最适合）
+            float tempEffect = 1.0f - Mathf.Abs(temperature - 0.6f) * 2.0f;
+            tempEffect = Mathf.Clamp(tempEffect, 0.0f, 1.0f);
+
+            // 降雨量对灵气的影响（适中最适合）
+            float rainEffect = 1.0f - Mathf.Abs(rainfall - 0.5f) * 2.0f;
+            rainEffect = Mathf.Clamp(rainEffect, 0.0f, 1.0f);
+
+            // 省份灵气密度修正
+            float provinceSpirit = 0.5f;
+            if (_provinceConfig != null)
+            {
+                provinceSpirit = _provinceConfig.SpiritDensity;
+            }
+
+            // 综合计算
+            float spirit = baseSpirit * 0.2f + elevationEffect * 0.3f + tempEffect * 0.15f + rainEffect * 0.15f + provinceSpirit * 0.2f;
+
+            return Mathf.Clamp(spirit, 0.0f, 1.0f);
+        }
+
+        /// <summary>
+        /// 检查是否为特殊区域
+        /// </summary>
+        private bool CheckSpecialRegion(int x, int y, SpecialRegionType type)
+        {
+            if (type == SpecialRegionType.None) return false;
+
+            // 根据区域类型设置不同的检查条件
+            float threshold = type switch
+            {
+                SpecialRegionType.SacredMountain => 0.85f,
+                SpecialRegionType.ForbiddenLand => 0.90f,
+                SpecialRegionType.AncientBattlefield => 0.75f,
+                SpecialRegionType.SpiritValley => 0.80f,
+                SpecialRegionType.DragonLair => 0.70f,
+                SpecialRegionType.FairyResidence => 0.78f,
+                SpecialRegionType.DemonicRealm => 0.82f,
+                SpecialRegionType.AncientTomb => 0.72f,
+                SpecialRegionType.SpiritForest => 0.76f,
+                SpecialRegionType.FloatingIsland => 0.88f,
+                _ => 0.70f
+            };
+
+            float noise = _spiritNoise.GetNoise2D(x * 10, y * 10) * 0.5f + 0.5f;
+            return noise > threshold;
+        }
+
+        /// <summary>
+        /// 检查是否为灵脉
+        /// </summary>
+        private bool CheckSpiritVein(int x, int y)
+        {
+            float veinNoise = _spiritNoise.GetNoise2D(x * 3, y * 3) * 0.5f + 0.5f;
+            return veinNoise > 0.88f;
         }
 
         private float ApplyVariation(float baseValue, float variation, float strength)
@@ -739,7 +846,7 @@ namespace TianYanShop.World.Map
         public MapTile GetTile(int x, int y)
         {
             if (x < 0 || x >= MapWidth || y < 0 || y >= MapHeight)
-                return new MapTile(BiomeType.Ocean, 0, 0, 0, 0);
+                return new MapTile(BiomeType.Ocean, 0, 0, 0, 0, 0.5f, false, false, SpecialRegionType.None);
             return MapTiles[x, y];
         }
     }

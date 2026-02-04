@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Collections.Generic;
 using TianYanShop.World.Config;
 
 namespace TianYanShop.World.Map
@@ -97,13 +98,50 @@ namespace TianYanShop.World.Map
                     string rainDesc = config.BaseRainfall < 0.35f ? "干旱" : (config.BaseRainfall > 0.65f ? "湿润" : "适中");
                     string tempDesc = config.BaseTemperature < 0.35f ? "寒冷" : (config.BaseTemperature > 0.60f ? "温暖" : "温和");
 
+                    string spiritDesc = config.SpiritDensity switch
+                    {
+                        < 0.3f => "[color=#FF6B6B]灵气稀薄[/color]",
+                        < 0.5f => "[color=#AAAAAA]灵气一般[/color]",
+                        < 0.7f => "[color=#6BFF6B]灵气充沛[/color]",
+                        _ => "[color=#FFD700]灵气浓郁[/color]"
+                    };
+
+                    string specialRegionName = config.SpecialRegionType switch
+                    {
+                        SpecialRegionType.AncientBattlefield => "古战场",
+                        SpecialRegionType.SacredMountain => "圣山",
+                        SpecialRegionType.ForbiddenLand => "禁地",
+                        SpecialRegionType.SpiritValley => "灵谷",
+                        SpecialRegionType.DragonLair => "龙穴",
+                        SpecialRegionType.FairyResidence => "仙境",
+                        SpecialRegionType.DemonicRealm => "魔域",
+                        SpecialRegionType.AncientTomb => "古墓",
+                        SpecialRegionType.SpiritForest => "灵林",
+                        SpecialRegionType.FloatingIsland => "浮空岛",
+                        _ => "无"
+                    };
+
+                    string specialFeatures = "";
+                    if (config.HasCaveParadise) specialFeatures += "[color=#6BFF6B]洞天福地[/color] ";
+                    if (config.HasAncientRuins) specialFeatures += "[color=#FFD700]上古遗迹[/color] ";
+                    if (config.HasSpiritVeins) specialFeatures += "[color=#6B6BFF]灵脉[/color] ";
+                    if (config.HasMonsterActivity) specialFeatures += "[color=#FF6B6B]妖兽出没[/color] ";
+                    if (string.IsNullOrEmpty(specialFeatures)) specialFeatures = "[color=#AAAAAA]无[/color]";
+
                     _terrainInfoLabel.Text = "[b]" + provinceName + "[/b] - " + terrainTypeName + "\n\n" +
                         "[color=#AAAAAA]" + config.Description + "[/color]\n\n" +
                         "[color=#AAAAAA]气候:[/color] " + rainDesc + ", " + tempDesc + "\n" +
-                        "[color=#AAAAAA]森林:[/color] " + (int)(config.ForestRatio * 100) + "%\n" +
+                        "[color=#AAAAAA]森林:[/color] " + (int)(config.ForestRatio * 100) + "%  |  " +
                         "[color=#AAAAAA]沙漠:[/color] " + (int)(config.DesertRatio * 100) + "%\n" +
-                        "[color=#AAAAAA]山地:[/color] " + (int)(config.MountainRatio * 100) + "%\n" +
-                        "[color=#AAAAAA]平原:[/color] " + (int)(config.PlainRatio * 100) + "%";
+                        "[color=#AAAAAA]山地:[/color] " + (int)(config.MountainRatio * 100) + "%  |  " +
+                        "[color=#AAAAAA]平原:[/color] " + (int)(config.PlainRatio * 100) + "%\n\n" +
+                        "[b]灵气概况[/b]\n" +
+                        "[color=#AAAAAA]浓郁度:[/color] " + spiritDesc + "\n" +
+                        "[color=#AAAAAA]" + config.SpiritDescription + "[/color]\n\n" +
+                        "[b]特殊区域[/b]\n" +
+                        "[color=#AAAAAA]类型:[/color] " + specialRegionName + "\n" +
+                        "[color=#AAAAAA]" + config.SpecialRegionDescription + "[/color]\n" +
+                        "[color=#AAAAAA]特征:[/color] " + specialFeatures;
                 }
             }
         }
