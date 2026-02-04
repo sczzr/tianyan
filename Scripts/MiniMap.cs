@@ -112,17 +112,16 @@ namespace TianYanShop
 		/// </summary>
 		private void FindMainCamera()
 		{
-			// 如果已经设置了主相机，则直接返回
 			if (_mainCamera != null)
 			{
 				return;
 			}
 
-			// 尝试从 WorldMapManager 获取相机引用
-			var worldMapManager = GetTree().Root.GetNodeOrNull<WorldMapManager>("WorldMapScene/MainMap");
-			if (worldMapManager != null)
+			// 尝试从 RealmMapManager 获取相机引用
+			var realmMapManager = GetTree().Root.GetNodeOrNull<RealmMapManager>("WorldMapScene/MainMap");
+			if (realmMapManager != null)
 			{
-				_mainCamera = worldMapManager.MapCamera;
+				_mainCamera = realmMapManager.MapCamera;
 				if (_mainCamera != null)
 				{
 					return;
