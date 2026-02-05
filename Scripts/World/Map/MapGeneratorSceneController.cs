@@ -12,70 +12,143 @@ namespace TianYanShop.World.Map
         private OptionButton _provinceOption;
         private SpinBox _widthSpin;
         private SpinBox _heightSpin;
-        private HSlider _waterLevelSlider;
-        private HSlider _forestSlider;
-        private HSlider _desertSlider;
-        private HSlider _lakeSlider;
+        private HSlider _temperatureSlider;
+        private HSlider _precipitationSlider;
+        private HSlider _continentalitySlider;
+        private HSlider _elevationSlider;
+        private Label _temperatureValue;
+        private Label _precipitationValue;
+        private Label _continentalityValue;
+        private Label _elevationValue;
         private Button _generateButton;
-        private Button _regenerateButton;
+        private Button _previewButton;
+        private Button _randomSeedButton;
         private RichTextLabel _terrainInfoLabel;
-
+        private Button _titleButton;
+        private Button _collapseButton;
+        private VBoxContainer _contentContainer;
+        private PanelContainer _controlPanel;
         private int _currentProvinceIndex = 0;
+        private int _lastSeed = -1;
+        private bool _isCollapsed = false;
+        private static readonly Random _staticRandom = new Random();
 
         public override void _Ready()
         {
             _renderer = GetNode<WorldMapRenderer>("WorldMapRenderer");
 
-            _seedInput = GetNode<LineEdit>("UI/ControlPanel/VBoxContainer/SeedInput");
-            _provinceOption = GetNode<OptionButton>("UI/ControlPanel/VBoxContainer/ProvinceOption");
-            _widthSpin = GetNode<SpinBox>("UI/ControlPanel/VBoxContainer/SizeContainer/WidthSpin");
-            _heightSpin = GetNode<SpinBox>("UI/ControlPanel/VBoxContainer/SizeContainer/HeightSpin");
-            _waterLevelSlider = GetNode<HSlider>("UI/ControlPanel/VBoxContainer/WaterLevelSlider");
-            _forestSlider = GetNode<HSlider>("UI/ControlPanel/VBoxContainer/ForestSlider");
-            _desertSlider = GetNode<HSlider>("UI/ControlPanel/VBoxContainer/DesertSlider");
-            _lakeSlider = GetNode<HSlider>("UI/ControlPanel/VBoxContainer/LakeSlider");
-            _generateButton = GetNode<Button>("UI/ControlPanel/VBoxContainer/GenerateButton");
-            _regenerateButton = GetNode<Button>("UI/ControlPanel/VBoxContainer/RegenerateButton");
+            _titleButton = GetNode<Button>("UI/ControlPanel/VBoxContainer/TitleContainer/Title");
+            _collapseButton = GetNode<Button>("UI/ControlPanel/VBoxContainer/TitleContainer/CollapseButton");
+            _contentContainer = GetNode<VBoxContainer>("UI/ControlPanel/VBoxContainer/ContentContainer");
+            _controlPanel = GetNode<PanelContainer>("UI/ControlPanel");
+
+            _seedInput = GetNode<LineEdit>("UI/ControlPanel/VBoxContainer/ContentContainer/SeedContainer/SeedInput");
+            _provinceOption = GetNode<OptionButton>("UI/ControlPanel/VBoxContainer/ContentContainer/ProvinceOption");
+            _widthSpin = GetNode<SpinBox>("UI/ControlPanel/VBoxContainer/ContentContainer/SizeContainer/WidthSpin");
+            _heightSpin = GetNode<SpinBox>("UI/ControlPanel/VBoxContainer/ContentContainer/SizeContainer/HeightSpin");
+            _temperatureSlider = GetNode<HSlider>("UI/ControlPanel/VBoxContainer/ContentContainer/TemperatureSlider");
+            _precipitationSlider = GetNode<HSlider>("UI/ControlPanel/VBoxContainer/ContentContainer/PrecipitationSlider");
+            _continentalitySlider = GetNode<HSlider>("UI/ControlPanel/VBoxContainer/ContentContainer/ContinentalitySlider");
+            _elevationSlider = GetNode<HSlider>("UI/ControlPanel/VBoxContainer/ContentContainer/ElevationSlider");
+
+            _temperatureValue = GetNode<Label>("UI/ControlPanel/VBoxContainer/ContentContainer/TemperatureRow/TemperatureValue");
+            _precipitationValue = GetNode<Label>("UI/ControlPanel/VBoxContainer/ContentContainer/PrecipitationRow/PrecipitationValue");
+            _continentalityValue = GetNode<Label>("UI/ControlPanel/VBoxContainer/ContentContainer/ContinentalityRow/ContinentalityValue");
+            _elevationValue = GetNode<Label>("UI/ControlPanel/VBoxContainer/ContentContainer/ElevationRow/ElevationValue");
+
+            _generateButton = GetNode<Button>("UI/ControlPanel/VBoxContainer/ContentContainer/ButtonContainer/GenerateButton");
+            _previewButton = GetNode<Button>("UI/ControlPanel/VBoxContainer/ContentContainer/ButtonContainer/PreviewButton");
+            _randomSeedButton = GetNode<Button>("UI/ControlPanel/VBoxContainer/ContentContainer/SeedContainer/RandomSeedButton");
             _terrainInfoLabel = GetNode<RichTextLabel>("UI/TerrainInfoPanel/TerrainInfoLabel");
 
-            SetupProvinceOptions();
-
             _generateButton.Pressed += OnGeneratePressed;
-            _regenerateButton.Pressed += OnRegeneratePressed;
+            _previewButton.Pressed += OnPreviewPressed;
+            _randomSeedButton.Pressed += OnRandomSeedPressed;
             _provinceOption.ItemSelected += OnProvinceSelected;
+            _titleButton.Pressed += OnCollapsePressed;
+            _collapseButton.Pressed += OnCollapsePressed;
 
-            // 滑块值改变时实时更新地图
-            _waterLevelSlider.ValueChanged += OnCustomSliderChanged;
-            _forestSlider.ValueChanged += OnCustomSliderChanged;
-            _desertSlider.ValueChanged += OnCustomSliderChanged;
-            _lakeSlider.ValueChanged += OnCustomSliderChanged;
+            _temperatureSlider.ValueChanged += OnSliderValueChanged;
+            _precipitationSlider.ValueChanged += OnSliderValueChanged;
+            _continentalitySlider.ValueChanged += OnSliderValueChanged;
+            _elevationSlider.ValueChanged += OnSliderValueChanged;
 
-            // 初始化滑块显示状态
+            UpdateValueLabels();
             ToggleTerrainParameters(true);
-
-            // 初始化地形介绍
+            SetupProvinceOptions();
             UpdateTerrainInfo();
+            InitializeRenderer();
+            RegenerateMapWithCurrentSeed();
+        }
+
+        private void InitializeRenderer()
+        {
+            if (string.IsNullOrEmpty(_seedInput.Text))
+            {
+                int randomSeed = _staticRandom.Next();
+                _seedInput.Text = randomSeed.ToString();
+            }
+
+            int seed = ConvertTextToSeed(_seedInput.Text);
+            _lastSeed = seed;
+            _renderer.Seed = seed;
+            _renderer.RandomSeed = false;
+
+            UpdateCustomParameters();
+        }
+
+        private void UpdateCustomParameters()
+        {
+            _renderer.UseCustomParameters = true;
+            _renderer.CustomTemperature = (float)_temperatureSlider.Value;
+            _renderer.CustomPrecipitation = (float)_precipitationSlider.Value;
+            _renderer.CustomContinentality = (float)_continentalitySlider.Value;
+            _renderer.CustomElevationVariation = (float)_elevationSlider.Value;
+        }
+
+        private void UpdateValueLabels()
+        {
+            float temperature = (float)_temperatureSlider.Value;
+            float precipitation = (float)_precipitationSlider.Value;
+            float continentality = (float)_continentalitySlider.Value;
+            float elevation = (float)_elevationSlider.Value;
+
+            float tempCelsius = temperature * 43 - 15;
+            _temperatureValue.Text = $"{tempCelsius:F0}°C";
+
+            float precipMm = precipitation * 2000;
+            _precipitationValue.Text = $"{precipMm:F0}mm/年";
+
+            string contDesc = continentality < 0.33f ? "海洋性" : (continentality < 0.66f ? "过渡性" : "大陆性");
+            _continentalityValue.Text = contDesc;
+
+            float elevMeters = elevation * 1500;
+            _elevationValue.Text = $"{elevMeters:F0}m";
         }
 
         private void UpdateTerrainInfo()
         {
             if (_currentProvinceIndex == 0)
             {
-                float waterLevel = (float)_waterLevelSlider.Value;
-                float forestDensity = (float)_forestSlider.Value;
-                float desertDensity = (float)_desertSlider.Value;
-                float lakeDensity = (float)_lakeSlider.Value;
+                float temperature = (float)_temperatureSlider.Value;
+                float precipitation = (float)_precipitationSlider.Value;
+                float continentality = (float)_continentalitySlider.Value;
+                float elevation = (float)_elevationSlider.Value;
 
-                string waterDesc = waterLevel < 0.25f ? "低水位 - 海洋面积小" : (waterLevel > 0.45f ? "高水位 - 海洋面积大" : "中等水位");
-                string forestDesc = forestDensity < 0.5f ? "稀疏森林" : (forestDensity > 1.5f ? "茂密森林" : "正常森林");
-                string desertDesc = desertDensity < 0.5f ? "极少沙漠" : (desertDensity > 1.5f ? "大面积沙漠" : "少量沙漠");
-                string lakeDesc = lakeDensity < 0.5f ? "极少湖泊" : (lakeDensity > 1.5f ? "众多湖泊" : "正常湖泊");
+                float tempCelsius = (temperature - 0.5f) * 60 - 10;
+                float precipMm = precipitation * 2000;
+                float elevMeters = elevation * 1500;
+
+                string tempDesc = temperature < 0.3f ? "寒冷" : (temperature < 0.6f ? "温和" : "炎热");
+                string precipDesc = precipitation < 0.3f ? "干旱" : (precipitation < 0.6f ? "适中" : "湿润");
+                string contDesc = continentality < 0.3f ? "海洋性气候" : (continentality < 0.6f ? "过渡性气候" : "大陆性气候");
+                string elevDesc = elevation < 0.5f ? "平原地形" : (elevation < 1.0f ? "丘陵地形" : "山地高原");
 
                 _terrainInfoLabel.Text = "[b]自定义地形[/b]\n\n" +
-                    "[color=#AAAAAA]水位:[/color] " + waterDesc + "\n" +
-                    "[color=#AAAAAA]森林:[/color] " + forestDesc + "\n" +
-                    "[color=#AAAAAA]沙漠:[/color] " + desertDesc + "\n" +
-                    "[color=#AAAAAA]湖泊:[/color] " + lakeDesc;
+                    $"[color=#AAAAAA]温度:[/color] {tempCelsius:F0}°C ({tempDesc})\n" +
+                    $"[color=#AAAAAA]降水:[/color] {precipMm:F0}mm/年 ({precipDesc})\n" +
+                    $"[color=#AAAAAA]气候:[/color] {contDesc}\n" +
+                    $"[color=#AAAAAA]海拔:[/color] ~{elevMeters:F0}m ({elevDesc})";
             }
             else
             {
@@ -98,66 +171,37 @@ namespace TianYanShop.World.Map
                     string rainDesc = config.BaseRainfall < 0.35f ? "干旱" : (config.BaseRainfall > 0.65f ? "湿润" : "适中");
                     string tempDesc = config.BaseTemperature < 0.35f ? "寒冷" : (config.BaseTemperature > 0.60f ? "温暖" : "温和");
 
-                    string spiritDesc = config.SpiritDensity switch
-                    {
-                        < 0.3f => "[color=#FF6B6B]灵气稀薄[/color]",
-                        < 0.5f => "[color=#AAAAAA]灵气一般[/color]",
-                        < 0.7f => "[color=#6BFF6B]灵气充沛[/color]",
-                        _ => "[color=#FFD700]灵气浓郁[/color]"
-                    };
-
-                    string specialRegionName = config.SpecialRegionType switch
-                    {
-                        SpecialRegionType.AncientBattlefield => "古战场",
-                        SpecialRegionType.SacredMountain => "圣山",
-                        SpecialRegionType.ForbiddenLand => "禁地",
-                        SpecialRegionType.SpiritValley => "灵谷",
-                        SpecialRegionType.DragonLair => "龙穴",
-                        SpecialRegionType.FairyResidence => "仙境",
-                        SpecialRegionType.DemonicRealm => "魔域",
-                        SpecialRegionType.AncientTomb => "古墓",
-                        SpecialRegionType.SpiritForest => "灵林",
-                        SpecialRegionType.FloatingIsland => "浮空岛",
-                        _ => "无"
-                    };
-
-                    string specialFeatures = "";
-                    if (config.HasCaveParadise) specialFeatures += "[color=#6BFF6B]洞天福地[/color] ";
-                    if (config.HasAncientRuins) specialFeatures += "[color=#FFD700]上古遗迹[/color] ";
-                    if (config.HasSpiritVeins) specialFeatures += "[color=#6B6BFF]灵脉[/color] ";
-                    if (config.HasMonsterActivity) specialFeatures += "[color=#FF6B6B]妖兽出没[/color] ";
-                    if (string.IsNullOrEmpty(specialFeatures)) specialFeatures = "[color=#AAAAAA]无[/color]";
-
-                    _terrainInfoLabel.Text = "[b]" + provinceName + "[/b] - " + terrainTypeName + "\n\n" +
-                        "[color=#AAAAAA]" + config.Description + "[/color]\n\n" +
-                        "[color=#AAAAAA]气候:[/color] " + rainDesc + ", " + tempDesc + "\n" +
-                        "[color=#AAAAAA]森林:[/color] " + (int)(config.ForestRatio * 100) + "%  |  " +
-                        "[color=#AAAAAA]沙漠:[/color] " + (int)(config.DesertRatio * 100) + "%\n" +
-                        "[color=#AAAAAA]山地:[/color] " + (int)(config.MountainRatio * 100) + "%  |  " +
-                        "[color=#AAAAAA]平原:[/color] " + (int)(config.PlainRatio * 100) + "%\n\n" +
-                        "[b]灵气概况[/b]\n" +
-                        "[color=#AAAAAA]浓郁度:[/color] " + spiritDesc + "\n" +
-                        "[color=#AAAAAA]" + config.SpiritDescription + "[/color]\n\n" +
-                        "[b]特殊区域[/b]\n" +
-                        "[color=#AAAAAA]类型:[/color] " + specialRegionName + "\n" +
-                        "[color=#AAAAAA]" + config.SpecialRegionDescription + "[/color]\n" +
-                        "[color=#AAAAAA]特征:[/color] " + specialFeatures;
+                    _terrainInfoLabel.Text = $"[b]{provinceName}[/b] - {terrainTypeName}\n\n" +
+                        $"[color=#AAAAAA]{config.Description}[/color]\n\n" +
+                        $"[color=#AAAAAA]气候:[/color] {rainDesc}, {tempDesc}\n" +
+                        $"[color=#AAAAAA]森林:[/color] {(int)(config.ForestRatio * 100)}%  |  " +
+                        $"[color=#AAAAAA]沙漠:[/color] {(int)(config.DesertRatio * 100)}%\n" +
+                        $"[color=#AAAAAA]山地:[/color] {(int)(config.MountainRatio * 100)}%  |  " +
+                        $"[color=#AAAAAA]平原:[/color] {(int)(config.PlainRatio * 100)}%\n\n" +
+                        $"[b]灵气概况[/b]\n" +
+                        $"[color=#AAAAAA]浓郁度:[/color] {config.SpiritDescription}";
                 }
             }
         }
 
-        private void OnCustomSliderChanged(double value)
+        private void OnSliderValueChanged(double value)
         {
+            UpdateValueLabels();
             if (_currentProvinceIndex == 0)
             {
-                _renderer.UseCustomParameters = true;
-                _renderer.CustomWaterLevel = (float)_waterLevelSlider.Value;
-                _renderer.CustomForestDensity = (float)_forestSlider.Value;
-                _renderer.CustomDesertDensity = (float)_desertSlider.Value;
-                _renderer.CustomLakeDensity = (float)_lakeSlider.Value;
+                UpdateCustomParameters();
                 _renderer.RegenerateMap();
                 UpdateTerrainInfo();
             }
+        }
+
+        private void OnCollapsePressed()
+        {
+            _isCollapsed = !_isCollapsed;
+            _contentContainer.Visible = !_isCollapsed;
+            _collapseButton.Text = _isCollapsed ? "▶" : "▼";
+            _controlPanel.CustomMinimumSize = new Vector2(_isCollapsed ? 100 : 250, 0);
+            _controlPanel.MouseFilter = _isCollapsed ? Control.MouseFilterEnum.Ignore : Control.MouseFilterEnum.Stop;
         }
 
         private void SetupProvinceOptions()
@@ -166,10 +210,7 @@ namespace TianYanShop.World.Map
             var provinceNames = ProvinceConfigManager.GetAllProvinceNames();
 
             _provinceOption.Clear();
-            
-            // 添加"自定义"选项（ID为0）
             _provinceOption.AddItem("自定义");
-            
             foreach (var name in provinceNames)
             {
                 _provinceOption.AddItem(name);
@@ -180,22 +221,14 @@ namespace TianYanShop.World.Map
         private void OnProvinceSelected(long index)
         {
             _currentProvinceIndex = (int)index;
-
-            // 根据选择的项显示或隐藏地形参数
-            // 当选择自定义(ID=0)时显示滑块，选择具体省份时隐藏
             bool isCustom = (index == 0);
             ToggleTerrainParameters(isCustom);
 
-            // 更新渲染器的配置并重新生成地图
             if (isCustom)
             {
                 _renderer.UseCustomParameters = true;
-                _renderer.CustomWaterLevel = (float)_waterLevelSlider.Value;
-                _renderer.CustomForestDensity = (float)_forestSlider.Value;
-                _renderer.CustomDesertDensity = (float)_desertSlider.Value;
-                _renderer.CustomLakeDensity = (float)_lakeSlider.Value;
+                UpdateCustomParameters();
                 _renderer.ProvinceName = "";
-                GD.Print($"切换到自定义模式 - 水位: {_renderer.CustomWaterLevel}, 森林: {_renderer.CustomForestDensity}, 沙漠: {_renderer.CustomDesertDensity}, 湖泊: {_renderer.CustomLakeDensity}");
             }
             else
             {
@@ -203,34 +236,28 @@ namespace TianYanShop.World.Map
                 _renderer.ProvinceName = _provinceOption.GetItemText((int)index);
             }
             _renderer.RegenerateMap();
-
             UpdateTerrainInfo();
-
-            GD.Print("选择省份: " + _provinceOption.GetItemText((int)index) + ", 自定义模式: " + isCustom);
         }
-        
+
         private void ToggleTerrainParameters(bool show)
         {
-            // 显示或隐藏地形参数滑块及其标签
-            var terrainLabel = GetNodeOrNull<Label>("UI/ControlPanel/VBoxContainer/TerrainLabel");
-            var waterLevelLabel = GetNodeOrNull<Label>("UI/ControlPanel/VBoxContainer/WaterLevelLabel");
-            var waterLevelSlider = GetNodeOrNull<HSlider>("UI/ControlPanel/VBoxContainer/WaterLevelSlider");
-            var forestLabel = GetNodeOrNull<Label>("UI/ControlPanel/VBoxContainer/ForestLabel");
-            var forestSlider = GetNodeOrNull<HSlider>("UI/ControlPanel/VBoxContainer/ForestSlider");
-            var desertLabel = GetNodeOrNull<Label>("UI/ControlPanel/VBoxContainer/DesertLabel");
-            var desertSlider = GetNodeOrNull<HSlider>("UI/ControlPanel/VBoxContainer/DesertSlider");
-            var lakeLabel = GetNodeOrNull<Label>("UI/ControlPanel/VBoxContainer/LakeLabel");
-            var lakeSlider = GetNodeOrNull<HSlider>("UI/ControlPanel/VBoxContainer/LakeSlider");
-            
-            if (terrainLabel != null) terrainLabel.Visible = show;
-            if (waterLevelLabel != null) waterLevelLabel.Visible = show;
-            if (waterLevelSlider != null) waterLevelSlider.Visible = show;
-            if (forestLabel != null) forestLabel.Visible = show;
-            if (forestSlider != null) forestSlider.Visible = show;
-            if (desertLabel != null) desertLabel.Visible = show;
-            if (desertSlider != null) desertSlider.Visible = show;
-            if (lakeLabel != null) lakeLabel.Visible = show;
-            if (lakeSlider != null) lakeSlider.Visible = show;
+            var tempRow = GetNodeOrNull<HBoxContainer>("UI/ControlPanel/VBoxContainer/ContentContainer/TemperatureRow");
+            var tempSlider = GetNodeOrNull<HSlider>("UI/ControlPanel/VBoxContainer/ContentContainer/TemperatureSlider");
+            var precipRow = GetNodeOrNull<HBoxContainer>("UI/ControlPanel/VBoxContainer/ContentContainer/PrecipitationRow");
+            var precipSlider = GetNodeOrNull<HSlider>("UI/ControlPanel/VBoxContainer/ContentContainer/PrecipitationSlider");
+            var contRow = GetNodeOrNull<HBoxContainer>("UI/ControlPanel/VBoxContainer/ContentContainer/ContinentalityRow");
+            var contSlider = GetNodeOrNull<HSlider>("UI/ControlPanel/VBoxContainer/ContentContainer/ContinentalitySlider");
+            var elevRow = GetNodeOrNull<HBoxContainer>("UI/ControlPanel/VBoxContainer/ContentContainer/ElevationRow");
+            var elevSlider = GetNodeOrNull<HSlider>("UI/ControlPanel/VBoxContainer/ContentContainer/ElevationSlider");
+
+            if (tempRow != null) tempRow.Visible = show;
+            if (tempSlider != null) tempSlider.Visible = show;
+            if (precipRow != null) precipRow.Visible = show;
+            if (precipSlider != null) precipSlider.Visible = show;
+            if (contRow != null) contRow.Visible = show;
+            if (contSlider != null) contSlider.Visible = show;
+            if (elevRow != null) elevRow.Visible = show;
+            if (elevSlider != null) elevSlider.Visible = show;
         }
 
         private int ConvertTextToSeed(string text)
@@ -238,11 +265,8 @@ namespace TianYanShop.World.Map
             if (string.IsNullOrEmpty(text))
                 return -1;
 
-            int result;
-            if (int.TryParse(text, out result))
-            {
+            if (int.TryParse(text, out int result))
                 return result;
-            }
 
             int hashValue = 0;
             foreach (char c in text)
@@ -257,25 +281,15 @@ namespace TianYanShop.World.Map
         {
             int width = (int)_widthSpin.Value;
             int height = (int)_heightSpin.Value;
-
             int seed = ConvertTextToSeed(_seedInput.Text);
-
-            // 判断是自定义还是具体省份
             bool isCustom = (_currentProvinceIndex == 0);
-            string provinceName = "";
-            
-            if (!isCustom)
-            {
-                // 获取选中的省份名称（索引0是自定义，所以实际省份从索引1开始）
-                provinceName = _provinceOption.GetItemText(_currentProvinceIndex);
-            }
-            
-            GD.Print($"生成地图 - 自定义模式: {isCustom}, 省份: {provinceName}");
+            string provinceName = isCustom ? "" : _provinceOption.GetItemText(_currentProvinceIndex);
 
             _renderer.MapWidth = width;
             _renderer.MapHeight = height;
             _renderer.Seed = seed;
             _renderer.RandomSeed = seed < 0;
+            _renderer.ProvinceName = provinceName;
 
             _renderer.GetParent().RemoveChild(_renderer);
             QueueFree();
@@ -286,27 +300,38 @@ namespace TianYanShop.World.Map
                 MapHeight = height,
                 Seed = seed,
                 RandomSeed = seed < 0,
-                ProvinceName = provinceName  // 如果为空字符串，WorldMapRenderer将使用滑块值
+                ProvinceName = provinceName
             };
             GetParent().AddChild(newRenderer);
             newRenderer.Name = "WorldMapRenderer";
         }
 
-        private void OnRegeneratePressed()
+        private void OnRandomSeedPressed()
+        {
+            int randomSeed = _staticRandom.Next();
+            _seedInput.Text = randomSeed.ToString();
+        }
+
+        private void OnPreviewPressed()
+        {
+            RegenerateMapWithCurrentSeed();
+        }
+
+        private void RegenerateMapWithCurrentSeed()
         {
             int seed = ConvertTextToSeed(_seedInput.Text);
-            _renderer.Seed = seed;
-            _renderer.RandomSeed = seed < 0;
+            _renderer.MapWidth = (int)_widthSpin.Value;
+            _renderer.MapHeight = (int)_heightSpin.Value;
 
-            // 确保自定义参数已更新
-            if (_currentProvinceIndex == 0)
+            if (seed != _lastSeed)
             {
-                _renderer.UseCustomParameters = true;
-                _renderer.CustomWaterLevel = (float)_waterLevelSlider.Value;
-                _renderer.CustomForestDensity = (float)_forestSlider.Value;
-                _renderer.CustomDesertDensity = (float)_desertSlider.Value;
-                _renderer.CustomLakeDensity = (float)_lakeSlider.Value;
+                _lastSeed = seed;
+                _renderer.Seed = seed;
+                _renderer.RandomSeed = false;
             }
+
+            if (_currentProvinceIndex == 0)
+                UpdateCustomParameters();
 
             _renderer.RegenerateMap();
         }

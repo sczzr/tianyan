@@ -126,16 +126,17 @@ namespace TianYanShop.World.Map
         public int MapHeight { get; private set; }
         public int Seed { get; private set; }
         public float WaterLevel { get; set; } = 0.35f;
-        public float TemperatureOffset { get; set; } = 0.0f;
 
         // 省份配置
         private ChinaProvinceConfig _provinceConfig;
         public string ProvinceName { get; private set; } = "";
 
-        // 用户调整参数
-        public float ForestDensity { get; set; } = 1.0f;
-        public float DesertDensity { get; set; } = 1.0f;
-        public float LakeDensity { get; set; } = 1.0f;
+        // 自定义地形参数
+        public float BaseTemperature { get; set; } = 0.5f;      // 基础温度 (0.0-1.0)
+        public float BasePrecipitation { get; set; } = 0.5f;    // 基础降水量 (0.0-1.0)
+        public float Continentality { get; set; } = 0.5f;       // 大陆度 (0.0-1.0)，越高海洋影响越小
+        public float ElevationVariation { get; set; } = 1.0f;    // 海拔变异度 (0.0-2.0)
+        public float BaseSpiritDensity { get; set; } = 0.5f;   // 基础灵气浓郁度 (0.0-1.0)
 
         // 生成的地图数据
         public MapTile[,] MapTiles { get; private set; }
@@ -215,11 +216,13 @@ namespace TianYanShop.World.Map
             ProvinceName = config?.Name ?? "";
             if (_provinceConfig != null)
             {
-                // 应用省份特定的水位和密度设置
+                // 应用省份特定的参数设置
                 WaterLevel = _provinceConfig.OceanThreshold;
-                ForestDensity = _provinceConfig.ForestRatio * 2.0f;
-                DesertDensity = _provinceConfig.DesertRatio * 2.0f;
-                LakeDensity = _provinceConfig.LakeCount / 10.0f;
+                BaseTemperature = _provinceConfig.BaseTemperature;
+                BasePrecipitation = _provinceConfig.BaseRainfall;
+                Continentality = 0.5f; // 使用默认值
+                ElevationVariation = 1.0f; // 使用默认值
+                BaseSpiritDensity = _provinceConfig.SpiritDensity;
             }
             GenerateMap();
         }
@@ -308,16 +311,31 @@ namespace TianYanShop.World.Map
             float fertilityNoise = _fertilityNoise.GetNoise2D(x, y) * 0.5f + 0.5f;
             float variation = _variationNoise.GetNoise2D(x, y) * 0.5f + 0.5f;
 
-            // 应用变化
-            elevationNoise = ApplyVariation(elevationNoise, variation, 0.1f);
+            // 应用海拔变异度
+            float elevationVariation = ElevationVariation;
+            elevationNoise = ApplyVariation(elevationNoise, variation, 0.1f * elevationVariation);
 
             // 计算纬度对温度的影响 (y轴代表南北)
             float latitudeEffect = Mathf.Abs((float)y / MapHeight - 0.5f) * 2.0f;
+            
+            // 使用基础温度参数调整
             float baseTemperature = 1.0f - latitudeEffect * 0.8f;
-            float temperature = Mathf.Clamp(baseTemperature + (tempNoise - 0.5f) * 0.4f, 0.0f, 1.0f);
+            // 将 BaseTemperature (0-1) 映射到合理的温度范围
+            // BaseTemperature=0.5 时温度适中，0 时偏冷，1 时偏热
+            baseTemperature = Mathf.Lerp(baseTemperature, Mathf.Clamp(BaseTemperature + (tempNoise - 0.5f) * 0.3f, 0.0f, 1.0f), 0.5f);
+            float temperature = Mathf.Clamp(baseTemperature + (tempNoise - 0.5f) * 0.3f, 0.0f, 1.0f);
 
-            // 降雨量受海洋距离和纬度的影响
+            // 降水量计算 - 受海洋距离和大陆度影响
             float rainfall = rainNoise;
+            
+            // 大陆度影响：远离赤道和海洋的地方更干燥
+            float continentalEffect = Continentality * 0.4f;
+            rainfall = Mathf.Lerp(rainfall, rainfall * (1.0f - continentalEffect), 0.5f);
+            
+            // 应用基础降水量参数
+            rainfall = Mathf.Lerp(rainfall, BasePrecipitation + (rainNoise - 0.5f) * 0.3f, 0.5f);
+            
+            // 海洋增加湿度
             if (elevationNoise < WaterLevel)
             {
                 rainfall = Mathf.Max(rainfall, 0.6f);
@@ -337,7 +355,6 @@ namespace TianYanShop.World.Map
                 elevationNoise = Mathf.Lerp(elevationNoise, modifiedElev, 0.7f);
 
                 // 根据省份参数进行更强烈的生物群系调整
-
                 // 森林覆盖率 - 极强影响
                 if (_provinceConfig.ForestRatio > 0.3f)
                 {
@@ -426,15 +443,15 @@ namespace TianYanShop.World.Map
             float rainEffect = 1.0f - Mathf.Abs(rainfall - 0.5f) * 2.0f;
             rainEffect = Mathf.Clamp(rainEffect, 0.0f, 1.0f);
 
-            // 省份灵气密度修正
-            float provinceSpirit = 0.5f;
+            // 灵气密度修正
+            float spiritDensity = BaseSpiritDensity;
             if (_provinceConfig != null)
             {
-                provinceSpirit = _provinceConfig.SpiritDensity;
+                spiritDensity = _provinceConfig.SpiritDensity;
             }
 
             // 综合计算
-            float spirit = baseSpirit * 0.2f + elevationEffect * 0.3f + tempEffect * 0.15f + rainEffect * 0.15f + provinceSpirit * 0.2f;
+            float spirit = baseSpirit * 0.2f + elevationEffect * 0.3f + tempEffect * 0.15f + rainEffect * 0.15f + spiritDensity * 0.2f;
 
             return Mathf.Clamp(spirit, 0.0f, 1.0f);
         }
@@ -833,11 +850,13 @@ namespace TianYanShop.World.Map
             // 重新生成地图时重新应用省份配置
             if (_provinceConfig != null)
             {
-                // 重新应用省份特定的水位和密度设置
+                // 重新应用省份特定的参数设置
                 WaterLevel = _provinceConfig.OceanThreshold;
-                ForestDensity = _provinceConfig.ForestRatio * 2.0f;
-                DesertDensity = _provinceConfig.DesertRatio * 2.0f;
-                LakeDensity = _provinceConfig.LakeCount / 10.0f;
+                BaseTemperature = _provinceConfig.BaseTemperature;
+                BasePrecipitation = _provinceConfig.BaseRainfall;
+                Continentality = 0.5f;
+                ElevationVariation = 1.0f;
+                BaseSpiritDensity = _provinceConfig.SpiritDensity;
             }
             
             GenerateMap();

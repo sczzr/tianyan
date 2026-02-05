@@ -19,10 +19,11 @@ namespace TianYanShop.World.Map
         [Export] public string ProvinceName { get; set; } = "";
 
         // 自定义参数
-        [Export] public float CustomWaterLevel { get; set; } = 0.35f;
-        [Export] public float CustomForestDensity { get; set; } = 1.0f;
-        [Export] public float CustomDesertDensity { get; set; } = 1.0f;
-        [Export] public float CustomLakeDensity { get; set; } = 1.0f;
+        [Export] public float CustomTemperature { get; set; } = 0.5f;
+        [Export] public float CustomPrecipitation { get; set; } = 0.5f;
+        [Export] public float CustomContinentality { get; set; } = 0.5f;
+        [Export] public float CustomElevationVariation { get; set; } = 1.0f;
+        [Export] public float CustomSpiritDensity { get; set; } = 0.5f;
         [Export] public bool UseCustomParameters { get; set; } = false;
 
         // 组件引用
@@ -157,36 +158,50 @@ namespace TianYanShop.World.Map
         /// </summary>
         public void RegenerateMap()
         {
-            Seed = (int)Time.GetUnixTimeFromSystem();
+            int seed = RandomSeed || Seed == -1 ? (int)Time.GetUnixTimeFromSystem() : Seed;
 
             ChinaProvinceConfig provinceConfig = null;
-
+ 
             if (UseCustomParameters)
             {
-                GD.Print($"使用自定义参数 - 水位: {CustomWaterLevel}, 森林: {CustomForestDensity}, 沙漠: {CustomDesertDensity}, 湖泊: {CustomLakeDensity}");
-                _generator = new WorldMapGenerator(MapWidth, MapHeight, Seed, null);
-                _generator.WaterLevel = CustomWaterLevel;
-                _generator.ForestDensity = CustomForestDensity;
-                _generator.DesertDensity = CustomDesertDensity;
-                _generator.LakeDensity = CustomLakeDensity;
+                GD.Print($"使用自定义参数 - 温度: {CustomTemperature}, 降水: {CustomPrecipitation}, 大陆度: {CustomContinentality}, 海拔变异: {CustomElevationVariation}, 灵气: {CustomSpiritDensity}");
+                _generator = new WorldMapGenerator(MapWidth, MapHeight, seed, null);
+                // 使用温度系数作为海洋阈值
+                _generator.WaterLevel = 0.35f; // 固定水位
+                _generator.BaseTemperature = CustomTemperature;
+                _generator.BasePrecipitation = CustomPrecipitation;
+                _generator.Continentality = CustomContinentality;
+                _generator.ElevationVariation = CustomElevationVariation;
+                _generator.BaseSpiritDensity = CustomSpiritDensity;
             }
             else if (!string.IsNullOrEmpty(ProvinceName))
             {
                 ProvinceConfigManager.Initialize();
                 provinceConfig = ProvinceConfigManager.GetProvince(ProvinceName);
                 GD.Print($"使用省份配置: {ProvinceName} ({provinceConfig.TerrainType})");
-                _generator = new WorldMapGenerator(MapWidth, MapHeight, Seed, provinceConfig);
+                _generator = new WorldMapGenerator(MapWidth, MapHeight, seed, provinceConfig);
             }
             else
             {
-                _generator = new WorldMapGenerator(MapWidth, MapHeight, Seed, null);
+                _generator = new WorldMapGenerator(MapWidth, MapHeight, seed, null);
             }
 
             _generator.GenerateMap();
 
             _tileMapLayer.Clear();
             RenderMap();
-            GD.Print($"地图重新生成 - 新种子: {Seed}, 省份: {ProvinceName}, 自定义: {UseCustomParameters}");
+
+            // 更新相机边界
+            if (_camera != null)
+            {
+                _camera.SetMapBounds(MapWidth * 32, MapHeight * 32);
+                // 在 Fixed Top Left 模式下，GlobalPosition 是屏幕左上角的世界坐标
+                // 要让地图中心显示在屏幕中心，需要减去视口的一半（考虑缩放）
+                Vector2 viewportHalf = GetViewportRect().Size / 2.0f / _camera.Zoom.X;
+                _camera.CenterOnPosition(new Vector2(MapWidth * 16, MapHeight * 16) - viewportHalf);
+            }
+
+            GD.Print($"地图重新生成 - 新种子: {seed}, 省份: {ProvinceName}, 自定义: {UseCustomParameters}");
         }
 
         /// <summary>

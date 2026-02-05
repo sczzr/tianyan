@@ -71,11 +71,8 @@ namespace TianYanShop.World.Map
 
 			Vector2 prevPos = GlobalPosition;
 
-			// 调试：每60帧打印一次位置
-			if (Engine.GetProcessFrames() % 60 == 0)
-			{
-				var parentPos = GetParent() is Node2D parent2D ? parent2D.GlobalPosition : Vector2.Zero;
-			}
+			// 实时更新视口尺寸（处理窗口大小变化）
+			_viewportSize = GetViewportRect().Size;
 
 			// 处理移动
 			HandleMovement(dt);
@@ -332,6 +329,21 @@ namespace TianYanShop.World.Map
 			_mapWidth = width;
 			_mapHeight = height;
 			_hasMapBounds = true;
+
+			// 更新视口尺寸
+			_viewportSize = GetViewportRect().Size;
+
+			// 根据新地图尺寸更新缩放，使地图占据合适的视口面积
+			float minZoomForCoverage = CalculateMinZoomForHalfCoverage();
+			// 当前缩放如果太小，适当放大以适应新地图
+			if (Zoom.X < minZoomForCoverage)
+			{
+				_targetZoom = new Vector2(minZoomForCoverage, minZoomForCoverage);
+				if (!EnableSmoothZoom)
+				{
+					Zoom = _targetZoom;
+				}
+			}
 		}
 
 	/// <summary>
@@ -408,17 +420,42 @@ namespace TianYanShop.World.Map
 		return Mathf.Max(minZoomForHalf, 0.01f);
 	}
 
-	/// <summary>
-	/// 将相机移动到指定位置
-	/// </summary>
-	public void CenterOnPosition(Vector2 worldPos)
-	{
-		GlobalPosition = worldPos;
-		if (_hasMapBounds)
+		/// <summary>
+		/// 将相机移动到指定世界坐标位置（屏幕中心对齐）
+		/// 在 Fixed Top Left 模式下，worldPos 会显示在屏幕中心
+		/// </summary>
+		public void CenterOnPosition(Vector2 worldPos)
 		{
-			ApplyBounds();
+			// 先设置位置
+			GlobalPosition = worldPos;
+			
+			// 确保相机在边界内，但不改变居中意图
+			if (_hasMapBounds)
+			{
+				float visibleWorldWidth = _viewportSize.X / Zoom.X;
+				float visibleWorldHeight = _viewportSize.Y / Zoom.Y;
+				
+				// 如果地图比视口大，保持中心位置
+				// 如果地图比视口小，确保中心位置在正确位置
+				Vector2 newPos = GlobalPosition;
+				
+				if (_mapWidth < visibleWorldWidth)
+				{
+					float targetX = (_mapWidth - visibleWorldWidth) / 2.0f;
+					if (Mathf.Abs(newPos.X - targetX) > 1)
+						newPos.X = targetX;
+				}
+				
+				if (_mapHeight < visibleWorldHeight)
+				{
+					float targetY = (_mapHeight - visibleWorldHeight) / 2.0f;
+					if (Mathf.Abs(newPos.Y - targetY) > 1)
+						newPos.Y = targetY;
+				}
+				
+				GlobalPosition = newPos;
+			}
 		}
-	}
 
 		/// <summary>
 		/// 将世界坐标的左上角 (0,0) 对齐到屏幕左上角
