@@ -33,6 +33,13 @@ namespace TianYanShop.World.Map
         private bool _isCollapsed = false;
         private static readonly Random _staticRandom = new Random();
 
+        // 宗门图层相关UI
+        private Button _toggleSectLayerButton;
+        private CheckBox _sectLayerToggle;
+        private PanelContainer _sectInfoPanel;
+        private Label _sectInfoLabel;
+        private bool _isSectLayerVisible = true;
+
         public override void _Ready()
         {
             _renderer = GetNode<WorldMapRenderer>("WorldMapRenderer");
@@ -78,7 +85,61 @@ namespace TianYanShop.World.Map
             SetupProvinceOptions();
             UpdateTerrainInfo();
             InitializeRenderer();
+            
+            // 初始化宗门UI
+            InitializeSectUI();
+            
             RegenerateMapWithCurrentSeed();
+        }
+
+        /// <summary>
+        /// 初始化宗门图层相关UI
+        /// </summary>
+        private void InitializeSectUI()
+        {
+            // 获取或创建宗门图层切换按钮
+            _toggleSectLayerButton = GetNodeOrNull<Button>("UI/ControlPanel/VBoxContainer/ContentContainer/SectLayerToggle");
+            if (_toggleSectLayerButton == null)
+            {
+                // 创建宗门图层切换复选框
+                _sectLayerToggle = new CheckBox();
+                _sectLayerToggle.Name = "SectLayerToggle";
+                _sectLayerToggle.Text = "显示宗门";
+                _sectLayerToggle.ButtonPressed = true;
+                
+                // 尝试添加到按钮容器
+                var buttonContainer = GetNodeOrNull<BoxContainer>("UI/ControlPanel/VBoxContainer/ContentContainer/ButtonContainer");
+                if (buttonContainer != null)
+                {
+                    buttonContainer.AddChild(_sectLayerToggle);
+                    _sectLayerToggle.Pressed += OnToggleSectLayer;
+                    GD.Print("[MapGeneratorSceneController] 宗门图层切换按钮已添加");
+                }
+            }
+            else
+            {
+                _toggleSectLayerButton.Pressed += OnToggleSectLayer;
+            }
+        }
+
+        /// <summary>
+        /// 切换宗门图层显示
+        /// </summary>
+        private void OnToggleSectLayer()
+        {
+            _isSectLayerVisible = !_isSectLayerVisible;
+            
+            // 通过渲染器控制图层
+            var layerManager = _renderer.GetNodeOrNull<Layer.MapLayerManager>("MapLayerManager");
+            if (layerManager != null)
+            {
+                layerManager.SetLayerVisibility(Layer.MapLayerType.Sect, _isSectLayerVisible);
+                GD.Print($"[MapGeneratorSceneController] 宗门图层已{(_isSectLayerVisible ? "显示" : "隐藏")}");
+            }
+            else
+            {
+                GD.PrintErr("[MapGeneratorSceneController] 未找到图层管理器");
+            }
         }
 
         private void InitializeRenderer()
@@ -201,7 +262,7 @@ namespace TianYanShop.World.Map
             _contentContainer.Visible = !_isCollapsed;
             _collapseButton.Text = _isCollapsed ? "▶" : "▼";
             _controlPanel.CustomMinimumSize = new Vector2(_isCollapsed ? 100 : 250, 0);
-            _controlPanel.MouseFilter = _isCollapsed ? Control.MouseFilterEnum.Ignore : Control.MouseFilterEnum.Stop;
+            _controlPanel.MouseFilter = _isCollapsed ? Godot.Control.MouseFilterEnum.Ignore : Godot.Control.MouseFilterEnum.Stop;
         }
 
         private void SetupProvinceOptions()

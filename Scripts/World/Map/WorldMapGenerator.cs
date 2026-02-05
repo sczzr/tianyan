@@ -868,5 +868,23 @@ namespace TianYanShop.World.Map
                 return new MapTile(BiomeType.Ocean, 0, 0, 0, 0, 0.5f, false, false, SpecialRegionType.None);
             return MapTiles[x, y];
         }
+
+        /// <summary>
+        /// 获取灵气分布图（用于宗门生成等系统）
+        /// </summary>
+        public float[,] GetSpiritPowerMap()
+        {
+            float[,] spiritMap = new float[MapWidth, MapHeight];
+            
+            for (int x = 0; x < MapWidth; x++)
+            {
+                for (int y = 0; y < MapHeight; y++)
+                {
+                    spiritMap[x, y] = MapTiles[x, y].Spirit;
+                }
+            }
+            
+            return spiritMap;
+        }
     }
 }

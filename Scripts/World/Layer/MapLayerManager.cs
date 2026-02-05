@@ -12,7 +12,8 @@ namespace TianYanShop.World.Layer
         Spirit,
         Element,
         Law,
-        Highlight
+        Highlight,
+        Sect
     }
 
     public partial class MapLayerManager : Node
@@ -21,6 +22,7 @@ namespace TianYanShop.World.Layer
         private ElementMaskLayer _elementLayer;
         private LawMaskLayer _lawLayer;
         private MaskHighlightLayer _highlightLayer;
+        private SectMaskLayer _sectLayer;
 
         private Dictionary<MapLayerType, bool> _layerVisibility = new()
         {
@@ -28,7 +30,8 @@ namespace TianYanShop.World.Layer
             { MapLayerType.Spirit, false },
             { MapLayerType.Element, false },
             { MapLayerType.Law, false },
-            { MapLayerType.Highlight, false }
+            { MapLayerType.Highlight, false },
+            { MapLayerType.Sect, true }
         };
 
         private Dictionary<MapLayerType, float> _layerOpacity = new()
@@ -37,7 +40,8 @@ namespace TianYanShop.World.Layer
             { MapLayerType.Spirit, 0.6f },
             { MapLayerType.Element, 0.5f },
             { MapLayerType.Law, 0.5f },
-            { MapLayerType.Highlight, 0.7f }
+            { MapLayerType.Highlight, 0.7f },
+            { MapLayerType.Sect, 0.8f }
         };
 
         public override void _Ready()
@@ -62,6 +66,10 @@ namespace TianYanShop.World.Layer
             _highlightLayer = new MaskHighlightLayer();
             _highlightLayer.Name = "HighlightMaskLayer";
             AddChild(_highlightLayer);
+
+            _sectLayer = new SectMaskLayer();
+            _sectLayer.Name = "SectMaskLayer";
+            AddChild(_sectLayer);
 
             UpdateLayerVisibility();
         }
@@ -119,6 +127,12 @@ namespace TianYanShop.World.Layer
                 _highlightLayer.Visible = _layerVisibility[MapLayerType.Highlight];
                 _highlightLayer.Modulate = new Color(1, 1, 1, _layerOpacity[MapLayerType.Highlight]);
             }
+
+            if (_sectLayer != null)
+            {
+                _sectLayer.Visible = _layerVisibility[MapLayerType.Sect];
+                _sectLayer.Modulate = new Color(1, 1, 1, _layerOpacity[MapLayerType.Sect]);
+            }
         }
 
         public void UpdateMapData(Data.RealmTile[,] mapData, int tileSize)
@@ -126,6 +140,14 @@ namespace TianYanShop.World.Layer
             _spiritLayer?.UpdateSpiritData(mapData, tileSize);
             _elementLayer?.UpdateElementData(mapData, tileSize);
             _lawLayer?.UpdateLawData(mapData, tileSize);
+        }
+
+        /// <summary>
+        /// 更新宗门数据
+        /// </summary>
+        public void UpdateSectData(System.Collections.Generic.List<Sect.SectData> sects, int tileSize)
+        {
+            _sectLayer?.UpdateSectData(sects, tileSize);
         }
 
         public void ShowHighlight(Vector2I tilePos, Color highlightColor, float radius = 1.0f)
@@ -151,6 +173,11 @@ namespace TianYanShop.World.Layer
         public void ToggleLawLayer()
         {
             SetLayerVisibility(MapLayerType.Law, !IsLayerVisible(MapLayerType.Law));
+        }
+
+        public void ToggleSectLayer()
+        {
+            SetLayerVisibility(MapLayerType.Sect, !IsLayerVisible(MapLayerType.Sect));
         }
     }
 }
