@@ -14,14 +14,18 @@ namespace TianYanShop.World.Map
 		[Export] public int Seed = -1;
 		[Export] public bool RandomSeed = true;
 		[Export] public bool GenerateOnReady = true;
-		[Export] public int TileSize = 64;  // 单元格像素大小
+		[Export] public int TileSize = 64;
+
+		[Export] public int BiomeTextureSize = 512;
+		[Export] public float TextureTilingScale = 1.0f;
 
 		// 组件引用
 		private WorldMapGenerator _generator;
 		private TileMapLayer _tileMapLayer;
 		private WorldMapCamera _camera;
+		private BiomeTextureGenerator _textureGenerator;
 
-		// 纹理尺寸信息 (从实际加载的纹理中获取)
+		// 纹理尺寸信息
 		private Vector2I _textureSize;
 
 		// 信号
@@ -29,24 +33,48 @@ namespace TianYanShop.World.Map
 
 		public override void _Ready()
 		{
-			// 确保 WorldMapManager 的位置为 (0, 0)，地图从全局坐标左上角开始
 			GlobalPosition = Vector2.Zero;
 
-			// 初始化生成器
 			int finalSeed = RandomSeed || Seed == -1 ? (int)Time.GetUnixTimeFromSystem() : Seed;
 			_generator = new WorldMapGenerator(MapWidth, MapHeight, finalSeed);
 
-			GD.Print($"世界地图管理器初始化 - 尺寸: {MapWidth}x{MapHeight}, 种子: {finalSeed}");
+			_textureGenerator = new BiomeTextureGenerator(BiomeTextureSize, TileSize, finalSeed);
 
-			// 设置组件
+			GD.Print($"世界地图管理器初始化 - 尺寸: {MapWidth}x{MapHeight}, 种子: {finalSeed}, 纹理尺寸: {BiomeTextureSize}x{BiomeTextureSize}");
+
 			SetupTileMap();
 			SetupCamera();
 
-			// 生成地图
 			if (GenerateOnReady)
 			{
 				GenerateAndRender();
 			}
+		}
+
+		/// <summary>
+		/// 设置纹理网格缩放（控制纹理的重复频率）
+		/// </summary>
+		public void SetTextureTilingScale(float scale)
+		{
+			TextureTilingScale = Mathf.Clamp(scale, 0.1f, 10.0f);
+			GD.Print($"纹理网格缩放已更新: {TextureTilingScale:F2}");
+			RenderMap();
+		}
+
+		/// <summary>
+		/// 获取纹理生成器
+		/// </summary>
+		public BiomeTextureGenerator GetTextureGenerator()
+		{
+			return _textureGenerator;
+		}
+
+		/// <summary>
+		/// 预生成所有生物群系纹理
+		/// </summary>
+		public void PreGenerateTextures()
+		{
+			_textureGenerator?.PreGenerateAll();
 		}
 
 		/// <summary>
@@ -56,55 +84,47 @@ namespace TianYanShop.World.Map
 		{
 			_tileMapLayer = new TileMapLayer();
 			_tileMapLayer.Name = "WorldMapTileLayer";
-			_tileMapLayer.GlobalPosition = Vector2.Zero; // 确保 TileMap 从 (0,0) 开始
+			_tileMapLayer.GlobalPosition = Vector2.Zero;
 			AddChild(_tileMapLayer);
 
-			// 创建 TileSet
 			var tileSet = new TileSet();
 			tileSet.TileSize = new Vector2I(TileSize, TileSize);
 
-			// 为每个生物群系创建图集源
+			_textureSize = new Vector2I(BiomeTextureSize, BiomeTextureSize);
+			GD.Print($"使用程序化生成纹理: {_textureSize.X}x{_textureSize.Y}");
+
+			int atlasId = 0;
 			foreach (var kvp in WorldMapGenerator.Biomes)
 			{
-				var biomeData = kvp.Value;
-				var texture = GD.Load<Texture2D>(biomeData.TexturePath);
+				var biomeData = kvp.Key;
+				var texture = _textureGenerator.GetBiomeTexture(biomeData);
 
 				if (texture == null)
 				{
-					GD.PrintErr($"无法加载纹理: {biomeData.TexturePath}");
+					GD.PrintErr($"无法生成生物群系纹理: {biomeData}");
 					continue;
-				}
-
-				// 存储纹理尺寸（只存储第一个有效纹理的尺寸）
-				if (_textureSize == Vector2I.Zero)
-				{
-					_textureSize = new Vector2I(texture.GetWidth(), texture.GetHeight());
-					GD.Print($"纹理尺寸: {_textureSize.X}x{_textureSize.Y}");
 				}
 
 				var atlasSource = new TileSetAtlasSource();
 				atlasSource.Texture = texture;
-
-				// 设置纹理区域大小为单元格大小
 				atlasSource.TextureRegionSize = new Vector2I(TileSize, TileSize);
 
-				// 计算纹理可以分成多少个瓦片
-				int textureTileCountX = texture.GetWidth() / TileSize;
-				int textureTileCountCountY = texture.GetHeight() / TileSize;
+				int textureTileCountX = BiomeTextureSize / TileSize;
+				int textureTileCountY = BiomeTextureSize / TileSize;
 
-				// 为每个纹理位置创建一个瓦片
 				for (int texX = 0; texX < textureTileCountX; texX++)
 				{
-					for (int texY = 0; texY < textureTileCountCountY; texY++)
+					for (int texY = 0; texY < textureTileCountY; texY++)
 					{
 						Vector2I tileCoords = new Vector2I(texX, texY);
 						atlasSource.CreateTile(tileCoords);
 					}
 				}
 
-				int sourceId = tileSet.AddSource(atlasSource, (int)kvp.Key);
+				int sourceId = tileSet.AddSource(atlasSource, atlasId);
 
-				GD.Print($"注册生物群系: {biomeData.Name} -> ID: {(int)kvp.Key}, SourceID: {sourceId}, 瓦片网格: {textureTileCountX}x{textureTileCountCountY}");
+				GD.Print($"注册生物群系: {biomeData} -> SourceID: {sourceId}, 瓦片网格: {textureTileCountX}x{textureTileCountY}");
+				atlasId++;
 			}
 
 			_tileMapLayer.TileSet = tileSet;
@@ -171,18 +191,18 @@ namespace TianYanShop.World.Map
 		{
 			GD.Print("开始渲染地图...");
 
-			// 清除现有瓦片
 			_tileMapLayer.Clear();
 
-			// 计算纹理中包含多少个瓦片 (从实际纹理尺寸获取)
 			int textureTileCountX = _textureSize.X / TileSize;
 			int textureTileCountY = _textureSize.Y / TileSize;
 
-			// 创建随机数生成器用于混合区域的纹理选择
 			var rand = new Random(Seed);
 
-			// 使用字典来存储混合瓦片数据
 			var blendTiles = new Dictionary<Vector2I, (BiomeType secondary, float factor)>();
+
+			float effectiveScale = TextureTilingScale;
+			int textureGridWidth = textureTileCountX;
+			int textureGridHeight = textureTileCountY;
 
 			for (int x = 0; x < MapWidth; x++)
 			{
@@ -190,16 +210,14 @@ namespace TianYanShop.World.Map
 				{
 					var tile = _generator.MapTiles[x, y];
 
-					// 确定要渲染的生物群系和纹理选择
 					(BiomeType renderBiome, Vector2I atlasCoords, bool isBlend) = DetermineRenderTile(
-						tile, x, y, textureTileCountX, textureTileCountY, rand);
+						tile, x, y, textureGridWidth, textureGridHeight, effectiveScale, rand);
 
 					int atlasId = (int)renderBiome;
 					Vector2I cellPos = new Vector2I(x, y);
 
 					_tileMapLayer.SetCell(cellPos, atlasId, atlasCoords);
 
-					// 记录混合信息以便后续处理
 					if (isBlend && tile.BlendFactor > 0.1f && tile.SecondaryBiome != tile.Biome)
 					{
 						blendTiles[cellPos] = (tile.SecondaryBiome, tile.BlendFactor);
@@ -207,8 +225,7 @@ namespace TianYanShop.World.Map
 				}
 			}
 
-			// 应用混合效果（使用透明度或混合瓦片）
-			ApplyBlendEffects(blendTiles, textureTileCountX, textureTileCountY, rand);
+			ApplyBlendEffects(blendTiles, textureGridWidth, textureGridHeight, effectiveScale, rand);
 
 			GD.Print($"地图渲染完成: {MapWidth}x{MapHeight} 瓦片, 混合区域: {blendTiles.Count}");
 		}
@@ -217,31 +234,25 @@ namespace TianYanShop.World.Map
 		/// 应用混合效果 - 在边界区域添加次群系的视觉元素
 		/// </summary>
 		private void ApplyBlendEffects(Dictionary<Vector2I, (BiomeType secondary, float factor)> blendTiles,
-			int textureTileCountX, int textureTileCountY, Random rand)
+			int textureTileCountX, int textureTileCountY, float scale, Random rand)
 		{
+			int textureGridWidth = textureTileCountX;
+			int textureGridHeight = textureTileCountY;
+
 			foreach (var kvp in blendTiles)
 			{
 				Vector2I pos = kvp.Key;
 				var (secondaryBiome, factor) = kvp.Value;
 
-				// 使用噪声决定是否在此位置放置次群系元素
 				float noiseValue = GetSpatialNoise(pos.X, pos.Y, Seed);
-
-				// 根据混合因子调整阈值
-				float threshold = 1f - (factor * 0.7f); // factor越高，越容易显示次群系
+				float threshold = 1f - (factor * 0.7f);
 
 				if (noiseValue > threshold)
 				{
-					// 使用次群系的纹理
 					int secondaryAtlasId = (int)secondaryBiome;
 
-					// 为次群系选择纹理坐标
-					int texX = (pos.X * 7 + pos.Y * 13) % textureTileCountX;
-					int texY = (pos.X * 11 + pos.Y * 7) % textureTileCountY;
-					Vector2I atlasCoords = new Vector2I(texX, texY);
+					Vector2I atlasCoords = CalculateAtlasCoords(pos.X, pos.Y, textureGridWidth, textureGridHeight, scale);
 
-					// 创建带有次群系视觉的混合效果
-					// 使用交替模式：主群系作为基础，次群系作为点缀
 					_tileMapLayer.SetCell(pos, secondaryAtlasId, atlasCoords);
 				}
 			}
@@ -258,34 +269,44 @@ namespace TianYanShop.World.Map
 		}
 
 		/// <summary>
+		/// 根据世界坐标计算图集坐标（世界空间映射）
+		/// atlasX = (x / TextureTilingScale) % TextureGridWidth
+		/// </summary>
+		private Vector2I CalculateAtlasCoords(int worldX, int worldY, int textureGridWidth, int textureGridHeight, float scale)
+		{
+			int scaledX = (int)(worldX / scale);
+			int scaledY = (int)(worldY / scale);
+
+			int atlasX = scaledX % textureGridWidth;
+			int atlasY = scaledY % textureGridHeight;
+
+			if (atlasX < 0) atlasX += textureGridWidth;
+			if (atlasY < 0) atlasY += textureGridHeight;
+
+			return new Vector2I(atlasX, atlasY);
+		}
+
+		/// <summary>
 		/// 确定渲染瓦片的生物群系和纹理坐标（处理过渡效果）
 		/// </summary>
 		private (BiomeType biome, Vector2I coords, bool isBlend) DetermineRenderTile(MapTile tile, int x, int y,
-			int textureTileCountX, int textureTileCountY, Random rand)
+			int textureTileCountX, int textureTileCountY, float scale, Random rand)
 		{
-			// 基础纹理坐标 - 基于位置
-			int baseTileX = x % textureTileCountX;
-			int baseTileY = y % textureTileCountY;
+			Vector2I atlasCoords = CalculateAtlasCoords(x, y, textureTileCountX, textureTileCountY, scale);
 
-			// 如果不是混合区域，直接使用主群系
 			if (tile.BlendFactor <= 0.01f || tile.Biome == tile.SecondaryBiome)
 			{
-				return (tile.Biome, new Vector2I(baseTileX, baseTileY), false);
+				return (tile.Biome, atlasCoords, false);
 			}
 
-			// 混合区域：根据混合因子决定渲染哪个群系
-			// 使用空间噪声模式来决定混合边界
 			float noiseValue = GetBlendNoise(x, y, tile.BlendFactor);
-
-			// 根据噪声值选择群系
 			BiomeType selectedBiome = noiseValue < tile.BlendFactor ? tile.SecondaryBiome : tile.Biome;
 
-			// 为混合区域选择纹理坐标
-			// 使用不同的偏移来创造更多变化
-			Vector2I coords = GetVariedTileCoords(baseTileX, baseTileY, textureTileCountX, textureTileCountY,
+			atlasCoords = CalculateAtlasCoords(x, y, textureTileCountX, textureTileCountY, scale);
+			atlasCoords = GetVariedTileCoords(atlasCoords.X, atlasCoords.Y, textureTileCountX, textureTileCountY,
 				selectedBiome, x, y, rand);
 
-			return (selectedBiome, coords, true);
+			return (selectedBiome, atlasCoords, true);
 		}
 
 		/// <summary>
@@ -360,9 +381,9 @@ namespace TianYanShop.World.Map
 		{
 			Seed = (int)Time.GetUnixTimeFromSystem();
 			_generator.Regenerate(Seed);
+			_textureGenerator.RegenerateAll(Seed);
 			RenderMap();
 
-			// 发出信号通知地图已重新生成
 			EmitSignal(SignalName.MapGenerated);
 
 			GD.Print($"地图重新生成 - 新种子: {Seed}");

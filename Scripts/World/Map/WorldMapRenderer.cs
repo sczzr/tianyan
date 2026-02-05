@@ -15,6 +15,9 @@ namespace TianYanShop.World.Map
         [Export] public int Seed = -1;
         [Export] public bool RandomSeed = true;
 
+        [Export] public int BiomeTextureSize = 512;
+        [Export] public float TextureTilingScale = 1.0f;
+
         // 省份配置
         [Export] public string ProvinceName { get; set; } = "";
 
@@ -31,12 +34,16 @@ namespace TianYanShop.World.Map
         private TileMapLayer _tileMapLayer;
         private WorldMapCamera _camera;
         private Layer.MapLayerManager _layerManager;
+        private BiomeTextureGenerator _textureGenerator;
 
         // 宗门系统
         private Sect.SectGenerator _sectGenerator;
 
         // 生物群系图集映射
         private Dictionary<BiomeType, int> _biomeToAtlasId = new();
+
+        // 纹理尺寸
+        private Vector2I _textureSize;
 
         // 单元格选择相关
         private Vector2I _selectedCell = new Vector2I(-1, -1);
@@ -48,10 +55,8 @@ namespace TianYanShop.World.Map
 
         public override void _Ready()
         {
-            // 初始化生成器
             int finalSeed = RandomSeed || Seed == -1 ? (int)Time.GetUnixTimeFromSystem() : Seed;
-            
-            // 获取省份配置
+
             ChinaProvinceConfig provinceConfig = null;
             if (!string.IsNullOrEmpty(ProvinceName))
             {
@@ -59,34 +64,53 @@ namespace TianYanShop.World.Map
                 provinceConfig = ProvinceConfigManager.GetProvince(ProvinceName);
                 GD.Print($"使用省份配置: {ProvinceName} ({provinceConfig.TerrainType})");
             }
-            
+
             _generator = new WorldMapGenerator(MapWidth, MapHeight, finalSeed, provinceConfig);
+            _textureGenerator = new BiomeTextureGenerator(BiomeTextureSize, 32, finalSeed);
 
-            GD.Print($"世界地图初始化 - 尺寸: {MapWidth}x{MapHeight}, 种子: {finalSeed}");
+            GD.Print($"世界地图初始化 - 尺寸: {MapWidth}x{MapHeight}, 种子: {finalSeed}, 纹理尺寸: {BiomeTextureSize}x{BiomeTextureSize}");
 
-            // 生成地图数据
             _generator.GenerateMap();
 
-            // 设置 TileMap
             SetupTileMap();
 
-            // 渲染地图
             RenderMap();
 
-            // 设置相机
             SetupCamera();
 
-            // 初始化图层管理器
             InitializeLayerManager();
 
-            // 初始化宗门系统
             InitializeSectSystem();
 
-            // 初始化选择层
             InitializeSelectionLayer();
 
-            // 设置输入处理
             SetProcessInput(true);
+        }
+
+        /// <summary>
+        /// 设置纹理网格缩放（控制纹理的重复频率）
+        /// </summary>
+        public void SetTextureTilingScale(float scale)
+        {
+            TextureTilingScale = Mathf.Clamp(scale, 0.1f, 10.0f);
+            GD.Print($"纹理网格缩放已更新: {TextureTilingScale:F2}");
+            RenderMap();
+        }
+
+        /// <summary>
+        /// 获取纹理生成器
+        /// </summary>
+        public BiomeTextureGenerator GetTextureGenerator()
+        {
+            return _textureGenerator;
+        }
+
+        /// <summary>
+        /// 预生成所有生物群系纹理
+        /// </summary>
+        public void PreGenerateTextures()
+        {
+            _textureGenerator?.PreGenerateAll();
         }
 
         /// <summary>
@@ -98,35 +122,68 @@ namespace TianYanShop.World.Map
             _tileMapLayer.Name = "WorldMapTileLayer";
             AddChild(_tileMapLayer);
 
-            // 创建 TileSet
             var tileSet = new TileSet();
             tileSet.TileSize = new Vector2I(32, 32);
 
-            // 为每个生物群系创建图集源
+            _textureSize = new Vector2I(BiomeTextureSize, BiomeTextureSize);
+
             int atlasId = 0;
             foreach (var kvp in WorldMapGenerator.Biomes)
             {
-                var biomeData = kvp.Value;
-                var texture = GD.Load<Texture2D>(biomeData.TexturePath);
+                var biomeType = kvp.Key;
+                var texture = _textureGenerator.GetBiomeTexture(biomeType);
 
                 if (texture == null)
                 {
-                    GD.PrintErr($"无法加载纹理: {biomeData.TexturePath}");
+                    GD.PrintErr($"无法生成生物群系纹理: {biomeType}");
                     continue;
                 }
 
                 var atlasSource = new TileSetAtlasSource();
                 atlasSource.Texture = texture;
                 atlasSource.TextureRegionSize = new Vector2I(32, 32);
-                atlasSource.CreateTile(Vector2I.Zero);
 
-                int sourceId = tileSet.AddSource(atlasSource);
-                _biomeToAtlasId[kvp.Key] = sourceId;
+                int textureTileCountX = BiomeTextureSize / 32;
+                int textureTileCountY = BiomeTextureSize / 32;
 
-                GD.Print($"注册生物群系: {biomeData.Name} -> AtlasID: {sourceId}");
+                for (int texX = 0; texX < textureTileCountX; texX++)
+                {
+                    for (int texY = 0; texY < textureTileCountY; texY++)
+                    {
+                        Vector2I tileCoords = new Vector2I(texX, texY);
+                        atlasSource.CreateTile(tileCoords);
+                    }
+                }
+
+                int sourceId = tileSet.AddSource(atlasSource, atlasId);
+                _biomeToAtlasId[biomeType] = sourceId;
+
+                GD.Print($"注册生物群系: {biomeType} -> AtlasID: {sourceId}, 瓦片网格: {textureTileCountX}x{textureTileCountY}");
+                atlasId++;
             }
 
             _tileMapLayer.TileSet = tileSet;
+        }
+
+        /// <summary>
+        /// 根据世界坐标计算图集坐标（世界空间映射）
+        /// atlasX = (x / TextureTilingScale) % TextureGridWidth
+        /// </summary>
+        private Vector2I CalculateAtlasCoords(int worldX, int worldY)
+        {
+            int textureGridWidth = _textureSize.X / 32;
+            int textureGridHeight = _textureSize.Y / 32;
+
+            int scaledX = (int)(worldX / TextureTilingScale);
+            int scaledY = (int)(worldY / TextureTilingScale);
+
+            int atlasX = scaledX % textureGridWidth;
+            int atlasY = scaledY % textureGridHeight;
+
+            if (atlasX < 0) atlasX += textureGridWidth;
+            if (atlasY < 0) atlasY += textureGridHeight;
+
+            return new Vector2I(atlasX, atlasY);
         }
 
         /// <summary>
@@ -136,8 +193,10 @@ namespace TianYanShop.World.Map
         {
             GD.Print("开始渲染地图...");
 
-            int tilesX = Mathf.CeilToInt((float)MapWidth / 32);
-            int tilesY = Mathf.CeilToInt((float)MapHeight / 32);
+            _tileMapLayer.Clear();
+
+            int textureTileCountX = _textureSize.X / 32;
+            int textureTileCountY = _textureSize.Y / 32;
 
             for (int x = 0; x < MapWidth; x++)
             {
@@ -147,7 +206,8 @@ namespace TianYanShop.World.Map
 
                     if (_biomeToAtlasId.TryGetValue(tile.Biome, out int atlasId))
                     {
-                        _tileMapLayer.SetCell(new Vector2I(x, y), atlasId, Vector2I.Zero);
+                        Vector2I atlasCoords = CalculateAtlasCoords(x, y);
+                        _tileMapLayer.SetCell(new Vector2I(x, y), atlasId, atlasCoords);
                     }
                 }
             }
@@ -184,14 +244,15 @@ namespace TianYanShop.World.Map
         {
             int seed = RandomSeed || Seed == -1 ? (int)Time.GetUnixTimeFromSystem() : Seed;
 
+            _textureGenerator.RegenerateAll(seed);
+
             ChinaProvinceConfig provinceConfig = null;
- 
+
             if (UseCustomParameters)
             {
                 GD.Print($"使用自定义参数 - 温度: {CustomTemperature}, 降水: {CustomPrecipitation}, 大陆度: {CustomContinentality}, 海拔变异: {CustomElevationVariation}, 灵气: {CustomSpiritDensity}");
                 _generator = new WorldMapGenerator(MapWidth, MapHeight, seed, null);
-                // 使用温度系数作为海洋阈值
-                _generator.WaterLevel = 0.35f; // 固定水位
+                _generator.WaterLevel = 0.35f;
                 _generator.BaseTemperature = CustomTemperature;
                 _generator.BasePrecipitation = CustomPrecipitation;
                 _generator.Continentality = CustomContinentality;
@@ -217,18 +278,13 @@ namespace TianYanShop.World.Map
 
             _selectionLayer.Clear();
 
-            // 重新初始化图层管理器
             InitializeLayerManager();
 
-            // 重新初始化宗门系统
             InitializeSectSystem();
 
-            // 更新相机边界
             if (_camera != null)
             {
                 _camera.SetMapBounds(MapWidth * 32, MapHeight * 32);
-                // 在 Fixed Top Left 模式下，GlobalPosition 是屏幕左上角的世界坐标
-                // 要让地图中心显示在屏幕中心，需要减去视口的一半（考虑缩放）
                 Vector2 viewportHalf = GetViewportRect().Size / 2.0f / _camera.Zoom.X;
                 _camera.CenterOnPosition(new Vector2(MapWidth * 16, MapHeight * 16) - viewportHalf);
             }
