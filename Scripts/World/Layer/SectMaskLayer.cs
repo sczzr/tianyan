@@ -347,11 +347,22 @@ namespace TianYanShop.World.Layer
         /// </summary>
         private Color GetSectColor(SectData sect)
         {
-            if (_sectTypeColors.TryGetValue(sect.PrimaryType, out Color color))
+            switch (sect.Level)
             {
-                return color;
+                case SectLevel.Top:
+                    if (_sectTypeColors.TryGetValue(sect.PrimaryType, out Color topColor))
+                    {
+                        return topColor;
+                    }
+                    return new Color(0.8f, 0.6f, 0.4f);
+
+                case SectLevel.Large:
+                    return new Color(0.95f, 0.9f, 0.75f);
+
+                case SectLevel.Small:
+                default:
+                    return new Color(0.6f, 0.6f, 0.6f);
             }
-            return new Color(0.5f, 0.5f, 0.5f);
         }
 
         /// <summary>

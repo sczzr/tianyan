@@ -144,8 +144,9 @@ namespace TianYanShop.World.Sect
                     float spirit = _spiritPowerMap[x, y];
                     if (spirit >= _config.TopSectSpiritThreshold)
                     {
-                        int radius = CalculateInfluenceRadius(SectLevel.Top);
-                        candidates.Add((new Vector2I(x, y), spirit, radius));
+                        if (!IsWithinBounds(new Vector2I(x, y), SectLevel.Top))
+                            continue;
+                        candidates.Add((new Vector2I(x, y), spirit, 0));
                     }
                 }
             }
@@ -157,6 +158,7 @@ namespace TianYanShop.World.Sect
 
             // 放置宗门
             int placed = 0;
+            int skipped = 0;
             foreach (var candidate in candidates)
             {
                 if (placed >= count) break;
@@ -165,9 +167,11 @@ namespace TianYanShop.World.Sect
                 bool tooClose = false;
                 foreach (var existing in _topSects)
                 {
-                    if (IsTooClose(candidate.pos, SectLevel.Top, existing.CenterPosition, SectLevel.Top))
+                    float dist = candidate.pos.DistanceTo(existing.CenterPosition);
+                    if (dist < _config.MinDistanceTopToTop)
                     {
                         tooClose = true;
+                        skipped++;
                         break;
                     }
                 }
@@ -181,7 +185,7 @@ namespace TianYanShop.World.Sect
                 placed++;
             }
 
-            GD.Print($"[SectGenerator] 成功放置 {placed}/{count} 个顶级宗门");
+            GD.Print($"[SectGenerator] 成功放置 {placed}/{count} 个顶级宗门，跳过 {skipped} 个（距离太近）");
         }
 
         /// <summary>
@@ -199,8 +203,9 @@ namespace TianYanShop.World.Sect
                     float spirit = _spiritPowerMap[x, y];
                     if (spirit >= _config.LargeSectSpiritThreshold)
                     {
-                        int radius = CalculateInfluenceRadius(SectLevel.Large);
-                        candidates.Add((new Vector2I(x, y), spirit, radius));
+                        if (!IsWithinBounds(new Vector2I(x, y), SectLevel.Large))
+                            continue;
+                        candidates.Add((new Vector2I(x, y), spirit, 0));
                     }
                 }
             }
@@ -220,7 +225,8 @@ namespace TianYanShop.World.Sect
                 bool tooCloseToLarge = false;
                 foreach (var existing in _largeSects)
                 {
-                    if (IsTooClose(candidate.pos, SectLevel.Large, existing.CenterPosition, SectLevel.Large))
+                    float dist = candidate.pos.DistanceTo(existing.CenterPosition);
+                    if (dist < _config.MinDistanceLargeToLarge)
                     {
                         tooCloseToLarge = true;
                         break;
@@ -233,7 +239,8 @@ namespace TianYanShop.World.Sect
                 bool tooCloseToTop = false;
                 foreach (var topSect in _topSects)
                 {
-                    if (IsTooClose(candidate.pos, SectLevel.Large, topSect.CenterPosition, SectLevel.Top))
+                    float dist = candidate.pos.DistanceTo(topSect.CenterPosition);
+                    if (dist < _config.MinDistanceLargeToTop)
                     {
                         tooCloseToTop = true;
                         break;
@@ -267,8 +274,9 @@ namespace TianYanShop.World.Sect
                     float spirit = _spiritPowerMap[x, y];
                     if (spirit >= _config.SmallSectSpiritThreshold)
                     {
-                        int radius = CalculateInfluenceRadius(SectLevel.Small);
-                        candidates.Add((new Vector2I(x, y), spirit, radius));
+                        if (!IsWithinBounds(new Vector2I(x, y), SectLevel.Small))
+                            continue;
+                        candidates.Add((new Vector2I(x, y), spirit, 0));
                     }
                 }
             }
@@ -288,7 +296,8 @@ namespace TianYanShop.World.Sect
                 bool tooCloseToSmall = false;
                 foreach (var existing in _smallSects)
                 {
-                    if (IsTooClose(candidate.pos, SectLevel.Small, existing.CenterPosition, SectLevel.Small))
+                    float dist = candidate.pos.DistanceTo(existing.CenterPosition);
+                    if (dist < _config.MinDistanceSmallToAdvanced)
                     {
                         tooCloseToSmall = true;
                         break;
@@ -297,7 +306,35 @@ namespace TianYanShop.World.Sect
 
                 if (tooCloseToSmall) continue;
 
-                // 创建宗门（允许在高级宗门势力范围内，但最终会被覆盖）
+                // 检查与顶级宗门的距离
+                bool tooCloseToTop = false;
+                foreach (var topSect in _topSects)
+                {
+                    float dist = candidate.pos.DistanceTo(topSect.CenterPosition);
+                    if (dist < _config.MinDistanceSmallToAdvanced)
+                    {
+                        tooCloseToTop = true;
+                        break;
+                    }
+                }
+
+                if (tooCloseToTop) continue;
+
+                // 检查与大型宗门的距离
+                bool tooCloseToLarge = false;
+                foreach (var largeSect in _largeSects)
+                {
+                    float dist = candidate.pos.DistanceTo(largeSect.CenterPosition);
+                    if (dist < _config.MinDistanceSmallToAdvanced)
+                    {
+                        tooCloseToLarge = true;
+                        break;
+                    }
+                }
+
+                if (tooCloseToLarge) continue;
+
+                // 创建宗门
                 var sect = CreateSect(candidate.pos, SectLevel.Small);
                 _smallSects.Add(sect);
                 _sects[sect.Id] = sect;
@@ -488,6 +525,24 @@ namespace TianYanShop.World.Sect
                 (SectLevel.Small, _) => distance < _config.MinDistanceSmallToAdvanced,
                 _ => false
             };
+        }
+
+        /// <summary>
+        /// 检查位置加上最大势力半径后是否在地图边界内
+        /// </summary>
+        private bool IsWithinBounds(Vector2I pos, SectLevel level)
+        {
+            int maxRadius = level switch
+            {
+                SectLevel.Top => _config.TopInfluenceRange.max,
+                SectLevel.Large => _config.LargeInfluenceRange.max,
+                SectLevel.Small => _config.SmallInfluenceRange.max,
+                _ => 5
+            };
+            return pos.X - maxRadius >= 0 &&
+                   pos.X + maxRadius < _mapWidth &&
+                   pos.Y - maxRadius >= 0 &&
+                   pos.Y + maxRadius < _mapHeight;
         }
 
         /// <summary>

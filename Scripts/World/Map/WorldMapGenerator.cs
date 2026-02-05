@@ -1,6 +1,8 @@
 using Godot;
 using System;
 using System.Collections.Generic;
+
+using System.Threading.Tasks;
 using TianYanShop.World.Config;
 
 namespace TianYanShop.World.Map
@@ -287,14 +289,18 @@ namespace TianYanShop.World.Map
         public void GenerateMap()
         {
             MapTiles = new MapTile[MapWidth, MapHeight];
+            
+            GD.Print($"开始多线程生成地图: {MapWidth}x{MapHeight}...");
 
-            for (int x = 0; x < MapWidth; x++)
+            int tileCount = MapWidth * MapHeight;
+            
+            // 使用多线程并行生成
+            Parallel.For(0, tileCount, i =>
             {
-                for (int y = 0; y < MapHeight; y++)
-                {
-                    MapTiles[x, y] = GenerateTile(x, y);
-                }
-            }
+                int x = i % MapWidth;
+                int y = i / MapWidth;
+                MapTiles[x, y] = GenerateTile(x, y);
+            });
 
             GD.Print($"地图生成完成: {MapWidth}x{MapHeight}, 种子: {Seed}");
         }
@@ -876,13 +882,15 @@ namespace TianYanShop.World.Map
         {
             float[,] spiritMap = new float[MapWidth, MapHeight];
             
-            for (int x = 0; x < MapWidth; x++)
+            int tileCount = MapWidth * MapHeight;
+            
+            // 使用多线程并行复制
+            Parallel.For(0, tileCount, i =>
             {
-                for (int y = 0; y < MapHeight; y++)
-                {
-                    spiritMap[x, y] = MapTiles[x, y].Spirit;
-                }
-            }
+                int x = i % MapWidth;
+                int y = i / MapWidth;
+                spiritMap[x, y] = MapTiles[x, y].Spirit;
+            });
             
             return spiritMap;
         }

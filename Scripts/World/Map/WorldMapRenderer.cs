@@ -333,7 +333,10 @@ namespace TianYanShop.World.Map
         {
             _selectionLayer = new TileMapLayer();
             _selectionLayer.Name = "SelectionLayer";
+            _selectionLayer.ZIndex = 100;
+            _selectionLayer.ZAsRelative = true;
             AddChild(_selectionLayer);
+            MoveChild(_selectionLayer, GetChildCount() - 1);
 
             var tileSet = new TileSet();
             tileSet.TileSize = new Vector2I(32, 32);

@@ -14,7 +14,7 @@ namespace TianYanShop.World.Sect
         /// </summary>
         public int TopSectRatio { get; set; } = 8000;
         public int LargeSectRatio { get; set; } = 2500;
-        public int SmallSectRatio { get; set; } = 800;
+        public int SmallSectRatio { get; set; } = 900;
 
         #endregion
 
@@ -23,10 +23,10 @@ namespace TianYanShop.World.Sect
         /// <summary>
         /// 距离限制（用于中心点距离检查）
         /// </summary>
-        public int MinDistanceTopToTop { get; set; } = 50;
-        public int MinDistanceLargeToLarge { get; set; } = 25;
-        public int MinDistanceLargeToTop { get; set; } = 15;
-        public int MinDistanceSmallToAdvanced { get; set; } = 8;
+        public int MinDistanceTopToTop { get; set; } = 80;
+        public int MinDistanceLargeToLarge { get; set; } = 40;
+        public int MinDistanceLargeToTop { get; set; } = 40;
+        public int MinDistanceSmallToAdvanced { get; set; } = 15;
 
         #endregion
 
@@ -46,9 +46,9 @@ namespace TianYanShop.World.Sect
         /// <summary>
         /// 灵力阈值
         /// </summary>
-        public float TopSectSpiritThreshold { get; set; } = 0.85f;
-        public float LargeSectSpiritThreshold { get; set; } = 0.7f;
-        public float SmallSectSpiritThreshold { get; set; } = 0.5f;
+        public float TopSectSpiritThreshold { get; set; } = 0.7f;
+        public float LargeSectSpiritThreshold { get; set; } = 0.55f;
+        public float SmallSectSpiritThreshold { get; set; } = 0.4f;
 
         #endregion
 
