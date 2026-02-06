@@ -18,9 +18,9 @@ public partial class LoadGame : Control
 
 	public override void _Ready()
 	{
-		_titleLabel = GetNode<Label>("TitleLabel");
-		_backButton = GetNode<Button>("BackButton");
-		_saveList = GetNode<VBoxContainer>("SaveList");
+		_titleLabel = GetNode<Label>("MainPanel/MainVBox/TitleLabel");
+		_backButton = GetNode<Button>("MainPanel/MainVBox/BackButton");
+		_saveList = GetNode<VBoxContainer>("MainPanel/MainVBox/ScrollContainer/SaveList");
 
 		_translationManager = TranslationManager.Instance;
 		_translationManager.LanguageChanged += OnLanguageChanged;
@@ -69,7 +69,7 @@ public partial class LoadGame : Control
 		};
 		foreach (var save in saves)
 		{
-			var saveButton = GetNode<Button>($"SaveList/{save.Value}");
+			var saveButton = GetNode<Button>($"MainPanel/MainVBox/ScrollContainer/SaveList/{save.Value}");
 			if (saveButton != null)
 			{
 				saveButton.Pressed += () => OnSavePressed(save.Key);

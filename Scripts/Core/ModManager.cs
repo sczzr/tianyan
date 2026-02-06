@@ -18,11 +18,11 @@ public partial class ModManager : Control
 
 	public override void _Ready()
 	{
-		_titleLabel = GetNode<Label>("TitleLabel");
-		_backButton = GetNode<Button>("BackButton");
-		_modList = GetNode<VBoxContainer>("ModList");
-		_sampleModLabel = GetNode<Label>("ModList/SampleModLabel");
-		_sampleModCheck = GetNode<CheckButton>("ModList/SampleModCheck");
+		_titleLabel = GetNode<Label>("MainPanel/MainVBox/TitleLabel");
+		_backButton = GetNode<Button>("MainPanel/MainVBox/BackButton");
+		_modList = GetNode<VBoxContainer>("MainPanel/MainVBox/ScrollContainer/ModList");
+		_sampleModLabel = GetNode<Label>("MainPanel/MainVBox/ScrollContainer/ModList/SampleModLabel");
+		_sampleModCheck = GetNode<CheckButton>("MainPanel/MainVBox/ScrollContainer/ModList/SampleModCheck");
 
 		_translationManager = TranslationManager.Instance;
 		_translationManager.LanguageChanged += OnLanguageChanged;

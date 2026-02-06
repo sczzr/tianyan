@@ -9,9 +9,8 @@ namespace FantasyMapGenerator.Scripts.Core;
 /// </summary>
 public partial class Game : Control
 {
-	[ExportGroup("UI Components")]
-	[Export] private MapView _mapView;
-	[Export] private Button _menuButton;
+	private MapView _mapView;
+	private Button _menuButton;
 
 	private TranslationManager _translationManager;
 
@@ -20,11 +19,10 @@ public partial class Game : Control
 		_translationManager = TranslationManager.Instance;
 		_translationManager.LanguageChanged += OnLanguageChanged;
 
-		if (_mapView == null)
-		{
-			_mapView = GetNode<MapView>("MapView");
-		}
+		_mapView = GetNode<MapView>("MapView");
+		_menuButton = GetNode<Button>("MenuPanel/MenuButton");
 		SetupUI();
+		UpdateUIText();
 	}
 
 	private void OnLanguageChanged(string language)

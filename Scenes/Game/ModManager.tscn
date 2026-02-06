@@ -1,6 +1,7 @@
 [gd_scene load_steps=2 format=3 uid="uid://modmanager"]
 
 [ext_resource type="Script" path="res://Scripts/Core/ModManager.cs" id="1_modmanager"]
+[ext_resource type="Theme" uid="uid://inkwashtheme" path="res://Themes/InkWashTheme.tres" id="2_theme"]
 
 [node name="ModManager" type="Control"]
 layout_mode = 3
@@ -9,36 +10,90 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("2_theme")
 script = ExtResource("1_modmanager")
 
-[node name="TitleLabel" type="Label" parent="."]
+[node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
-offset_left = 50.0
-offset_top = 50.0
-offset_right = 350.0
-offset_bottom = 100.0
-text = "模组管理"
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.961, 0.925, 0.843, 1)
 
-[node name="BackButton" type="Button" parent="."]
+[node name="MainPanel" type="PanelContainer" parent="."]
 layout_mode = 1
-offset_left = 50.0
-offset_top = 100.0
-offset_right = 150.0
-offset_bottom = 150.0
-text = "返回"
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -350.0
+offset_right = 300.0
+offset_bottom = 350.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="ModList" type="VBoxContainer" parent="."]
-layout_mode = 1
-offset_left = 50.0
-offset_top = 160.0
-offset_right = 450.0
-offset_bottom = 560.0
-
-[node name="SampleModLabel" type="Label" parent="ModList"]
+[node name="MainVBox" type="VBoxContainer" parent="MainPanel"]
 layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="TitleLabel" type="Label" parent="MainPanel/MainVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 28
+text = "模组管理"
+horizontal_alignment = 1
+
+[node name="TitleSpacer" type="Control" parent="MainPanel/MainVBox"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
+[node name="Separator1" type="HSeparator" parent="MainPanel/MainVBox"]
+layout_mode = 2
+
+[node name="ContentSpacer" type="Control" parent="MainPanel/MainVBox"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MainPanel/MainVBox"]
+custom_minimum_size = Vector2(0, 400)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="ModList" type="VBoxContainer" parent="MainPanel/MainVBox/ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="SampleModLabel" type="Label" parent="MainPanel/MainVBox/ScrollContainer/ModList"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
 text = "已安装的模组："
 
-[node name="SampleModCheck" type="CheckButton" parent="ModList"]
+[node name="ModSpacer" type="Control" parent="MainPanel/MainVBox/ScrollContainer/ModList"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
+[node name="SampleModCheck" type="CheckButton" parent="MainPanel/MainVBox/ScrollContainer/ModList"]
 layout_mode = 2
 button_pressed = true
 text = "示例模组"
+
+[node name="BottomSpacer" type="Control" parent="MainPanel/MainVBox"]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+
+[node name="Separator2" type="HSeparator" parent="MainPanel/MainVBox"]
+layout_mode = 2
+
+[node name="ButtonSpacer" type="Control" parent="MainPanel/MainVBox"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="MainPanel/MainVBox"]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "返回"
