@@ -68,10 +68,15 @@ public partial class TranslationManager : Node
 			["back"] = "返回",
 			["sound_volume"] = "音效音量",
 			["music_volume"] = "音乐音量",
+			["resolution"] = "分辨率",
 			["fullscreen"] = "全屏",
 			["load_game_title"] = "加载存档",
 			["installed_mods"] = "已安装的模组",
-			["menu"] = "菜单"
+			["menu"] = "菜单",
+			["resume"] = "返回游戏",
+			["regenerate_map"] = "重新生成地图",
+			["back_to_main_menu"] = "返回主菜单",
+			["game_paused"] = "游戏已暂停"
 		};
 
 		_translations["en"] = new Dictionary<string, string>
@@ -86,10 +91,15 @@ public partial class TranslationManager : Node
 			["back"] = "Back",
 			["sound_volume"] = "Sound Volume",
 			["music_volume"] = "Music Volume",
+			["resolution"] = "Resolution",
 			["fullscreen"] = "Fullscreen",
 			["load_game_title"] = "Load Game",
 			["installed_mods"] = "Installed Mods",
-			["menu"] = "Menu"
+			["menu"] = "Menu",
+			["resume"] = "Resume",
+			["regenerate_map"] = "Regenerate Map",
+			["back_to_main_menu"] = "Back to Main Menu",
+			["game_paused"] = "Game Paused"
 		};
 	}
 

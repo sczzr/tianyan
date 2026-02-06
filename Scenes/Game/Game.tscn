@@ -28,11 +28,76 @@ script = ExtResource("3_mapview")
 
 [node name="MenuPanel" type="PanelContainer" parent="." unique_id=124898716]
 layout_mode = 1
-offset_left = 16.0
-offset_top = 16.0
-offset_right = 136.0
-offset_bottom = 72.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -220.0
+offset_right = 160.0
+offset_bottom = 220.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="MenuButton" type="Button" parent="MenuPanel" unique_id=2002950935]
+[node name="MenuVBox" type="VBoxContainer" parent="MenuPanel" unique_id=124898717]
 layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="PausedLabel" type="Label" parent="MenuPanel/MenuVBox" unique_id=124898718]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 32
+text = "游戏已暂停"
+horizontal_alignment = 1
+
+[node name="Spacer1" type="Control" parent="MenuPanel/MenuVBox" unique_id=124898719]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+
+[node name="Separator1" type="HSeparator" parent="MenuPanel/MenuVBox" unique_id=124898720]
+layout_mode = 2
+
+[node name="ResumeButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898721]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "返回游戏"
+
+[node name="RegenerateButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898722]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "重新生成地图"
+
+[node name="SettingsButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898723]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "设置"
+
+[node name="Separator2" type="HSeparator" parent="MenuPanel/MenuVBox" unique_id=124898724]
+layout_mode = 2
+
+[node name="MainMenuButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898725]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "返回主菜单"
+
+[node name="QuitButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898726]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "退出游戏"
+
+[node name="Spacer2" type="Control" parent="MenuPanel/MenuVBox" unique_id=124898727]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+
+[node name="MenuButton" type="Button" parent="." unique_id=2002950935]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -136.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 72.0
+grow_horizontal = 0
 text = "菜单"

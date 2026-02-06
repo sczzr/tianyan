@@ -16,6 +16,51 @@ namespace FantasyMapGenerator.Scripts.Tests
         {
             TestDepressionResolution();
             TestRiverFlow();
+            TestRiverMeandering();
+        }
+
+        private void TestRiverMeandering()
+        {
+            // Setup a straight river
+            // (0,0) -> (10,10) -> (20,20)
+            int width = 30;
+            int height = 30;
+            var cells = CreateGridCells(width, height);
+            
+            var river = new River(1);
+            river.Cells.Add(0); // 0,0
+            river.Cells.Add(width + 1); // 1,1
+            river.Cells.Add(2 * width + 2); // 2,2
+            river.Cells.Add(3 * width + 3); // 3,3
+
+            // Need flux for cells to avoid 0 flux in logic
+            cells[0].Flux = 100;
+            cells[width + 1].Flux = 100;
+            cells[2 * width + 2].Flux = 100;
+            cells[3 * width + 3].Flux = 100;
+
+            var prng = new AleaPRNG("meander");
+            var builder = new RiverPathBuilder(cells, prng, width, height);
+
+            builder.AddMeandering(river, 0.5f);
+
+            Assert(river.MeanderedPoints.Count > 0, "Should generate meandered points");
+            Assert(river.MeanderedPoints.Count > river.Cells.Count, $"Should generate more points than input cells (Input: {river.Cells.Count}, Output: {river.MeanderedPoints.Count})");
+
+            // Check if points are not all on the same line
+            // The original points are (0,0), (1,1), (2,2), (3,3) -> perfect line y = x
+            bool deviationFound = false;
+            foreach (var p in river.MeanderedPoints)
+            {
+                // Distance from line x - y = 0
+                float dist = Math.Abs(p.X - p.Y) / Mathf.Sqrt(2);
+                if (dist > 0.01f)
+                {
+                    deviationFound = true;
+                    break;
+                }
+            }
+            Assert(deviationFound, "River path should deviate from straight line due to meandering/smoothing");
         }
 
         private void TestDepressionResolution()

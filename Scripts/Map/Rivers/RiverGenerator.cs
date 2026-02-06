@@ -18,7 +18,7 @@ public class RiverGenerator
 	private readonly float _waterLevel;
 	private readonly float[] _heights;
 
-	private const int MinFluxToFormRiver = 30;
+	private const int MinFluxToFormRiver = 50;
 	private const float FluxFactor = 500f;
 	private const float MaxFluxWidth = 1f;
 	private const float LengthFactor = 200f;
@@ -187,8 +187,29 @@ public class RiverGenerator
 
 		if (candidates.Count == 0) return -1;
 
-		// 返回最低的邻居
-		return candidates.OrderBy(c => _heights[c]).First();
+		// 找到所有比当前cell低的邻居
+		var downhillCandidates = candidates.Where(c => _heights[c] < _heights[cellId]).ToList();
+
+		if (downhillCandidates.Count == 0) return -1;
+		
+		// 如果只有一个选择，直接返回
+		if (downhillCandidates.Count == 1) return downhillCandidates[0];
+
+		// 随机选择一个下坡，而不是总是选最低的（引入一些随机性以避免直线河流）
+		// 但仍然偏向更低的（给更低的权重更高）
+		// 简单加权：权重 = 1 / (相对高度差 + 0.01) 的某种反比? 或者直接高度差
+		// 这里用简单逻辑：有 70% 概率选最低的，30% 概率选次低的/随机的
+		
+		downhillCandidates.Sort((a, b) => _heights[a].CompareTo(_heights[b])); // a is lower (better)
+		
+		if (_prng.NextFloat() < 0.7f)
+		{
+			return downhillCandidates[0];
+		}
+		
+		// 从剩下的里面选一个
+		int index = (int)_prng.NextRange(1, downhillCandidates.Count);
+		return downhillCandidates[index];
 	}
 
 	/// <summary>

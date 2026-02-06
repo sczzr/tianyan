@@ -117,9 +117,22 @@ custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 
 [node name="Separator3" type="HSeparator" parent="SettingsPanel/SettingsVBox"]
-layout_mode = 2
+layout_mode = 2 
 
 [node name="DisplaySpacer" type="Control" parent="SettingsPanel/SettingsVBox"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
+[node name="ResolutionLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "分辨率"
+
+[node name="ResolutionSelector" type="OptionButton" parent="SettingsPanel/SettingsVBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="ResolutionSpacer" type="Control" parent="SettingsPanel/SettingsVBox"]
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 

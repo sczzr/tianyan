@@ -27,65 +27,91 @@ public class RiverPathBuilder
 	}
 
 	/// <summary>
-	/// 为河流添加曲折效果
+	/// 为河流添加曲折效果 (使用 Chaikin 平滑算法)
 	/// </summary>
 	public void AddMeandering(River river, float meandering = DefaultMeandering)
 	{
 		river.MeanderedPoints.Clear();
 
-		var points = GetRiverPoints(river);
-		if (points.Count < 2) return;
+		var rawPoints = GetRiverPoints(river);
+		if (rawPoints.Count < 2) return;
 
-		int step = _cells[river.Cells[0]].Height < 0.2f ? 1 : 10;
-
-		for (int i = 0; i < points.Count; i++, step++)
+		// 1. 构建基础控制点并添加随机扰动
+		var controlPoints = new List<Vector3>();
+		for (int i = 0; i < rawPoints.Count; i++)
 		{
-			int cellId = river.Cells[i];
+			int cellId = river.Cells[Math.Min(i, river.Cells.Count - 1)];
 			float flux = cellId >= 0 ? _cells[cellId].Flux : 0;
+			controlPoints.Add(new Vector3(rawPoints[i].x, rawPoints[i].y, flux));
 
-			var (x1, y1) = points[i];
-			river.MeanderedPoints.Add(new Vector3(x1, y1, flux));
-
-			if (i >= points.Count - 1) break;
-
-			int nextCellId = river.Cells[i + 1];
-			if (nextCellId < 0)
+			// 在点之间添加扰动点
+			if (i < rawPoints.Count - 1)
 			{
-				var (x2, y2) = points[i + 1];
-				river.MeanderedPoints.Add(new Vector3(x2, y2, flux));
-				break;
-			}
+				var p1 = rawPoints[i];
+				var p2 = rawPoints[i + 1];
+				float dist = Mathf.Sqrt((p2.x - p1.x) * (p2.x - p1.x) + (p2.y - p1.y) * (p2.y - p1.y));
+				
+				// 只有足够长的段才添加扰动
+				if (dist > 10) 
+				{
+					// 中点
+					float midX = (p1.x + p2.x) * 0.5f;
+					float midY = (p1.y + p2.y) * 0.5f;
 
-			var (nx, ny) = points[i + 1];
-			float dist2 = (nx - x1) * (nx - x1) + (ny - y1) * (ny - y1);
+					// 垂直向量
+					float dx = p2.x - p1.x;
+					float dy = p2.y - p1.y;
+					float nx = -dy;
+					float ny = dx;
+					
+					// 归一化
+					float len = Mathf.Sqrt(nx * nx + ny * ny);
+					if (len > 0.001f)
+					{
+						nx /= len;
+						ny /= len;
+					}
 
-			// 如果距离太近且河流足够长，跳过
-			if (dist2 <= 25 && river.Cells.Count >= 6) continue;
+					// 随机偏移 (基于 meandering 参数)
+					float offsetStr = dist * meandering * 0.3f;
+					float offset = _prng.NextRange(-offsetStr, offsetStr);
 
-			// 计算曲折度
-			float meander = meandering + 1f / step + MathF.Max(meandering - step / 100f, 0);
-			float angle = MathF.Atan2(ny - y1, nx - x1);
-			float sinMeander = MathF.Sin(angle) * meander;
-			float cosMeander = MathF.Cos(angle) * meander;
-
-			if (step < 20 && (dist2 > 64 || (dist2 > 36 && river.Cells.Count < 5)))
-			{
-				// 距离较大时添加两个控制点
-				float p1x = (x1 * 2 + nx) / 3 - sinMeander;
-				float p1y = (y1 * 2 + ny) / 3 + cosMeander;
-				float p2x = (x1 + nx * 2) / 3 + sinMeander / 2;
-				float p2y = (y1 + ny * 2) / 3 - cosMeander / 2;
-				river.MeanderedPoints.Add(new Vector3(p1x, p1y, 0));
-				river.MeanderedPoints.Add(new Vector3(p2x, p2y, 0));
-			}
-			else if (dist2 > 25 || river.Cells.Count < 6)
-			{
-				// 距离中等时添加一个控制点
-				float px = (x1 + nx) / 2 - sinMeander;
-				float py = (y1 + ny) / 2 + cosMeander;
-				river.MeanderedPoints.Add(new Vector3(px, py, 0));
+					controlPoints.Add(new Vector3(midX + nx * offset, midY + ny * offset, flux));
+				}
 			}
 		}
+
+		// 2. 应用 Chaikin 平滑
+		var smoothedPoints = ChaikinSmooth(controlPoints, 3); // 3次迭代
+
+		river.MeanderedPoints.AddRange(smoothedPoints);
+	}
+
+	private List<Vector3> ChaikinSmooth(List<Vector3> points, int iterations)
+	{
+		if (iterations <= 0 || points.Count < 3) return points;
+
+		var newPoints = new List<Vector3>();
+		
+		// 保留第一个点
+		newPoints.Add(points[0]);
+
+		for (int i = 0; i < points.Count - 1; i++)
+		{
+			var p0 = points[i];
+			var p1 = points[i + 1];
+
+			// Q: 0.75 * p0 + 0.25 * p1
+			newPoints.Add(p0 * 0.75f + p1 * 0.25f);
+			
+			// R: 0.25 * p0 + 0.75 * p1
+			newPoints.Add(p0 * 0.25f + p1 * 0.75f);
+		}
+
+		// 保留最后一个点
+		newPoints.Add(points[points.Count - 1]);
+
+		return ChaikinSmooth(newPoints, iterations - 1);
 	}
 
 	/// <summary>
@@ -103,8 +129,12 @@ public class RiverPathBuilder
 				// 边界点
 				if (i > 0)
 				{
-					var borderPoint = GetBorderPoint(river.Cells[i - 1]);
-					points.Add(borderPoint);
+					int prevCellId = river.Cells[i - 1];
+					// 确保 prevCellId 有效
+					if (prevCellId >= 0) {
+						var borderPoint = GetBorderPoint(prevCellId);
+						points.Add(borderPoint);
+					}
 				}
 			}
 			else

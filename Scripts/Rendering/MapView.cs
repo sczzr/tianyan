@@ -39,13 +39,17 @@ public partial class MapView : Node2D
 	[Export]
 	public bool UseBiomeColors { get; set; } = true;
 
-	private int _cellCount = 500;
+	// 颜色常量
+	private static readonly Color OceanLayerColor = new Color(0.2f, 0.5f, 0.8f);
+	private static readonly Color RiverColor = new Color(0.3f, 0.6f, 0.9f);
+
+	private int _cellCount = 2000;
 	private MapGenerator _mapGenerator;
 	private bool _isGenerating = false;
 
-	// 渲染颜色
-	private static readonly Color RiverColor = new Color(0.2f, 0.4f, 0.9f, 0.9f);
-	private static readonly Color OceanLayerColor = new Color(0.9f, 0.95f, 1.0f, 0.15f);
+	// 选择状态
+	private int _selectedCellId = -1;
+	[Signal] public delegate void CellSelectedEventHandler(int cellId);
 
 	public override void _Ready()
 	{
@@ -57,6 +61,7 @@ public partial class MapView : Node2D
 	{
 		if (_isGenerating) return;
 		_isGenerating = true;
+		_selectedCellId = -1;
 
 		_mapGenerator.GenerateWithNewSeed(_cellCount);
 		QueueRedraw();
@@ -68,6 +73,7 @@ public partial class MapView : Node2D
 	{
 		if (_isGenerating) return;
 		_isGenerating = true;
+		_selectedCellId = -1;
 
 		_mapGenerator.Generate(seed, _cellCount);
 		QueueRedraw();
@@ -130,12 +136,36 @@ public partial class MapView : Node2D
 
 				// 使用固定颜色确保可见
 				Color color = new Color(0.2f, 0.8f, 0.2f); // 绿色
+				// 如果是选中状态，高亮显示
+				if (cell.Id == _selectedCellId)
+				{
+					color = new Color(1f, 0.8f, 0.2f); // 金黄色选中
+				}
+				else
+				{
+					color = UseBiomeColors ? BiomeData.GetColor(cell.BiomeId) : cell.RenderColor;
+				}
+
 				var colors = new Color[cell.Vertices.Count];
 				for (int i = 0; i < cell.Vertices.Count; i++)
 				{
 					colors[i] = color;
 				}
 				DrawPolygon(points, colors);
+				
+				// 绘制选中框线
+				if (cell.Id == _selectedCellId)
+				{
+					Vector2[] borderPoints = new Vector2[points.Length + 1];
+					Array.Copy(points, borderPoints, points.Length);
+					borderPoints[points.Length] = points[0];
+					DrawPolyline(borderPoints, new Color(1, 1, 1), 2f);
+				}
+			}
+			else if (cell.Vertices != null && cell.Vertices.Count == 2)
+			{
+				Color color = UseBiomeColors ? BiomeData.GetColor(cell.BiomeId) : cell.RenderColor;
+				DrawLine(cell.Vertices[0], cell.Vertices[1], color, 1f);
 			}
 		}
 
@@ -151,39 +181,6 @@ public partial class MapView : Node2D
 		if (ShowRivers)
 		{
 			DrawRivers();
-		}
-	}
-
-	/// <summary>
-	/// 绘制Cell多边形
-	/// </summary>
-	private void DrawCells()
-	{
-		var cells = _mapGenerator.Data.Cells;
-
-		foreach (var cell in cells)
-		{
-			if (cell.Vertices != null && cell.Vertices.Count >= 3)
-			{
-				var points = new Vector2[cell.Vertices.Count];
-				for (int i = 0; i < cell.Vertices.Count; i++)
-				{
-					points[i] = cell.Vertices[i];
-				}
-
-				Color color = UseBiomeColors ? BiomeData.GetColor(cell.BiomeId) : cell.RenderColor;
-				var colors = new Color[cell.Vertices.Count];
-				for (int i = 0; i < cell.Vertices.Count; i++)
-				{
-					colors[i] = color;
-				}
-				DrawPolygon(points, colors);
-			}
-			else if (cell.Vertices != null && cell.Vertices.Count == 2)
-			{
-				Color color = UseBiomeColors ? BiomeData.GetColor(cell.BiomeId) : cell.RenderColor;
-				DrawLine(cell.Vertices[0], cell.Vertices[1], color, 1f);
-			}
 		}
 	}
 
@@ -264,10 +261,69 @@ public partial class MapView : Node2D
 
 	public override void _Input(InputEvent @event)
 	{
-		if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed && mouseButton.ButtonIndex == MouseButton.Left)
+		if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed)
 		{
-			GenerateMap();
+			if (mouseButton.ButtonIndex == MouseButton.Left)
+			{
+				// 计算点击的Cell
+				var mapPos = TransformToMapCoordinates(mouseButton.Position);
+				var cellId = GetCellAtPosition(mapPos);
+				
+				if (cellId != -1)
+				{
+					SelectCell(cellId);
+				}
+				else
+				{
+					// 点击空白处，重新生成（保留之前的功能，或者可以改成取消选择）
+					// GenerateMap(); 
+					// 此处改为左键点击只是选择，不再重新生成。如果需要重新生成可以加个按钮或右键。
+					SelectCell(-1);
+				}
+			}
+			else if (mouseButton.ButtonIndex == MouseButton.Right)
+			{
+				// 右键重新生成
+				GenerateMap();
+			}
 		}
+	}
+
+	private void SelectCell(int cellId)
+	{
+		_selectedCellId = cellId;
+		QueueRedraw();
+		EmitSignal(SignalName.CellSelected, cellId);
+		
+		if (cellId != -1 && _mapGenerator?.Data != null)
+		{
+			var cell = _mapGenerator.Data.Cells[cellId];
+			GD.Print($"Selected Cell {cellId}: Pos={cell.Position}, Height={cell.Height:F3}, Biome={cell.BiomeId}, IsLand={cell.IsLand}");
+		}
+	}
+
+	private int GetCellAtPosition(Vector2 mapPos)
+	{
+		if (_mapGenerator?.Data?.Cells == null) return -1;
+
+		float minDistanceSq = float.MaxValue;
+		int closestCellId = -1;
+
+		// 简单的遍历查找最近的种子点 (Voronoi 性质)
+		// 对于几千个点，遍历是可以接受的。如果点非常多，可以使用空间分区优化。
+		foreach (var cell in _mapGenerator.Data.Cells)
+		{
+			float distSq = cell.Position.DistanceSquaredTo(mapPos);
+			if (distSq < minDistanceSq)
+			{
+				minDistanceSq = distSq;
+				closestCellId = cell.Id;
+			}
+		}
+
+		// 检查是否在有效距离内（防止点击太远的地方也选中边缘点）
+		// 这里的阈值可以根据地图大小调整，或者如果确实是全覆盖Voronoi，只要在包围盒内就应该选中
+		return closestCellId;
 	}
 
 	public MapData GetMapData()
@@ -275,30 +331,50 @@ public partial class MapView : Node2D
 		return _mapGenerator?.Data;
 	}
 
+	// 缓存变换参数
+	private float _currentScale = 1f;
+	private Vector2 _currentOffset = Vector2.Zero;
+
 	/// <summary>
 	/// 将地图坐标转换为屏幕坐标
 	/// 地图坐标范围是 (0,0) 到 (512,512)，屏幕坐标需要适应 Node2D 的绘制区域
 	/// </summary>
 	private Vector2 TransformToScreenCoordinates(Vector2 mapPos)
 	{
+		UpdateTransformParameters();
+		return new Vector2(
+			_currentOffset.X + mapPos.X * _currentScale,
+			_currentOffset.Y + mapPos.Y * _currentScale
+		);
+	}
+
+	/// <summary>
+	/// 将屏幕坐标转换为地图坐标
+	/// </summary>
+	private Vector2 TransformToMapCoordinates(Vector2 screenPos)
+	{
+		UpdateTransformParameters();
+		return new Vector2(
+			(screenPos.X - _currentOffset.X) / _currentScale,
+			(screenPos.Y - _currentOffset.Y) / _currentScale
+		);
+	}
+
+	private void UpdateTransformParameters()
+	{
 		// 获取当前节点的绘制边界
 		var viewSize = GetViewportRect().Size;
-		var mapSize = _mapGenerator?.Data?.MapSize ?? new Vector2(512, 512);
+		var mapSize = _mapGenerator?.Data?.MapSize ?? new Vector2(1024, 1024);
 
 		// 计算缩放比例（留一点边距）
 		float margin = 20f;
 		float scaleX = (viewSize.X - margin * 2) / mapSize.X;
 		float scaleY = (viewSize.Y - margin * 2) / mapSize.Y;
-		float scale = Mathf.Min(scaleX, scaleY);
+		_currentScale = Mathf.Min(scaleX, scaleY);
 
 		// 计算中心偏移
-		var scaledMapSize = mapSize * scale;
-		var centerOffset = (viewSize - scaledMapSize) / 2;
-
-		// 应用变换
-		return new Vector2(
-			margin + centerOffset.X + mapPos.X * scale,
-			margin + centerOffset.Y + mapPos.Y * scale
-		);
+		var scaledMapSize = mapSize * _currentScale;
+		// 偏移量 = 边距 + (视口剩余空间的一半)
+		_currentOffset = new Vector2(margin, margin) + (viewSize - scaledMapSize) / 2;
 	}
 }

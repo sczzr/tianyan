@@ -12,20 +12,34 @@ public partial class Settings : Control
 	private Label _volumeLabel;
 	private Label _musicLabel;
 	private Label _languageLabel;
+	private Label _resolutionLabel;
 	private OptionButton _languageSelector;
 	private HSlider _volumeSlider;
 	private HSlider _musicSlider;
+	private OptionButton _resolutionSelector;
 	private CheckButton _fullscreenCheck;
 	private Button _backButton;
 
 	private TranslationManager _translationManager;
 
+	// 可选分辨率列表
+	private readonly Vector2I[] _resolutions = new[]
+	{
+		new Vector2I(1280, 720),
+		new Vector2I(1600, 900),
+		new Vector2I(1920, 1080),
+		new Vector2I(2560, 1440),
+		new Vector2I(3840, 2160)
+	};
+
 	public override void _Ready()
 	{
 		_backButton = GetNode<Button>("SettingsPanel/SettingsVBox/BackButton");
 		_languageSelector = GetNode<OptionButton>("SettingsPanel/SettingsVBox/LanguageSelector");
+		_resolutionLabel = GetNode<Label>("SettingsPanel/SettingsVBox/ResolutionLabel");
 		_volumeSlider = GetNode<HSlider>("SettingsPanel/SettingsVBox/VolumeSlider");
 		_musicSlider = GetNode<HSlider>("SettingsPanel/SettingsVBox/MusicSlider");
+		_resolutionSelector = GetNode<OptionButton>("SettingsPanel/SettingsVBox/ResolutionSelector");
 		_fullscreenCheck = GetNode<CheckButton>("SettingsPanel/SettingsVBox/FullscreenCheck");
 
 		_translationManager = TranslationManager.Instance;
@@ -43,6 +57,11 @@ public partial class Settings : Control
 		{
 			_languageSelector.ItemSelected += OnLanguageSelected;
 			SetupLanguageOptions();
+		}
+		if (_resolutionSelector != null)
+		{
+			_resolutionSelector.ItemSelected += OnResolutionSelected;
+			SetupResolutionOptions();
 		}
 
 		UpdateUIText();
@@ -111,6 +130,10 @@ public partial class Settings : Control
 		{
 			_languageLabel.Text = tm.Tr("language");
 		}
+		if (_resolutionLabel != null)
+		{
+			_resolutionLabel.Text = tm.Tr("resolution");
+		}
 	}
 
 	private void OnFullscreenToggled(bool pressed)
@@ -128,5 +151,58 @@ public partial class Settings : Control
 	private void OnBackPressed()
 	{
 		GetTree().ChangeSceneToFile("res://Scenes/UI/MainMenu.tscn");
+	}
+
+	private void SetupResolutionOptions()
+	{
+		if (_resolutionSelector == null) return;
+
+		_resolutionSelector.Clear();
+		for (int i = 0; i < _resolutions.Length; i++)
+		{
+			var res = _resolutions[i];
+			_resolutionSelector.AddItem($"{res.X}x{res.Y}", i);
+		}
+
+		// 设置当前分辨率为默认选项
+		var currentWidth = DisplayServer.WindowGetSize().X;
+		int selectedIndex = 2; // 默认 1920x1080
+		for (int i = 0; i < _resolutions.Length; i++)
+		{
+			if (_resolutions[i].X == currentWidth)
+			{
+				selectedIndex = i;
+				break;
+			}
+		}
+		_resolutionSelector.Selected = selectedIndex;
+	}
+
+	private void OnResolutionSelected(long index)
+	{
+		if (index < 0 || index >= _resolutions.Length) return;
+
+		var newSize = _resolutions[index];
+
+		// 如果当前是全屏，先退出全屏模式
+		var currentMode = DisplayServer.WindowGetMode();
+		if (currentMode == DisplayServer.WindowMode.Fullscreen)
+		{
+			DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
+		}
+
+		// 设置窗口大小
+		DisplayServer.WindowSetSize(newSize);
+
+		// 尝试兼容方式设置窗口位置（居中）
+		var screenId = DisplayServer.WindowGetCurrentScreen();
+		var screenSize = DisplayServer.ScreenGetSize(screenId);
+		var screenPos = new Vector2I(
+			(screenSize.X - newSize.X) / 2,
+			(screenSize.Y - newSize.Y) / 2
+		);
+		DisplayServer.WindowSetPosition(screenPos, screenId);
+
+		GD.Print($"Resolution changed to: {newSize.X}x{newSize.Y}");
 	}
 }
