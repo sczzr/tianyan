@@ -1,0 +1,89 @@
+# Godot 4+ specific ignores
+.godot/
+*.import
+
+# Godot .NET specific ignores
+*.csproj
+*.sln
+*.user
+*.userprefs
+*.pidb
+*.suo
+
+# Build results
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+build/
+
+# Windows
+Thumbs.db
+*.swp
+*~
+
+# macOS
+.DS_Store
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+
+# Linux
+*~
+.trash/
+
+# Temp
+*.tmp
+*.temp
+tmp/
+temp/
+
+# Logs
+*.log
+
+# Godot
+.godot/
+*.import
+*.translation
+
+# Export files
+*.pck
+*.wasm
+*.pcx
+
+# Unity (just in case)
+Library/
+Temp/
+Obj/
+UnityLockfile
+*.asset
+*.scene
+
+# Backup files
+*.backup
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# .NET Core
+.dotnet/
+*.dll
+*.pdb
+*.exe
+*.log
+
+# NuGet
+packages/
+nuget.config
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*~

@@ -1,0 +1,75 @@
+[gd_scene load_steps=2 format=3 uid="uid://settings"]
+
+[ext_resource type="Script" path="res://Scripts/UI/Settings.cs" id="1_settings"]
+
+[node name="Settings" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_settings")
+
+[node name="SettingsPanel" type="PanelContainer" parent="."]
+layout_mode = 1
+offset_left = 50.0
+offset_top = 50.0
+offset_right = 450.0
+offset_bottom = 550.0
+
+[node name="SettingsVBox" type="VBoxContainer" parent="SettingsPanel"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
+layout_mode = 2
+text = "设置"
+horizontal_alignment = 1
+
+[node name="Separator1" type="HSeparator" parent="SettingsPanel/SettingsVBox"]
+layout_mode = 2
+
+[node name="VolumeLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
+layout_mode = 2
+text = "音效音量"
+
+[node name="VolumeSlider" type="HSlider" parent="SettingsPanel/SettingsVBox"]
+layout_mode = 2
+min_value = 0.0
+max_value = 100.0
+value = 80.0
+
+[node name="MusicLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
+layout_mode = 2
+text = "音乐音量"
+
+[node name="MusicSlider" type="HSlider" parent="SettingsPanel/SettingsVBox"]
+layout_mode = 2
+min_value = 0.0
+max_value = 100.0
+value = 60.0
+
+[node name="Separator2" type="HSeparator" parent="SettingsPanel/SettingsVBox"]
+layout_mode = 2
+
+[node name="LanguageLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
+layout_mode = 2
+text = "语言"
+
+[node name="LanguageSelector" type="OptionButton" parent="SettingsPanel/SettingsVBox"]
+layout_mode = 2
+
+[node name="Separator3" type="HSeparator" parent="SettingsPanel/SettingsVBox"]
+layout_mode = 2
+
+[node name="FullscreenCheck" type="CheckButton" parent="SettingsPanel/SettingsVBox"]
+layout_mode = 2
+button_pressed = true
+text = "全屏"
+
+[node name="Separator4" type="HSeparator" parent="SettingsPanel/SettingsVBox"]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="SettingsPanel/SettingsVBox"]
+layout_mode = 2
+text = "返回"

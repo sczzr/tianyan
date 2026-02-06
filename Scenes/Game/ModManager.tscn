@@ -1,0 +1,44 @@
+[gd_scene load_steps=2 format=3 uid="uid://modmanager"]
+
+[ext_resource type="Script" path="res://Scripts/Core/ModManager.cs" id="1_modmanager"]
+
+[node name="ModManager" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_modmanager")
+
+[node name="TitleLabel" type="Label" parent="."]
+layout_mode = 1
+offset_left = 50.0
+offset_top = 50.0
+offset_right = 350.0
+offset_bottom = 100.0
+text = "模组管理"
+
+[node name="BackButton" type="Button" parent="."]
+layout_mode = 1
+offset_left = 50.0
+offset_top = 100.0
+offset_right = 150.0
+offset_bottom = 150.0
+text = "返回"
+
+[node name="ModList" type="VBoxContainer" parent="."]
+layout_mode = 1
+offset_left = 50.0
+offset_top = 160.0
+offset_right = 450.0
+offset_bottom = 560.0
+
+[node name="SampleModLabel" type="Label" parent="ModList"]
+layout_mode = 2
+text = "已安装的模组："
+
+[node name="SampleModCheck" type="CheckButton" parent="ModList"]
+layout_mode = 2
+button_pressed = true
+text = "示例模组"
