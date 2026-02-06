@@ -68,9 +68,11 @@ public class DepressionResolver
 		for (int iteration = 0; depressions > 0 && iteration < MaxIterations; iteration++)
 		{
 			// 检测进度是否停滞
-			if (progress.Count > 5 && progress.Sum() > 0)
+            // 如果连续50次迭代没有减少 depressions 数量，才认为是停滞
+            // 注意：填坑过程中 depressions 数量可能会暂时上升，这是正常的，所以不能用 Sum() > 0 判断
+			if (progress.Count > 50 && progress.TakeLast(50).All(x => x >= 0))
 			{
-				GD.PrintErr($"Depression resolution progress stalled, aborting after {iteration} iterations");
+				GD.PrintErr($"Depression resolution progress stalled (no reduction for 50 steps), aborting after {iteration} iterations");
 				break;
 			}
 

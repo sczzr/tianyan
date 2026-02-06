@@ -56,7 +56,7 @@ public class AleaPRNG
 		ut = (ut ^ (ut >> 5)) * 0xCD9E8D57U;
 		ut = (ut ^ (ut >> 13)) * 0xFC87C538U;
 		ut = (ut ^ (ut >> 6)) * 0xB5026F5AU;
-		_floatState = ut * 1.1102230246251565e-16;
+		_floatState = (ut >> 12) * 2.2204460492503131e-16; // 2^-52
 		return _floatState;
 	}
 

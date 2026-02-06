@@ -34,8 +34,13 @@ public class PerlinNoise
 
         for (int i = GridSize - 1; i > 0; i--)
         {
-            int j = _prng.NextInt(0, i);
-            (_permutation[i], _permutation[j]) = (_permutation[j], _permutation[i]);
+            int j = _prng.NextInt(0, i);  // [0, i)，范围安全
+            if (j < 0) j = 0;
+            if (j >= i) j = i - 1;
+            // 安全交换
+            int temp = _permutation[i];
+            _permutation[i] = _permutation[j];
+            _permutation[j] = temp;
         }
 
         for (int i = 0; i < GridSize; i++)

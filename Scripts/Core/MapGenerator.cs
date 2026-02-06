@@ -95,6 +95,10 @@ public class MapGenerator
         var depressionResolver = new DepressionResolver(cells, features, WaterLevel);
         var resolvedHeights = depressionResolver.Resolve();
 
+        // 阶段_Pre: 计算降水量
+        GD.Print("[MapGenerator] 阶段Pre: 计算降水量...");
+        CalculatePrecipitation(cells, width, height);
+
         // 阶段7: 河流生成
         GD.Print("[MapGenerator] 阶段7: 生成河流...");
         var riverGenerator = new RiverGenerator(cells, features, PRNG, resolvedHeights, WaterLevel);
@@ -206,6 +210,28 @@ public class MapGenerator
         }
     }
 
+    private void CalculatePrecipitation(Cell[] cells, int width, int height)
+    {
+        var noise = new FastNoiseLite();
+        noise.Seed = PRNG.NextInt();
+        noise.Frequency = 0.02f;
+        noise.FractalType = FastNoiseLite.FractalTypeEnum.Fbm;
+
+        foreach (var cell in cells)
+        {
+            // 基础降水噪音
+            float noiseVal = noise.GetNoise2D(cell.Position.X, cell.Position.Y);
+            // 归一化到 0-1
+            float precipitation = (noiseVal + 1) / 2f;
+            
+            // 简单模拟: 高度越高/靠近水源 降水可能不同 (此处简化)
+            // 调整强度
+            precipitation *= 255;
+            
+            cell.Precipitation = (byte)Mathf.Clamp(precipitation, 0, 255);
+        }
+    }
+
     private Vector2[] GenerateRandomPoints(int count, int width, int height)
     {
         var points = new Vector2[count];
@@ -213,10 +239,14 @@ public class MapGenerator
 
         for (int i = 0; i < count; i++)
         {
-            points[i] = new Vector2(
-                PRNG.NextRange(margin, width - margin),
-                PRNG.NextRange(margin, height - margin)
-            );
+            float x = PRNG.NextRange(margin, width - margin);
+            float y = PRNG.NextRange(margin, height - margin);
+            points[i] = new Vector2(x, y);
+
+            if (i < 3)
+            {
+                GD.Print($"[GenerateRandomPoints] Point {i}: ({x}, {y})");
+            }
         }
 
         return points;

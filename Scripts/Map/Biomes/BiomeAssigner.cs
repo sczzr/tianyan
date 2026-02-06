@@ -63,6 +63,7 @@ public class BiomeAssigner
 		}
 
 		float heightRange = maxY - minY;
+		if (heightRange < 0.001f) heightRange = 1.0f;
 
 		foreach (var cell in _cells)
 		{

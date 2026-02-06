@@ -24,7 +24,7 @@ public class Delaunay
         }
     }
 
-    private struct EdgeHash
+    private struct EdgeHash : IEquatable<EdgeHash>
     {
         public int P, Q;
 
@@ -42,16 +42,22 @@ public class Delaunay
             }
         }
 
+        public bool Equals(EdgeHash other)
+        {
+            return P == other.P && Q == other.Q;
+        }
+
         public override bool Equals(object obj)
         {
-            if (obj is EdgeHash other)
-                return P == other.P && Q == other.Q;
-            return false;
+            return obj is EdgeHash other && Equals(other);
         }
 
         public override int GetHashCode()
         {
-            return P * 73856093 ^ Q;
+            unchecked
+            {
+                return P * 73856093 ^ Q;
+            }
         }
     }
 
@@ -92,76 +98,114 @@ public class Delaunay
 
         for (int i = 0; i < n; i++)
         {
-            var edges = new HashSet<EdgeHash>();
+            if (i % 50 == 0) GD.Print($"[Delaunay] Processing point {i}/{n}...");
+            pointVertices.Add(points[i]);
+
+            // Dictionary to count edge occurrences
+            // Key: EdgeHash, Value: Count
+            var edgeCounts = new Dictionary<EdgeHash, int>();
+            int currentPointIndex = pointVertices.Count - 1;
 
             for (int t = triangles.Count - 1; t >= 0; t--)
             {
                 var tri = triangles[t];
-                if (IsInCircumcircle(points[i], pointVertices[tri.V0], pointVertices[tri.V1], pointVertices[tri.V2]))
+                if (IsInCircumcircle(pointVertices[currentPointIndex], pointVertices[tri.V0], pointVertices[tri.V1], pointVertices[tri.V2]))
                 {
-                    edges.Add(new EdgeHash(tri.V0, tri.V1));
-                    edges.Add(new EdgeHash(tri.V1, tri.V2));
-                    edges.Add(new EdgeHash(tri.V2, tri.V0));
+                    AddEdge(edgeCounts, new EdgeHash(tri.V0, tri.V1));
+                    AddEdge(edgeCounts, new EdgeHash(tri.V1, tri.V2));
+                    AddEdge(edgeCounts, new EdgeHash(tri.V2, tri.V0));
                     triangles.RemoveAt(t);
                 }
             }
 
-            foreach (var edge in edges)
+            foreach (var kvp in edgeCounts)
             {
-                var newTri = new Triangle(
-                    pointVertices.Count - 1,
-                    edge.P,
-                    edge.Q
-                );
-                triangles.Add(newTri);
-            }
+                // Only edges shared by exactly 1 triangle (boundary of polygon) should be kept
+                if (kvp.Value == 1)
+                {
+                    var edge = kvp.Key;
+                    var newTri = new Triangle(currentPointIndex, edge.P, edge.Q);
+                    
+                    // Calculate and store circumcenter
+                    Vector2 v0 = pointVertices[currentPointIndex];
+                    Vector2 v1 = pointVertices[edge.P];
+                    Vector2 v2 = pointVertices[edge.Q];
+                    newTri.Circumcenter = GetCircumcenter(v0, v1, v2);
 
-            pointVertices.Add(points[i]);
+                    triangles.Add(newTri);
+                }
+            }
         }
 
         for (int t = triangles.Count - 1; t >= 0; t--)
         {
             var tri = triangles[t];
-            if (tri.V0 >= n || tri.V1 >= n || tri.V2 >= n)
+            // Remove triangles connected to the super triangle (indices 0, 1, 2)
+            if (tri.V0 < 3 || tri.V1 < 3 || tri.V2 < 3)
             {
                 triangles.RemoveAt(t);
+            }
+            else
+            {
+                // Shift indices back to match the input points array (0-based)
+                // The internal pointVertices list had 3 super triangle points at the beginning
+                var fixedTri = new Triangle(tri.V0 - 3, tri.V1 - 3, tri.V2 - 3);
+                fixedTri.Circumcenter = tri.Circumcenter;
+                triangles[t] = fixedTri;
+            }
+        }
+
+        // 调试：检查三角形
+        GD.Print($"[Delaunay] Generated {triangles.Count} triangles");
+        if (triangles.Count > 0)
+        {
+            var firstTri = triangles[0];
+            GD.Print($"  First triangle indices: {firstTri.V0}, {firstTri.V1}, {firstTri.V2}");
+            if (firstTri.V0 < points.Length && firstTri.V1 < points.Length && firstTri.V2 < points.Length)
+            {
+                GD.Print($"  First triangle points: ({points[firstTri.V0].X}, {points[firstTri.V0].Y}), ({points[firstTri.V1].X}, {points[firstTri.V1].Y}), ({points[firstTri.V2].X}, {points[firstTri.V2].Y})");
             }
         }
 
         return triangles.ToArray();
     }
 
+    private static void AddEdge(Dictionary<EdgeHash, int> edgeCounts, EdgeHash edge)
+    {
+        if (edgeCounts.ContainsKey(edge))
+            edgeCounts[edge]++;
+        else
+            edgeCounts[edge] = 1;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool IsInCircumcircle(Vector2 p, Vector2 a, Vector2 b, Vector2 c)
     {
-        float dx = a.X - p.X;
-        float dy = a.Y - p.Y;
-        float det = dx * dx + dy * dy;
+        // 计算外接圆中心
+        float d = 2f * (a.X * (b.Y - c.Y) + b.X * (c.Y - a.Y) + c.X * (a.Y - b.Y));
+        if (Math.Abs(d) < 0.0001f) return false; // 退化三角形或共线
 
-        float cax = c.X - p.X;
-        float cay = c.Y - p.Y;
-        float detC = cax * cax + cay * cay;
+        float ax2ay2 = a.X * a.X + a.Y * a.Y;
+        float bx2by2 = b.X * b.X + b.Y * b.Y;
+        float cx2cy2 = c.X * c.X + c.Y * c.Y;
 
-        float bax = b.X - p.X;
-        float bay = b.Y - p.Y;
-        float detB = bax * bax + bay * bay;
+        float ux = (ax2ay2 * (b.Y - c.Y) + bx2by2 * (c.Y - a.Y) + cx2cy2 * (a.Y - b.Y)) / d;
+        float uy = (ax2ay2 * (c.X - b.X) + bx2by2 * (a.X - c.X) + cx2cy2 * (b.X - a.X)) / d;
 
-        float matrix = (dx * (bay - cay) -
-                        dy * (bax - cax) +
-                        (cay - bay) * (c.X - a.X) +
-                        (cax - bax) * (c.Y - a.Y)) * 2f;
+        // 计算半径平方
+        float radiusSq = (ux - a.X) * (ux - a.X) + (uy - a.Y) * (uy - a.Y);
 
-        float abDet = det * (bax * cay - bay * cax);
-        float bcDet = detB * cax - detC * bax;
-        float caDet = detC * bay - abDet / detC;
+        // 计算点到圆心的距离平方
+        float distSq = (p.X - ux) * (p.X - ux) + (p.Y - uy) * (p.Y - uy);
 
-        return matrix > 0 ? abDet + bcDet + caDet < 0 : abDet + bcDet + caDet > 0;
+        return distSq < radiusSq;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Vector2 GetCircumcenter(Vector2 a, Vector2 b, Vector2 c)
     {
         float d = 2f * (a.X * (b.Y - c.Y) + b.X * (c.Y - a.Y) + c.X * (a.Y - b.Y));
+        if (Math.Abs(d) < 0.0001f) return (a + b + c) / 3f; // 避免除零，返回重心
 
         float ax2ay2 = a.X * a.X + a.Y * a.Y;
         float bx2by2 = b.X * b.X + b.Y * b.Y;

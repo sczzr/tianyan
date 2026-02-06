@@ -59,23 +59,30 @@ public class FeatureDetector
 	/// </summary>
 	private void MarkBorderCells()
 	{
-		// 简化处理：检查Cell是否在地图边缘附近
-		// 实际应该检查Cell的顶点是否接触地图边界
-		float margin = 10f;
-		float maxX = 0, maxY = 0;
+		float minX = float.MaxValue, minY = float.MaxValue;
+		float maxX = float.MinValue, maxY = float.MinValue;
 
 		foreach (var cell in _cells)
 		{
+			minX = Math.Min(minX, cell.Position.X);
+			minY = Math.Min(minY, cell.Position.Y);
 			maxX = Math.Max(maxX, cell.Position.X);
 			maxY = Math.Max(maxY, cell.Position.Y);
 		}
 
+		float width = maxX - minX;
+		float height = maxY - minY;
+		
+		// 边界边距：取地图尺寸的 2% 或 至少 1.0
+		float marginX = Math.Max(width * 0.02f, 1.0f);
+		float marginY = Math.Max(height * 0.02f, 1.0f);
+
 		foreach (var cell in _cells)
 		{
-			cell.IsBorder = cell.Position.X < margin ||
-			                cell.Position.Y < margin ||
-			                cell.Position.X > maxX - margin ||
-			                cell.Position.Y > maxY - margin;
+			cell.IsBorder = cell.Position.X < minX + marginX ||
+			                cell.Position.Y < minY + marginY ||
+			                cell.Position.X > maxX - marginX ||
+			                cell.Position.Y > maxY - marginY;
 		}
 	}
 

@@ -176,6 +176,7 @@ public class HeightmapTools
 	private void AddOneHill(string heightRange, string rangeX, string rangeY)
 	{
 		var change = new float[_cells.Length];
+		var distances = new int[_cells.Length];
 		float h = Clamp(GetValueInRange(heightRange));
 
 		int start = -1;
@@ -191,6 +192,7 @@ public class HeightmapTools
 		if (start < 0) return;
 
 		change[start] = h;
+		distances[start] = 0;
 		var queue = new Queue<int>();
 		queue.Enqueue(start);
 
@@ -201,7 +203,15 @@ public class HeightmapTools
 			foreach (int c in _cells[q].NeighborIds)
 			{
 				if (change[c] > 0) continue;
-				change[c] = MathF.Pow(change[q], _blobPower) * (_prng.NextRange(0.9f, 1.1f));
+
+				distances[c] = distances[q] + 1;
+
+				// Attenuate height based on distance from center
+				float attenuation = MathF.Pow(_blobPower, distances[c]);
+				float randomizedAttenuation = attenuation * _prng.NextRange(0.9f, 1.1f);
+
+				change[c] = h * randomizedAttenuation;
+
 				if (change[c] > 1)
 					queue.Enqueue(c);
 			}

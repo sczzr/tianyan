@@ -1,9 +1,10 @@
-[gd_scene load_steps=2 format=3 uid="uid://game"]
+[gd_scene format=3 uid="uid://game"]
 
-[ext_resource type="Script" path="res://Scripts/Core/Game.cs" id="1_game"]
+[ext_resource type="Script" uid="uid://dwji5xe8bttmu" path="res://Scripts/Core/Game.cs" id="1_game"]
 [ext_resource type="Theme" uid="uid://inkwashtheme" path="res://Themes/InkWashTheme.tres" id="2_theme"]
+[ext_resource type="Script" uid="uid://dgei4p0lkynu5" path="res://Scripts/Rendering/MapView.cs" id="3_mapview"]
 
-[node name="Game" type="Control"]
+[node name="Game" type="Control" unique_id=2146714292]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -13,7 +14,7 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_game")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=22057012]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -22,21 +23,16 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.961, 0.925, 0.843, 1)
 
-[node name="MapView" type="Control" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="MapView" type="Node2D" parent="." unique_id=1067976962]
+script = ExtResource("3_mapview")
 
-[node name="MenuPanel" type="PanelContainer" parent="."]
+[node name="MenuPanel" type="PanelContainer" parent="." unique_id=124898716]
 layout_mode = 1
 offset_left = 16.0
 offset_top = 16.0
 offset_right = 136.0
 offset_bottom = 72.0
 
-[node name="MenuButton" type="Button" parent="MenuPanel"]
+[node name="MenuButton" type="Button" parent="MenuPanel" unique_id=2002950935]
 layout_mode = 2
 text = "菜单"

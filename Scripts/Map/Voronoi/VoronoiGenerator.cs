@@ -8,7 +8,7 @@ using FantasyMapGenerator.Scripts.Data;
 namespace FantasyMapGenerator.Scripts.Map.Voronoi;
 
 /// <summary>
-/// Voronoi 多边形生成器
+/// Voronoi 多边形生成器 - 基于 Delaunay 三角形的简化实现
 /// </summary>
 public class VoronoiGenerator
 {
@@ -21,162 +21,130 @@ public class VoronoiGenerator
         int n = points.Length;
         var cells = new Cell[n];
 
+        // 为每个点创建一个 cell
         for (int i = 0; i < n; i++)
         {
             cells[i] = new Cell
             {
                 Id = i,
-                Position = points[i]
+                Position = points[i],
+                Vertices = new List<Vector2>(),
+                NeighborIds = new List<int>()
             };
         }
 
+        // 收集每个点关联的三角形
+        var pointTriangles = new Dictionary<int, List<Triangle>>();
+
         foreach (var tri in triangles)
         {
-            var circumcenter = Delaunay.GetCircumcenter(
-                points[tri.V0],
-                points[tri.V1],
-                points[tri.V2]
-            );
-
-            AddNeighbor(cells[tri.V0], tri.V1);
-            AddNeighbor(cells[tri.V0], tri.V2);
-            AddNeighbor(cells[tri.V1], tri.V0);
-            AddNeighbor(cells[tri.V1], tri.V2);
-            AddNeighbor(cells[tri.V2], tri.V0);
-            AddNeighbor(cells[tri.V2], tri.V1);
+            AddTriangleToPoint(tri.V0, tri, pointTriangles);
+            AddTriangleToPoint(tri.V1, tri, pointTriangles);
+            AddTriangleToPoint(tri.V2, tri, pointTriangles);
+            
+            // 构建邻居关系
+            AddNeighbor(cells, tri.V0, tri.V1);
+            AddNeighbor(cells, tri.V0, tri.V2);
+            AddNeighbor(cells, tri.V1, tri.V0);
+            AddNeighbor(cells, tri.V1, tri.V2);
+            AddNeighbor(cells, tri.V2, tri.V0);
+            AddNeighbor(cells, tri.V2, tri.V1);
         }
 
-        foreach (var cell in cells)
+        // 为每个 cell 构建多边形 (使用三角形外心)
+        for (int i = 0; i < n; i++)
         {
-            CalculateCellPolygon(cell, points, width, height);
+            if (!pointTriangles.TryGetValue(i, out var tris) || tris.Count == 0)
+                continue;
+
+            // 对三角形按角度排序，确保顶点按顺时针/逆时针连接
+            var center = points[i];
+            tris.Sort((a, b) =>
+            {
+                float angleA = Mathf.Atan2(a.Circumcenter.Y - center.Y, a.Circumcenter.X - center.X);
+                float angleB = Mathf.Atan2(b.Circumcenter.Y - center.Y, b.Circumcenter.X - center.X);
+                return angleA.CompareTo(angleB);
+            });
+
+            var vertices = new List<Vector2>();
+            foreach (var tri in tris)
+            {
+                Vector2 v = tri.Circumcenter;
+                // 裁剪到地图范围内
+                v = ClampToMap(v, width, height);
+                vertices.Add(v);
+            }
+            
+            cells[i].Vertices = vertices;
+            cells[i].Centroid = GetCentroid(vertices);
         }
 
         return cells;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void AddNeighbor(Cell cell, int neighborId)
+    private static void AddNeighbor(Cell[] cells, int a, int b)
     {
-        if (!cell.NeighborIds.Contains(neighborId))
-        {
-            cell.NeighborIds.Add(neighborId);
-        }
+        if (!cells[a].NeighborIds.Contains(b))
+            cells[a].NeighborIds.Add(b);
     }
 
-    private static void CalculateCellPolygon(
-        Cell cell,
-        Vector2[] points,
-        float width,
-        float height)
+    private static Vector2 GetCentroid(List<Vector2> vertices)
     {
-        var pointsCopy = new Vector2[cell.NeighborIds.Count + 1];
-        pointsCopy[0] = cell.Position;
-        for (int i = 0; i < cell.NeighborIds.Count; i++)
-        {
-            pointsCopy[i + 1] = points[cell.NeighborIds[i]];
-        }
-
-        Vector2 center = CalculateCentroid(pointsCopy);
-
-        var rays = new List<(Vector2 Direction, float Angle)>();
-        for (int i = 0; i < cell.NeighborIds.Count; i++)
-        {
-            Vector2 dir = (points[cell.NeighborIds[i]] - cell.Position).Normalized();
-            rays.Add((dir, Mathf.Atan2(dir.Y, dir.X)));
-        }
-
-        rays = rays.OrderBy(r => r.Angle).ToList();
-
-        var vertices = new List<Vector2>();
-
-        for (int i = 0; i < rays.Count; i++)
-        {
-            Vector2 dir1 = rays[i].Direction;
-            Vector2 dir2 = rays[(i + 1) % rays.Count].Direction;
-
-            float angle = Mathf.Atan2(dir2.Y, dir2.X) - Mathf.Atan2(dir1.Y, dir1.X);
-            while (angle > Math.PI) angle -= 2 * (float)Math.PI;
-            while (angle < -Math.PI) angle += 2 * (float)Math.PI;
-
-            Vector2 bisector = (dir1 + dir2).Normalized();
-            float bisectorAngle = Mathf.Atan2(bisector.Y, bisector.X);
-
-            vertices.Add(FindCellVertex(cell.Position, bisectorAngle, width, height, points, cell.Id));
-        }
-
-        cell.Vertices = vertices;
-        cell.Centroid = CalculateCentroid(vertices.ToArray());
+        if (vertices.Count == 0) return Vector2.Zero;
+        Vector2 sum = Vector2.Zero;
+        foreach (var v in vertices) sum += v;
+        return sum / vertices.Count;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Vector2 FindCellVertex(
-        Vector2 center,
-        float angle,
-        float width,
-        float height,
-        Vector2[] allPoints,
-        int ownId)
+    private static void AddTriangleToPoint(int pointId, Triangle tri, Dictionary<int, List<Triangle>> pointTriangles)
     {
-        float minT = float.MaxValue;
-        Vector2 bestPoint = center + new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * width;
-
-        foreach (var p in allPoints)
+        if (!pointTriangles.ContainsKey(pointId))
         {
-            if (p == center) continue;
+            pointTriangles[pointId] = new List<Triangle>();
+        }
+        pointTriangles[pointId].Add(tri);
+    }
 
-            float dx = p.X - center.X;
-            float dy = p.Y - center.Y;
-            float perpX = -dy;
-            float perpY = dx;
+    private static Vector2 ClampToMap(Vector2 v, float width, float height)
+    {
+        // 裁剪到地图范围内，稍微向外扩展一点
+        float margin = 0;
+        return new Vector2(
+            Mathf.Clamp(v.X, -margin, width + margin),
+            Mathf.Clamp(v.Y, -margin, height + margin)
+        );
+    }
 
-            float dot = dx * perpX + dy * perpY;
-            if (Math.Abs(dot) < 0.0001f) continue;
+    private static List<Vector2> SimplifyVertices(List<Vector2> vertices, float width, float height)
+    {
+        if (vertices.Count < 3)
+            return vertices;
 
-            float t = ((center.X - p.X) * perpX + (center.Y - p.Y) * perpY) / dot;
-            if (t <= 0) continue;
+        // 简单的凸包或边界计算
+        // 由于是 Delaunay 三角形，点的顺序可能不是按边的顺序
 
-            float t2 = ((p.Y - center.Y) * dx - (p.X - center.X) * dy) / dot;
+        // 收集所有唯一的顶点
+        var unique = vertices.Distinct().ToList();
 
-            float intersectionX = center.X + perpX * t;
-            float intersectionY = center.Y + perpY * t;
+        // 如果顶点太多，选择边界上的点
+        if (unique.Count > 10)
+        {
+            // 找到边界点
+            var boundary = unique.Where(v =>
+                v.X <= 0 || v.X >= width || v.Y <= 0 || v.Y >= height
+            ).ToList();
 
-            if (intersectionX < 0 || intersectionX > width ||
-                intersectionY < 0 || intersectionY > height)
-                t = Mathf.Min(t, float.MaxValue);
-            else
-                t = Mathf.Min(t, Mathf.Sqrt(t2));
-
-            if (t < minT)
+            if (boundary.Count >= 3)
             {
-                minT = t;
-                bestPoint = new Vector2(intersectionX, intersectionY);
+                // 按角度排序形成多边形
+                var center = unique.Aggregate(Vector2.Zero, (s, v) => s + v) / unique.Count;
+                boundary = boundary.OrderBy(v =>
+                    Mathf.Atan2(v.Y - center.Y, v.X - center.X)
+                ).ToList();
+                return boundary;
             }
         }
 
-        return bestPoint;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static Vector2 CalculateCentroid(Vector2[] points)
-    {
-        if (points.Length == 0) return Vector2.Zero;
-
-        float signedArea = 0;
-        float cx = 0;
-        float cy = 0;
-
-        for (int i = 0; i < points.Length; i++)
-        {
-            int j = (i + 1) % points.Length;
-            float a = points[i].X * points[j].Y - points[j].X * points[i].Y;
-            signedArea += a;
-            cx += (points[i].X + points[j].X) * a;
-            cy += (points[i].Y + points[j].Y) * a;
-        }
-
-        signedArea *= 0.5f;
-        if (Math.Abs(signedArea) < 0.0001f) return Vector2.Zero;
-
-        return new Vector2(cx / (6 * signedArea), cy / (6 * signedArea));
+        return unique;
     }
 }
