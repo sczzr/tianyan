@@ -15,6 +15,26 @@ public class Cell
 	public bool IsLand;
 	public Color RenderColor;
 	public Vector2 Centroid;
+
+	// 地形特征
+	public int FeatureId;
+	public sbyte DistanceField;
+	public bool IsBorder;
+
+	// 水文系统
+	public ushort RiverId;
+	public ushort Flux;
+	public ushort Confluence;
+	public int Haven = -1;
+	public byte Harbor;
+
+	// 气候与生态
+	public byte BiomeId;
+	public sbyte Temperature;
+	public byte Precipitation;
+
+	// 网格引用
+	public int GridCellId;
 }
 
 public class Triangle
@@ -40,4 +60,8 @@ public class MapData
 	public float[] Heightmap;
 	public Vector2 MapSize;
 	public int Seed;
+
+	// 地貌特征和河流
+	public Feature[] Features;
+	public River[] Rivers;
 }

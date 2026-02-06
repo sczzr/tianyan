@@ -49,6 +49,101 @@ public class HeightmapProcessor
 		return heightmap;
 	}
 
+	/// <summary>
+	/// 使用模板生成高度图（直接在Cell上操作）
+	/// </summary>
+	public void GenerateFromTemplate(Cell[] cells, int width, int height, HeightmapTemplateType templateType)
+	{
+		// 初始化所有Cell的高度为0
+		foreach (var cell in cells)
+		{
+			cell.Height = 0;
+		}
+
+		string template = HeightmapTemplates.GetTemplate(templateType);
+		ApplyTemplate(cells, width, height, template);
+
+		// 应用水位线
+		foreach (var cell in cells)
+		{
+			cell.IsLand = cell.Height > WaterLevel;
+		}
+	}
+
+	/// <summary>
+	/// 使用随机模板生成高度图
+	/// </summary>
+	public void GenerateFromRandomTemplate(Cell[] cells, int width, int height)
+	{
+		var random = new Random(_prng.NextInt());
+		var templateType = HeightmapTemplates.GetRandomTemplate(random);
+		GD.Print($"Using heightmap template: {HeightmapTemplates.GetTemplateName(templateType)}");
+		GenerateFromTemplate(cells, width, height, templateType);
+	}
+
+	/// <summary>
+	/// 应用模板字符串
+	/// </summary>
+	public void ApplyTemplate(Cell[] cells, int width, int height, string template)
+	{
+		var tools = new HeightmapTools(_prng, cells, width, height);
+		var lines = template.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+
+		foreach (var line in lines)
+		{
+			var trimmed = line.Trim();
+			if (string.IsNullOrEmpty(trimmed)) continue;
+
+			var parts = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+			if (parts.Length < 2) continue;
+
+			string command = parts[0];
+			string arg1 = parts.Length > 1 ? parts[1] : "0";
+			string arg2 = parts.Length > 2 ? parts[2] : "0";
+			string arg3 = parts.Length > 3 ? parts[3] : "0";
+			string arg4 = parts.Length > 4 ? parts[4] : "0";
+
+			switch (command)
+			{
+				case "Hill":
+					tools.AddHill(arg1, arg2, arg3, arg4);
+					break;
+				case "Pit":
+					tools.AddPit(arg1, arg2, arg3, arg4);
+					break;
+				case "Range":
+					tools.AddRange(arg1, arg2, arg3, arg4);
+					break;
+				case "Trough":
+					tools.AddTrough(arg1, arg2, arg3, arg4);
+					break;
+				case "Strait":
+					tools.AddStrait(arg1, arg2);
+					break;
+				case "Mask":
+					tools.Mask(arg1);
+					break;
+				case "Smooth":
+					tools.Smooth(arg1);
+					break;
+				case "Add":
+					if (float.TryParse(arg1, out float addValue))
+						tools.Modify(arg2, addValue, 1);
+					break;
+				case "Multiply":
+					if (float.TryParse(arg1, out float multValue))
+						tools.Modify(arg2, 0, multValue);
+					break;
+				case "Invert":
+					tools.Invert(arg1, arg2);
+					break;
+			}
+		}
+
+		// 规范化高度到 [0, 1] 范围
+		NormalizeCellHeights(cells);
+	}
+
 	[MethodImpl(MethodImplOptions.AggressiveInlining)]
 	private static float DistanceFromCenter(float x, float y)
 	{
@@ -77,6 +172,31 @@ public class HeightmapProcessor
 		for (int i = 0; i < heightmap.Length; i++)
 		{
 			heightmap[i] = (heightmap[i] - min) / range;
+		}
+	}
+
+	/// <summary>
+	/// 规范化Cell高度到 [0, 1] 范围
+	/// </summary>
+	private static void NormalizeCellHeights(Cell[] cells)
+	{
+		if (cells.Length == 0) return;
+
+		float min = float.MaxValue;
+		float max = float.MinValue;
+
+		foreach (var cell in cells)
+		{
+			min = Mathf.Min(min, cell.Height);
+			max = Mathf.Max(max, cell.Height);
+		}
+
+		float range = max - min;
+		if (range < 0.0001f) range = 1f;
+
+		foreach (var cell in cells)
+		{
+			cell.Height = (cell.Height - min) / range;
 		}
 	}
 
