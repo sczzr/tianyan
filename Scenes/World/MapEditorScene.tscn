@@ -1,0 +1,136 @@
+[gd_scene format=3 uid="uid://bqrj8d32kdq3r"]
+
+[ext_resource type="Script" uid="uid://bvkiroi5t8pu2" path="res://Scripts/Scene/MapEditorScene.cs" id="1_editor"]
+
+[node name="MapEditorScene" type="Control" unique_id=2000363010]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_editor")
+
+[node name="MapContainer" type="ColorRect" parent="." unique_id=999999999]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.1, 0.15, 1)
+
+[node name="Toolbar" type="PanelContainer" parent="." unique_id=590446012]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 120.0
+grow_horizontal = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="Toolbar" unique_id=1985976453]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="ToolSection" type="VBoxContainer" parent="Toolbar/HBoxContainer" unique_id=1655974521]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+
+[node name="ToolTitle" type="Label" parent="Toolbar/HBoxContainer/ToolSection" unique_id=1345865116]
+layout_mode = 2
+text = "编辑工具"
+
+[node name="HSeparator" type="HSeparator" parent="Toolbar/HBoxContainer/ToolSection" unique_id=521955560]
+layout_mode = 2
+
+[node name="ToolButtons" type="VBoxContainer" parent="Toolbar/HBoxContainer/ToolSection" unique_id=767333521]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="HillBrushButton" type="Button" parent="Toolbar/HBoxContainer/ToolSection/ToolButtons" unique_id=1461062919]
+layout_mode = 2
+text = "山丘笔刷 (H)"
+
+[node name="PitBrushButton" type="Button" parent="Toolbar/HBoxContainer/ToolSection/ToolButtons" unique_id=1098489402]
+layout_mode = 2
+text = "坑洼笔刷 (P)"
+
+[node name="MountainBrushButton" type="Button" parent="Toolbar/HBoxContainer/ToolSection/ToolButtons" unique_id=1532913128]
+layout_mode = 2
+text = "山脉笔刷 (M)"
+
+[node name="SmoothBrushButton" type="Button" parent="Toolbar/HBoxContainer/ToolSection/ToolButtons" unique_id=480565090]
+layout_mode = 2
+text = "平滑笔刷 (S)"
+
+[node name="ValleyBrushButton" type="Button" parent="Toolbar/HBoxContainer/ToolSection/ToolButtons" unique_id=218619681]
+layout_mode = 2
+text = "河谷笔刷 (V)"
+
+[node name="AddBurgButton" type="Button" parent="Toolbar/HBoxContainer/ToolSection/ToolButtons" unique_id=876663968]
+layout_mode = 2
+text = "添加城市 (A)"
+
+[node name="RemoveBurgButton" type="Button" parent="Toolbar/HBoxContainer/ToolSection/ToolButtons" unique_id=2028503652]
+layout_mode = 2
+text = "移除城市 (D)"
+
+[node name="BrushSection" type="VBoxContainer" parent="Toolbar/HBoxContainer" unique_id=1711012642]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="BrushTitle" type="Label" parent="Toolbar/HBoxContainer/BrushSection" unique_id=1030846792]
+layout_mode = 2
+text = "笔刷设置"
+
+[node name="HSeparator2" type="HSeparator" parent="Toolbar/HBoxContainer/BrushSection" unique_id=1215188967]
+layout_mode = 2
+
+[node name="RadiusLabel" type="Label" parent="Toolbar/HBoxContainer/BrushSection" unique_id=511359467]
+layout_mode = 2
+text = "笔刷半径: 20"
+
+[node name="RadiusSlider" type="HSlider" parent="Toolbar/HBoxContainer/BrushSection" unique_id=176830552]
+layout_mode = 2
+min_value = 5.0
+value = 20.0
+
+[node name="StrengthLabel" type="Label" parent="Toolbar/HBoxContainer/BrushSection" unique_id=865326685]
+layout_mode = 2
+text = "笔刷强度: 0.5"
+
+[node name="StrengthSlider" type="HSlider" parent="Toolbar/HBoxContainer/BrushSection" unique_id=1730296378]
+layout_mode = 2
+min_value = 0.1
+max_value = 1.0
+step = 0.05
+value = 0.5
+
+[node name="ButtonSection" type="VBoxContainer" parent="Toolbar/HBoxContainer" unique_id=1463856552]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="SaveButton" type="Button" parent="Toolbar/HBoxContainer/ButtonSection" unique_id=585396674]
+layout_mode = 2
+text = "保存地图"
+
+[node name="ExportButton" type="Button" parent="Toolbar/HBoxContainer/ButtonSection" unique_id=2094692343]
+layout_mode = 2
+text = "导出场景"
+
+[node name="BackButton" type="Button" parent="Toolbar/HBoxContainer/ButtonSection" unique_id=646629834]
+layout_mode = 2
+text = "返回主菜单"
+
+[node name="GenerateButton" type="Button" parent="Toolbar/HBoxContainer/ButtonSection" unique_id=1234567890]
+layout_mode = 2
+text = "重新生成地图"
+
+[node name="Spacer" type="Control" parent="Toolbar/HBoxContainer" unique_id=1447892897]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatusLabel" type="Label" parent="Toolbar/HBoxContainer" unique_id=1201629149]
+layout_mode = 2
+text = "就绪 - 按 H/P/M/S/V 选择工具"

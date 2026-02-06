@@ -1,0 +1,85 @@
+[gd_scene format=3 uid="uid://di256ajqc8j0s"]
+
+[ext_resource type="Script" uid="uid://b4viunaqohbqw" path="res://Scripts/Scene/WorldMapDisplay.cs" id="1_display"]
+
+[node name="WorldMapDisplay" type="Control" unique_id=1136624943]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_display")
+
+[node name="InfoPanel" type="PanelContainer" parent="." unique_id=796972745]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 130.0
+grow_horizontal = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="InfoPanel" unique_id=2014755325]
+layout_mode = 2
+theme_override_constants/separation = 30
+
+[node name="InfoSection" type="VBoxContainer" parent="InfoPanel/HBoxContainer" unique_id=598285721]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="SeedLabel" type="Label" parent="InfoPanel/HBoxContainer/InfoSection" unique_id=991905047]
+layout_mode = 2
+text = "地图种子: default"
+
+[node name="PositionLabel" type="Label" parent="InfoPanel/HBoxContainer/InfoSection" unique_id=1466796223]
+layout_mode = 2
+text = "位置: (0, 0)"
+
+[node name="BiomeLabel" type="Label" parent="InfoPanel/HBoxContainer/InfoSection" unique_id=2056319754]
+layout_mode = 2
+text = "地形: 未知"
+
+[node name="ZoomLabel" type="Label" parent="InfoPanel/HBoxContainer/InfoSection" unique_id=200084488]
+layout_mode = 2
+text = "缩放: 1.00x"
+
+[node name="ControlsSection" type="VBoxContainer" parent="InfoPanel/HBoxContainer" unique_id=756682885]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ControlsTitle" type="Label" parent="InfoPanel/HBoxContainer/ControlsSection" unique_id=165360679]
+layout_mode = 2
+text = "操作说明"
+
+[node name="ControlsInfo" type="Label" parent="InfoPanel/HBoxContainer/ControlsSection" unique_id=1483608571]
+layout_mode = 2
+text = "WASD: 移动
+滚轮: 缩放
+左键拖拽: 平移"
+
+[node name="Spacer" type="Control" parent="InfoPanel/HBoxContainer" unique_id=1201294233]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ButtonSection" type="VBoxContainer" parent="InfoPanel/HBoxContainer" unique_id=524352791]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="RegenerateButton" type="Button" parent="InfoPanel/HBoxContainer/ButtonSection" unique_id=106019615]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+text = "重新生成"
+
+[node name="EditMapButton" type="Button" parent="InfoPanel/HBoxContainer/ButtonSection" unique_id=298625370]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+text = "编辑地图"
+
+[node name="EnterWorldButton" type="Button" parent="InfoPanel/HBoxContainer/ButtonSection" unique_id=755318276]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+text = "进入世界"
+
+[node name="MapRenderer" type="Node2D" parent="." unique_id=2074932656]
+z_index = -1
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1137229926]
