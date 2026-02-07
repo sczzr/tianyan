@@ -16,6 +16,7 @@ public class GameManager
     public AleaPRNG PRNG { get; private set; }
 
     private HeightmapProcessor _heightmapProcessor;
+    private const int LloydRelaxIterations = 2;
 
     public void Generate(string seed, int cellCount = 500)
     {
@@ -105,7 +106,78 @@ public class GameManager
             }
         }
 
-        return points.ToArray();
+        return RelaxPoints(points.ToArray(), width, height, LloydRelaxIterations);
+    }
+
+    private Vector2[] RelaxPoints(Vector2[] points, int width, int height, int iterations)
+    {
+        if (iterations <= 0 || points.Length == 0)
+        {
+            return points;
+        }
+
+        var current = points;
+        for (int iter = 0; iter < iterations; iter++)
+        {
+            var triangles = Delaunay.Triangulate(current);
+            var cells = VoronoiGenerator.GenerateVoronoi(current, width, height, triangles);
+            var next = new Vector2[current.Length];
+
+            for (int i = 0; i < current.Length; i++)
+            {
+                var vertices = cells[i].Vertices;
+                if (vertices != null && vertices.Count >= 3)
+                {
+                    var centroid = ComputePolygonCentroid(vertices);
+                    next[i] = new Vector2(
+                        Mathf.Clamp(centroid.X, 0, width),
+                        Mathf.Clamp(centroid.Y, 0, height)
+                    );
+                }
+                else
+                {
+                    next[i] = current[i];
+                }
+            }
+
+            current = next;
+        }
+
+        return current;
+    }
+
+    private static Vector2 ComputePolygonCentroid(List<Vector2> vertices)
+    {
+        int count = vertices.Count;
+        if (count == 0)
+        {
+            return Vector2.Zero;
+        }
+
+        double area = 0.0;
+        double cx = 0.0;
+        double cy = 0.0;
+
+        for (int i = 0; i < count; i++)
+        {
+            var a = vertices[i];
+            var b = vertices[(i + 1) % count];
+            double cross = a.X * b.Y - b.X * a.Y;
+            area += cross;
+            cx += (a.X + b.X) * cross;
+            cy += (a.Y + b.Y) * cross;
+        }
+
+        if (Math.Abs(area) < 0.00001)
+        {
+            Vector2 sum = Vector2.Zero;
+            foreach (var v in vertices) sum += v;
+            return sum / count;
+        }
+
+        area *= 0.5;
+        double factor = 1.0 / (6.0 * area);
+        return new Vector2((float)(cx * factor), (float)(cy * factor));
     }
 
     public void Generate(int seed, int cellCount = 500)

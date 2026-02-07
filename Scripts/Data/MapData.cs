@@ -64,4 +64,8 @@ public class MapData
 	// 地貌特征和河流
 	public Feature[] Features;
 	public River[] Rivers;
+
+	// 国家数据
+	public Country[] Countries;
+	public int[] CellCountryIds;
 }

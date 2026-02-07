@@ -5,7 +5,9 @@ namespace FantasyMapGenerator.Scripts.UI;
 
 public partial class MainMenu : Control
 {
-	[Export] private TextureRect _backgroundImage;
+	private ColorRect _background;
+	private Window _rootWindow;
+	private Vector2I _lastWindowSize;
 	[Export] private PanelContainer _menuPanel;
 	[Export] private VBoxContainer _menuVBox;
 	[Export] private Label _titleLabel;
@@ -22,6 +24,7 @@ public partial class MainMenu : Control
 	public override void _Ready()
 	{
 		GD.Print("MainMenu _Ready called");
+		_background = GetNode<ColorRect>("Background");
 		_translationManager = TranslationManager.Instance;
 		_translationManager.LanguageChanged += OnLanguageChanged;
 
@@ -33,6 +36,55 @@ public partial class MainMenu : Control
 		
 		SetupMenuItems();
 		UpdateUIText();
+
+		_rootWindow = GetTree().Root;
+		_lastWindowSize = DisplayServer.WindowGetSize();
+		DisplayServer.WindowSetFlag(DisplayServer.WindowFlags.ResizeDisabled, false);
+		var windowMode = DisplayServer.WindowGetMode();
+		var resizable = !DisplayServer.WindowGetFlag(DisplayServer.WindowFlags.ResizeDisabled);
+		var minSize = DisplayServer.WindowGetMinSize();
+		var maxSize = DisplayServer.WindowGetMaxSize();
+		GD.Print($"MainMenu initial sizes: window={_rootWindow?.Size} ds_window={_lastWindowSize} viewport={GetViewportRect().Size} self={Size} background={_background?.Size}");
+		GD.Print($"MainMenu window state: mode={windowMode} resizable={resizable} min={minSize} max={maxSize}");
+		if (_rootWindow != null)
+		{
+			_rootWindow.SizeChanged += OnWindowSizeChanged;
+		}
+		OnWindowSizeChanged();
+	}
+
+	public override void _ExitTree()
+	{
+		if (_rootWindow != null)
+		{
+			_rootWindow.SizeChanged -= OnWindowSizeChanged;
+		}
+	}
+
+	private void OnWindowSizeChanged()
+	{
+		var targetSize = (Vector2)DisplayServer.WindowGetSize();
+		if (targetSize == Vector2.Zero)
+		{
+			targetSize = _rootWindow?.Size ?? GetViewportRect().Size;
+		}
+		Size = targetSize;
+		if (_background != null)
+		{
+			_background.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+			_background.Size = targetSize;
+		}
+		GD.Print($"MainMenu resized: window={_rootWindow?.Size} ds_window={DisplayServer.WindowGetSize()} viewport={GetViewportRect().Size} self={Size} background={_background?.Size}");
+	}
+
+	public override void _Process(double delta)
+	{
+		var current = DisplayServer.WindowGetSize();
+		if (current != _lastWindowSize)
+		{
+			_lastWindowSize = current;
+			OnWindowSizeChanged();
+		}
 	}
 
 	private void OnLanguageChanged(string language)

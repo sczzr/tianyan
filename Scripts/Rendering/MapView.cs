@@ -10,7 +10,7 @@ namespace FantasyMapGenerator.Scripts.Rendering;
 /// <summary>
 /// 地图视图节点，负责渲染地图
 /// </summary>
-public partial class MapView : Node2D
+public partial class MapView : Control
 {
 	[Export]
 	public int CellCount
@@ -19,7 +19,7 @@ public partial class MapView : Node2D
 		set
 		{
 			_cellCount = value;
-			if (_mapGenerator != null)
+			if (_mapGenerator != null && AutoRegenerate)
 			{
 				GenerateMap();
 				QueueRedraw();
@@ -28,16 +28,201 @@ public partial class MapView : Node2D
 	}
 
 	[Export]
-	public bool AutoRegenerate { get; set; } = false;
+	public bool AutoRegenerate { get; set; } = true;
 
 	[Export]
-	public bool ShowRivers { get; set; } = true;
+	public bool ShowRivers
+	{
+		get => _showRivers;
+		set
+		{
+			_showRivers = value;
+			QueueRedraw();
+		}
+	}
 
 	[Export]
-	public bool ShowOceanLayers { get; set; } = true;
+	public bool ShowOceanLayers
+	{
+		get => _showOceanLayers;
+		set
+		{
+			_showOceanLayers = value;
+			QueueRedraw();
+		}
+	}
 
 	[Export]
-	public bool UseBiomeColors { get; set; } = true;
+	public bool UseBiomeColors
+	{
+		get => _useBiomeColors;
+		set
+		{
+			_useBiomeColors = value;
+			QueueRedraw();
+		}
+	}
+
+	[Export]
+	public bool ShowTerrainLayer
+	{
+		get => _showTerrainLayer;
+		set
+		{
+			_showTerrainLayer = value;
+			QueueRedraw();
+		}
+	}
+
+	[Export]
+	public bool ShowNames
+	{
+		get => _showNames;
+		set
+		{
+			_showNames = value;
+			QueueRedraw();
+		}
+	}
+
+	public enum TerrainStyle
+	{
+		Heightmap = 0,
+		Contour = 1,
+		Heatmap = 2
+	}
+
+	[Export]
+	public TerrainStyle TerrainStyleMode
+	{
+		get => _terrainStyleMode;
+		set
+		{
+			_terrainStyleMode = value;
+			QueueRedraw();
+		}
+	}
+
+	[Export]
+	public bool ShowCountries
+	{
+		get => _showCountries;
+		set
+		{
+			_showCountries = value;
+			QueueRedraw();
+		}
+	}
+
+	[Export]
+	public bool ShowCountryBorders
+	{
+		get => _showCountryBorders;
+		set
+		{
+			_showCountryBorders = value;
+			QueueRedraw();
+		}
+	}
+
+	[Export]
+	public int CountryCount
+	{
+		get => _countryCount;
+		set
+		{
+			_countryCount = Mathf.Clamp(value, 1, 128);
+			if (_mapGenerator?.Data?.Cells != null)
+			{
+				GenerateCountries();
+				QueueRedraw();
+			}
+		}
+	}
+
+	[Export]
+	public float CountryBorderWidth
+	{
+		get => _countryBorderWidth;
+		set
+		{
+			_countryBorderWidth = Mathf.Max(0.5f, value);
+			QueueRedraw();
+		}
+	}
+
+	[Export]
+	public float CountryFillAlpha
+	{
+		get => _countryFillAlpha;
+		set
+		{
+			_countryFillAlpha = Mathf.Clamp(value, 0.1f, 1.0f);
+			QueueRedraw();
+		}
+	}
+
+	[Export]
+	public Color CountryBorderColor { get; set; } = new Color(0.12f, 0.1f, 0.08f, 0.9f);
+
+	[Export]
+	public int MapWidth
+	{
+		get => _mapWidth;
+		set
+		{
+			_mapWidth = Mathf.Clamp(value, 128, 4096);
+			_canvasSize = new Vector2(_mapWidth, _canvasSize.Y);
+			if (_mapGenerator != null)
+			{
+				_mapGenerator.MapWidth = _mapWidth;
+				if (AutoRegenerate)
+				{
+					GenerateMap();
+				}
+			}
+			QueueRedraw();
+		}
+	}
+
+	[Export]
+	public int MapHeight
+	{
+		get => _mapHeight;
+		set
+		{
+			_mapHeight = Mathf.Clamp(value, 128, 4096);
+			_canvasSize = new Vector2(_canvasSize.X, _mapHeight);
+			if (_mapGenerator != null)
+			{
+				_mapGenerator.MapHeight = _mapHeight;
+				if (AutoRegenerate)
+				{
+					GenerateMap();
+				}
+			}
+			QueueRedraw();
+		}
+	}
+
+	[Export]
+	public float RiverDensity
+	{
+		get => _riverDensity;
+		set
+		{
+			_riverDensity = Mathf.Clamp(value, 0.25f, 3f);
+			if (_mapGenerator != null)
+			{
+				_mapGenerator.RiverDensity = _riverDensity;
+				if (AutoRegenerate)
+				{
+					GenerateMap();
+					QueueRedraw();
+				}
+			}
+		}
+	}
 
 	[Export]
 	public float ViewScale
@@ -45,7 +230,7 @@ public partial class MapView : Node2D
 		get => _viewScale;
 		set
 		{
-			_viewScale = Mathf.Clamp(value, 0.5f, 2.0f);
+			_viewScale = Mathf.Clamp(value, 0.05f, 5.0f);
 			QueueRedraw();
 		}
 	}
@@ -53,19 +238,70 @@ public partial class MapView : Node2D
 	// 颜色常量
 	private static readonly Color OceanLayerColor = new Color(0.2f, 0.5f, 0.8f);
 	private static readonly Color RiverColor = new Color(0.3f, 0.6f, 0.9f);
+	private static readonly Color HeatmapLowColor = new Color(0.12f, 0.25f, 0.85f);
+	private static readonly Color HeatmapHighColor = new Color(0.92f, 0.25f, 0.15f);
+	private static readonly Color NameColor = new Color(0.12f, 0.1f, 0.08f, 0.85f);
+	private const float SharedVertexEpsilon = 0.01f;
 
 	private int _cellCount = 2000;
+	private int _mapWidth = 512;
+	private int _mapHeight = 512;
+	private float _riverDensity = 1f;
 	private MapGenerator _mapGenerator;
 	private bool _isGenerating = false;
 	private float _viewScale = 1f;
+	private Vector2 _canvasSize = new Vector2(512, 512);
+	private Vector2 _cameraMapOffset = Vector2.Zero;
+	private bool _showRivers = true;
+	private bool _showOceanLayers = true;
+	private bool _useBiomeColors = true;
+	private bool _showTerrainLayer = true;
+	private bool _showNames = true;
+	private TerrainStyle _terrainStyleMode = TerrainStyle.Heightmap;
+	private bool _showCountries = true;
+	private bool _showCountryBorders = true;
+	private int _countryCount = 12;
+	private float _countryBorderWidth = 2f;
+	private float _countryFillAlpha = 0.85f;
+	private int[] _cellCountryIds;
+	private List<Country> _countries = new();
 
 	// 选择状态
 	private int _selectedCellId = -1;
 	[Signal] public delegate void CellSelectedEventHandler(int cellId);
 
+	[Export]
+	public Vector2 CanvasSize
+	{
+		get => _canvasSize;
+		set
+		{
+			_canvasSize = new Vector2(
+				Mathf.Clamp(value.X, 128, 4096),
+				Mathf.Clamp(value.Y, 128, 4096)
+			);
+			QueueRedraw();
+		}
+	}
+
+	[Export]
+	public Vector2 CameraMapOffset
+	{
+		get => _cameraMapOffset;
+		set
+		{
+			_cameraMapOffset = value;
+			QueueRedraw();
+		}
+	}
+
 	public override void _Ready()
 	{
 		_mapGenerator = new MapGenerator();
+		_mapGenerator.MapWidth = _mapWidth;
+		_mapGenerator.MapHeight = _mapHeight;
+		_mapGenerator.RiverDensity = _riverDensity;
+		_canvasSize = new Vector2(_mapWidth, _mapHeight);
 		GenerateMap();
 	}
 
@@ -76,6 +312,7 @@ public partial class MapView : Node2D
 		_selectedCellId = -1;
 
 		_mapGenerator.GenerateWithNewSeed(_cellCount);
+		GenerateCountries();
 		QueueRedraw();
 
 		_isGenerating = false;
@@ -88,6 +325,7 @@ public partial class MapView : Node2D
 		_selectedCellId = -1;
 
 		_mapGenerator.Generate(seed, _cellCount);
+		GenerateCountries();
 		QueueRedraw();
 
 		_isGenerating = false;
@@ -155,7 +393,7 @@ public partial class MapView : Node2D
 				}
 				else
 				{
-					color = UseBiomeColors ? BiomeData.GetColor(cell.BiomeId) : cell.RenderColor;
+					color = GetCellRenderColor(cell);
 				}
 
 				var colors = new Color[cell.Vertices.Count];
@@ -176,7 +414,7 @@ public partial class MapView : Node2D
 			}
 			else if (cell.Vertices != null && cell.Vertices.Count == 2)
 			{
-				Color color = UseBiomeColors ? BiomeData.GetColor(cell.BiomeId) : cell.RenderColor;
+				Color color = GetCellRenderColor(cell);
 				DrawLine(cell.Vertices[0], cell.Vertices[1], color, 1f);
 			}
 		}
@@ -189,10 +427,21 @@ public partial class MapView : Node2D
 			DrawOceanLayers();
 		}
 
+		// 2.5 绘制国家边界
+		if (ShowCountries && ShowCountryBorders)
+		{
+			DrawCountryBorders();
+		}
+
 		// 3. 绘制河流
 		if (ShowRivers)
 		{
 			DrawRivers();
+		}
+
+		if (ShowNames && ShowCountries)
+		{
+			DrawCountryNames();
 		}
 	}
 
@@ -278,7 +527,8 @@ public partial class MapView : Node2D
 			if (mouseButton.ButtonIndex == MouseButton.Left)
 			{
 				// 计算点击的Cell
-				var mapPos = TransformToMapCoordinates(mouseButton.Position);
+				var localPos = GetLocalMousePosition();
+				var mapPos = TransformToMapCoordinates(localPos);
 				var cellId = GetCellAtPosition(mapPos);
 				
 				if (cellId != -1)
@@ -299,6 +549,237 @@ public partial class MapView : Node2D
 				GenerateMap();
 			}
 		}
+	}
+
+	private Color GetCellRenderColor(Cell cell)
+	{
+		if (ShowCountries && _cellCountryIds != null && cell.Id >= 0 && cell.Id < _cellCountryIds.Length)
+		{
+			var countryId = _cellCountryIds[cell.Id];
+			if (countryId >= 0 && countryId < _countries.Count)
+			{
+				var color = _countries[countryId].Color;
+				color.A *= _countryFillAlpha;
+				return color;
+			}
+		}
+
+		if (UseBiomeColors)
+		{
+			return BiomeData.GetColor(cell.BiomeId);
+		}
+
+		if (ShowTerrainLayer)
+		{
+			return GetTerrainColor(cell);
+		}
+
+		return new Color(0, 0, 0, 0);
+	}
+
+	private Color GetTerrainColor(Cell cell)
+	{
+		if (!cell.IsLand)
+		{
+			return new Color(OceanLayerColor.R, OceanLayerColor.G, OceanLayerColor.B, 0.8f);
+		}
+
+		float height = Mathf.Clamp(cell.Height, 0f, 1f);
+		switch (_terrainStyleMode)
+		{
+			case TerrainStyle.Contour:
+				const int bands = 8;
+				float bandValue = Mathf.Floor(height * bands) / bands;
+				return LerpColor(HeatmapLowColor, HeatmapHighColor, bandValue);
+			case TerrainStyle.Heatmap:
+				return LerpColor(HeatmapLowColor, HeatmapHighColor, height);
+			default:
+				return cell.RenderColor;
+		}
+	}
+
+	private int GetCountryId(int cellId)
+	{
+		if (_cellCountryIds == null || cellId < 0 || cellId >= _cellCountryIds.Length)
+		{
+			return -1;
+		}
+
+		return _cellCountryIds[cellId];
+	}
+
+	private void GenerateCountries()
+	{
+		if (_mapGenerator?.Data?.Cells == null)
+		{
+			return;
+		}
+
+		var cells = _mapGenerator.Data.Cells;
+		_cellCountryIds = new int[cells.Length];
+		Array.Fill(_cellCountryIds, -1);
+		_countries = new List<Country>();
+
+		var landCellIds = new List<int>();
+		for (int i = 0; i < cells.Length; i++)
+		{
+			if (cells[i].IsLand)
+			{
+				landCellIds.Add(i);
+			}
+		}
+
+		if (landCellIds.Count == 0)
+		{
+			_mapGenerator.Data.Countries = Array.Empty<Country>();
+			_mapGenerator.Data.CellCountryIds = _cellCountryIds;
+			return;
+		}
+
+		var countryCount = Mathf.Clamp(_countryCount, 1, landCellIds.Count);
+		var available = new List<int>(landCellIds);
+		var seedCells = new List<int>();
+
+		for (int i = 0; i < countryCount; i++)
+		{
+			var index = _mapGenerator.PRNG.NextInt(0, available.Count - 1);
+			var seedCellId = available[index];
+			available.RemoveAt(index);
+			seedCells.Add(seedCellId);
+
+			var country = new Country
+			{
+				Id = i,
+				Name = $"国家 {i + 1}",
+				Color = GenerateCountryColor(i, countryCount),
+				CapitalCellId = seedCellId
+			};
+
+			_countries.Add(country);
+			_cellCountryIds[seedCellId] = i;
+		}
+
+		var queue = new Queue<int>(seedCells);
+		while (queue.Count > 0)
+		{
+			var cellId = queue.Dequeue();
+			var countryId = _cellCountryIds[cellId];
+			var cell = cells[cellId];
+			foreach (var neighborId in cell.NeighborIds)
+			{
+				if (neighborId < 0 || neighborId >= cells.Length)
+				{
+					continue;
+				}
+
+				if (!cells[neighborId].IsLand || _cellCountryIds[neighborId] != -1)
+				{
+					continue;
+				}
+
+				_cellCountryIds[neighborId] = countryId;
+				queue.Enqueue(neighborId);
+			}
+		}
+
+		for (int i = 0; i < cells.Length; i++)
+		{
+			if (!cells[i].IsLand || _cellCountryIds[i] != -1)
+			{
+				continue;
+			}
+
+			var closestCountry = 0;
+			var closestDist = float.MaxValue;
+			for (int c = 0; c < seedCells.Count; c++)
+			{
+				var seedCellId = seedCells[c];
+				var dist = cells[i].Position.DistanceSquaredTo(cells[seedCellId].Position);
+				if (dist < closestDist)
+				{
+					closestDist = dist;
+					closestCountry = c;
+				}
+			}
+
+			_cellCountryIds[i] = closestCountry;
+		}
+
+		foreach (var country in _countries)
+		{
+			country.CellIds.Clear();
+		}
+
+		for (int i = 0; i < _cellCountryIds.Length; i++)
+		{
+			var countryId = _cellCountryIds[i];
+			if (countryId >= 0 && countryId < _countries.Count)
+			{
+				_countries[countryId].CellIds.Add(i);
+			}
+		}
+
+		for (int i = 0; i < _countries.Count; i++)
+		{
+			var country = _countries[i];
+			if (country.CellIds.Count == 0)
+			{
+				continue;
+			}
+
+			Vector2 sum = Vector2.Zero;
+			foreach (var cellId in country.CellIds)
+			{
+				sum += cells[cellId].Position;
+			}
+
+			country.Center = sum / country.CellIds.Count;
+		}
+
+		_mapGenerator.Data.Countries = _countries.ToArray();
+		_mapGenerator.Data.CellCountryIds = _cellCountryIds;
+	}
+
+	private Color GenerateCountryColor(int index, int count)
+	{
+		var hue = count > 0 ? (float)index / count : 0f;
+		var hueOffset = _mapGenerator.PRNG.NextRange(-0.03f, 0.03f);
+		hue = Mathf.PosMod(hue + hueOffset, 1f);
+		var saturation = 0.45f + _mapGenerator.PRNG.NextRange(-0.05f, 0.1f);
+		var value = 0.85f + _mapGenerator.PRNG.NextRange(-0.05f, 0.05f);
+		return Color.FromHsv(hue, Mathf.Clamp(saturation, 0.25f, 0.9f), Mathf.Clamp(value, 0.6f, 0.95f));
+	}
+
+	private bool TryGetSharedEdge(List<Vector2> verticesA, List<Vector2> verticesB, out Vector2 v1, out Vector2 v2)
+	{
+		v1 = Vector2.Zero;
+		v2 = Vector2.Zero;
+		int found = 0;
+		float epsilonSq = SharedVertexEpsilon * SharedVertexEpsilon;
+
+		for (int i = 0; i < verticesA.Count; i++)
+		{
+			var a = verticesA[i];
+			for (int j = 0; j < verticesB.Count; j++)
+			{
+				var b = verticesB[j];
+				if (a.DistanceSquaredTo(b) <= epsilonSq)
+				{
+					if (found == 0)
+					{
+						v1 = a;
+						found = 1;
+					}
+					else if (found == 1 && a.DistanceSquaredTo(v1) > epsilonSq)
+					{
+						v2 = a;
+						return true;
+					}
+				}
+			}
+		}
+
+		return false;
 	}
 
 	private void SelectCell(int cellId)
@@ -343,6 +824,48 @@ public partial class MapView : Node2D
 		return _mapGenerator?.Data;
 	}
 
+	private void DrawCountryNames()
+	{
+		if (_countries == null || _countries.Count == 0)
+		{
+			return;
+		}
+
+		var font = GetThemeFont("font", "Label");
+		if (font == null)
+		{
+			return;
+		}
+
+		int fontSize = GetThemeFontSize("font_size", "Label");
+		if (fontSize <= 0)
+		{
+			fontSize = 14;
+		}
+
+		foreach (var country in _countries)
+		{
+			if (country.CellIds == null || country.CellIds.Count == 0)
+			{
+				continue;
+			}
+
+			var screenPos = TransformToScreenCoordinates(country.Center);
+			DrawString(font, screenPos, country.Name, HorizontalAlignment.Center, -1, fontSize, NameColor);
+		}
+	}
+
+	private static Color LerpColor(Color from, Color to, float t)
+	{
+		t = Mathf.Clamp(t, 0f, 1f);
+		return new Color(
+			Mathf.Lerp(from.R, to.R, t),
+			Mathf.Lerp(from.G, to.G, t),
+			Mathf.Lerp(from.B, to.B, t),
+			Mathf.Lerp(from.A, to.A, t)
+		);
+	}
+
 	// 缓存变换参数
 	private float _currentScale = 1f;
 	private Vector2 _currentOffset = Vector2.Zero;
@@ -375,8 +898,16 @@ public partial class MapView : Node2D
 	private void UpdateTransformParameters()
 	{
 		// 获取当前节点的绘制边界
-		var viewSize = GetViewportRect().Size;
-		var mapSize = _mapGenerator?.Data?.MapSize ?? new Vector2(1024, 1024);
+		var viewSize = Size;
+		if (viewSize == Vector2.Zero)
+		{
+			viewSize = GetViewportRect().Size;
+		}
+		var mapSize = _canvasSize;
+		if (mapSize == Vector2.Zero)
+		{
+			mapSize = _mapGenerator?.Data?.MapSize ?? new Vector2(1024, 1024);
+		}
 
 		// 计算缩放比例（留一点边距）
 		float margin = 20f;
@@ -388,5 +919,69 @@ public partial class MapView : Node2D
 		var scaledMapSize = mapSize * _currentScale;
 		// 偏移量 = 边距 + (视口剩余空间的一半)
 		_currentOffset = new Vector2(margin, margin) + (viewSize - scaledMapSize) / 2;
+		_currentOffset -= _cameraMapOffset * _currentScale;
+	}
+
+	public override void _Notification(int what)
+	{
+		if (what == NotificationResized)
+		{
+			QueueRedraw();
+		}
+	}
+
+	private void DrawCountryBorders()
+	{
+		if (_cellCountryIds == null || _mapGenerator?.Data?.Cells == null)
+		{
+			return;
+		}
+
+		var cells = _mapGenerator.Data.Cells;
+		for (int i = 0; i < cells.Length; i++)
+		{
+			var cell = cells[i];
+			if (cell.Vertices == null || cell.Vertices.Count < 2)
+			{
+				continue;
+			}
+
+			var countryId = GetCountryId(cell.Id);
+			if (countryId < 0)
+			{
+				continue;
+			}
+
+			foreach (var neighborId in cell.NeighborIds)
+			{
+				if (neighborId <= cell.Id)
+				{
+					continue;
+				}
+
+				if (neighborId < 0 || neighborId >= cells.Length)
+				{
+					continue;
+				}
+
+				if (_cellCountryIds[neighborId] == countryId)
+				{
+					continue;
+				}
+
+				var neighbor = cells[neighborId];
+				if (neighbor.Vertices == null || neighbor.Vertices.Count < 2)
+				{
+					continue;
+				}
+
+				if (TryGetSharedEdge(cell.Vertices, neighbor.Vertices, out var v1, out var v2))
+				{
+					var p1 = TransformToScreenCoordinates(v1);
+					var p2 = TransformToScreenCoordinates(v2);
+					DrawLine(p1, p2, CountryBorderColor, _countryBorderWidth);
+				}
+			}
+		}
 	}
 }

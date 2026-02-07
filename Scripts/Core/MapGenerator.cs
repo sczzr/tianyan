@@ -21,6 +21,9 @@ public class MapGenerator
     public int CellCount { get; private set; }
     public MapData Data { get; private set; }
     public AleaPRNG PRNG { get; private set; }
+    public int MapWidth { get; set; } = 512;
+    public int MapHeight { get; set; } = 512;
+    public float RiverDensity { get; set; } = 1f;
 
     private HeightmapProcessor _heightmapProcessor;
 
@@ -30,6 +33,8 @@ public class MapGenerator
     public HeightmapTemplateType TemplateType { get; set; } = HeightmapTemplateType.HighIsland;
     public bool RandomTemplate { get; set; } = true;
 
+    private const int LloydRelaxIterations = 2;
+
     /// <summary>
     /// 完整地图生成（包含河流、湖泊、生物群落等）
     /// </summary>
@@ -38,8 +43,8 @@ public class MapGenerator
         CellCount = cellCount;
         PRNG = new AleaPRNG(seed);
 
-        int width = 512;
-        int height = 512;
+        int width = Math.Max(128, MapWidth);
+        int height = Math.Max(128, MapHeight);
         MapSize = new Vector2(width, height);
 
         GD.Print($"[MapGenerator] 开始生成地图 Seed={seed}, Cells={cellCount}");
@@ -101,7 +106,7 @@ public class MapGenerator
 
         // 阶段7: 河流生成
         GD.Print("[MapGenerator] 阶段7: 生成河流...");
-        var riverGenerator = new RiverGenerator(cells, features, PRNG, resolvedHeights, WaterLevel);
+        var riverGenerator = new RiverGenerator(cells, features, PRNG, resolvedHeights, RiverDensity, WaterLevel);
         var rivers = riverGenerator.Generate();
         GD.Print($"[MapGenerator] 生成了 {rivers.Count} 条河流");
 
@@ -146,8 +151,8 @@ public class MapGenerator
         CellCount = cellCount;
         PRNG = new AleaPRNG(seed);
 
-        int width = 512;
-        int height = 512;
+        int width = Math.Max(128, MapWidth);
+        int height = Math.Max(128, MapHeight);
         MapSize = new Vector2(width, height);
 
         var points = GenerateRandomPoints(cellCount, width, height);
@@ -288,12 +293,85 @@ public class MapGenerator
             }
         }
 
-        for (int i = 0; i < Math.Min(3, points.Count); i++)
+        var relaxed = RelaxPoints(points.ToArray(), width, height, LloydRelaxIterations);
+
+        for (int i = 0; i < Math.Min(3, relaxed.Length); i++)
         {
-            GD.Print($"[GenerateRandomPoints] Point {i}: ({points[i].X}, {points[i].Y})");
+            GD.Print($"[GenerateRandomPoints] Point {i}: ({relaxed[i].X}, {relaxed[i].Y})");
         }
 
-        return points.ToArray();
+        return relaxed;
+    }
+
+    private Vector2[] RelaxPoints(Vector2[] points, int width, int height, int iterations)
+    {
+        if (iterations <= 0 || points.Length == 0)
+        {
+            return points;
+        }
+
+        var current = points;
+        for (int iter = 0; iter < iterations; iter++)
+        {
+            var triangles = Delaunay.Triangulate(current);
+            var cells = VoronoiGenerator.GenerateVoronoi(current, width, height, triangles);
+            var next = new Vector2[current.Length];
+
+            for (int i = 0; i < current.Length; i++)
+            {
+                var vertices = cells[i].Vertices;
+                if (vertices != null && vertices.Count >= 3)
+                {
+                    var centroid = ComputePolygonCentroid(vertices);
+                    next[i] = new Vector2(
+                        Mathf.Clamp(centroid.X, 0, width),
+                        Mathf.Clamp(centroid.Y, 0, height)
+                    );
+                }
+                else
+                {
+                    next[i] = current[i];
+                }
+            }
+
+            current = next;
+        }
+
+        return current;
+    }
+
+    private static Vector2 ComputePolygonCentroid(List<Vector2> vertices)
+    {
+        int count = vertices.Count;
+        if (count == 0)
+        {
+            return Vector2.Zero;
+        }
+
+        double area = 0.0;
+        double cx = 0.0;
+        double cy = 0.0;
+
+        for (int i = 0; i < count; i++)
+        {
+            var a = vertices[i];
+            var b = vertices[(i + 1) % count];
+            double cross = a.X * b.Y - b.X * a.Y;
+            area += cross;
+            cx += (a.X + b.X) * cross;
+            cy += (a.Y + b.Y) * cross;
+        }
+
+        if (Math.Abs(area) < 0.00001)
+        {
+            Vector2 sum = Vector2.Zero;
+            foreach (var v in vertices) sum += v;
+            return sum / count;
+        }
+
+        area *= 0.5;
+        double factor = 1.0 / (6.0 * area);
+        return new Vector2((float)(cx * factor), (float)(cy * factor));
     }
 
     public void Generate(int seed, int cellCount = 500)

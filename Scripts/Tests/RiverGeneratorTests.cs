@@ -110,7 +110,7 @@ namespace FantasyMapGenerator.Scripts.Tests
             cells[1].Precipitation = 100;
 
             float[] heights = cells.Select(c => c.Height).ToArray();
-            var generator = new RiverGenerator(cells, new List<Feature>(), prng, heights, waterLevel);
+            var generator = new RiverGenerator(cells, new List<Feature>(), prng, heights, 1f, waterLevel);
             
             // We need to trigger DrainWater and DefineRivers
             // Generate calls these

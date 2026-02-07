@@ -140,6 +140,15 @@ text = "全屏"
 [node name="Separator4" type="HSeparator" parent="SettingsPanel/SettingsVBox" unique_id=144749963]
 layout_mode = 2
 
+[node name="ControlSpacer" type="Control" parent="SettingsPanel/SettingsVBox" unique_id=1166961090]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
+[node name="ControlSettingsButton" type="Button" parent="SettingsPanel/SettingsVBox" unique_id=1561373922]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "操作设置"
+
 [node name="SaveSpacer" type="Control" parent="SettingsPanel/SettingsVBox" unique_id=1028255294]
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2

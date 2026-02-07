@@ -18,7 +18,7 @@ public class RiverGenerator
 	private readonly float _waterLevel;
 	private readonly float[] _heights;
 
-	private const int MinFluxToFormRiver = 50;
+	private const int BaseMinFluxToFormRiver = 50;
 	private const float FluxFactor = 500f;
 	private const float MaxFluxWidth = 1f;
 	private const float LengthFactor = 200f;
@@ -26,14 +26,17 @@ public class RiverGenerator
 	private readonly Dictionary<int, List<int>> _riversData = new();
 	private readonly Dictionary<int, int> _riverParents = new();
 	private int _riverNext = 1;
+	private readonly int _minFluxToFormRiver;
 
-	public RiverGenerator(Cell[] cells, List<Feature> features, AleaPRNG prng, float[] heights, float waterLevel = 0.35f)
+	public RiverGenerator(Cell[] cells, List<Feature> features, AleaPRNG prng, float[] heights, float riverDensity = 1f, float waterLevel = 0.35f)
 	{
 		_cells = cells;
 		_features = features;
 		_prng = prng;
 		_heights = heights;
 		_waterLevel = waterLevel;
+		float density = MathF.Max(0.1f, riverDensity);
+		_minFluxToFormRiver = Math.Max(1, (int)MathF.Round(BaseMinFluxToFormRiver / density));
 	}
 
 	/// <summary>
@@ -148,7 +151,7 @@ public class RiverGenerator
 			if (downhill < 0 || _heights[cellId] <= _heights[downhill]) continue;
 
 			// 流量不足以形成河流
-			if (_cells[cellId].Flux < MinFluxToFormRiver)
+			if (_cells[cellId].Flux < _minFluxToFormRiver)
 			{
 				if (_heights[downhill] >= _waterLevel)
 					_cells[downhill].Flux = (ushort)Math.Min(_cells[downhill].Flux + _cells[cellId].Flux, ushort.MaxValue);

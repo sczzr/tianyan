@@ -20,6 +20,7 @@ public partial class Settings : Control
 	private CheckButton _fullscreenCheck;
 	private Button _backButton;
 	private Button _saveButton;
+	private Button _controlSettingsButton;
 
 	private TranslationManager _translationManager;
 
@@ -43,6 +44,7 @@ public partial class Settings : Control
 		_resolutionSelector = GetNode<OptionButton>("SettingsPanel/SettingsVBox/ResolutionSelector");
 		_fullscreenCheck = GetNode<CheckButton>("SettingsPanel/SettingsVBox/FullscreenCheck");
 		_saveButton = GetNode<Button>("SettingsPanel/SettingsVBox/SaveButton");
+		_controlSettingsButton = GetNode<Button>("SettingsPanel/SettingsVBox/ControlSettingsButton");
 
 		_translationManager = TranslationManager.Instance;
 		_translationManager.LanguageChanged += OnLanguageChanged;
@@ -58,6 +60,10 @@ public partial class Settings : Control
 		if (_saveButton != null)
 		{
 			_saveButton.Pressed += OnSavePressed;
+		}
+		if (_controlSettingsButton != null)
+		{
+			_controlSettingsButton.Pressed += OnControlSettingsPressed;
 		}
 		if (_languageSelector != null)
 		{
@@ -144,6 +150,10 @@ public partial class Settings : Control
 		{
 			_saveButton.Text = tm.Tr("save_settings");
 		}
+		if (_controlSettingsButton != null)
+		{
+			_controlSettingsButton.Text = tm.Tr("control_settings");
+		}
 	}
 	
 	private void OnFullscreenToggled(bool pressed)
@@ -204,6 +214,11 @@ public partial class Settings : Control
 		{
 			GD.PrintErr($"Failed to save settings: {error}");
 		}
+	}
+
+	private void OnControlSettingsPressed()
+	{
+		SceneNavigator.Instance.NavigateTo("res://Scenes/UI/ControlSettings.tscn");
 	}
 
 	private void SetupResolutionOptions()
