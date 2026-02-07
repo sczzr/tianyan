@@ -4,6 +4,21 @@
 [ext_resource type="Theme" uid="uid://inkwashtheme" path="res://Themes/InkWashTheme.tres" id="2_theme"]
 [ext_resource type="Script" uid="uid://dgei4p0lkynu5" path="res://Scripts/Rendering/MapView.cs" id="3_mapview"]
 
+[sub_resource type="StyleBoxFlat" id="DropdownPanelStyle"]
+bg_color = Color(0.91, 0.835, 0.71, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.788, 0.722, 0.588, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.15)
+shadow_size = 8
+shadow_offset = Vector2(2, 2)
+
 [node name="Game" type="Control" unique_id=2146714292]
 layout_mode = 3
 anchors_preset = 15
@@ -68,6 +83,18 @@ custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 text = "重新生成地图"
 
+[node name="MapViewScaleLabel" type="Label" parent="MenuPanel/MenuVBox" unique_id=124898728]
+layout_mode = 2
+text = "地图大小: 100%"
+
+[node name="MapViewScaleSlider" type="HSlider" parent="MenuPanel/MenuVBox" unique_id=124898729]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+min_value = 0.5
+max_value = 1.5
+step = 0.05
+value = 1.0
+
 [node name="SettingsButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898723]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
@@ -90,14 +117,72 @@ text = "退出游戏"
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 
-[node name="MenuButton" type="Button" parent="." unique_id=2002950935]
+[node name="TopMenu" type="HBoxContainer" parent="." unique_id=508882228]
 layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -136.0
+offset_left = 16.0
 offset_top = 16.0
-offset_right = -16.0
+offset_right = 232.0
 offset_bottom = 72.0
-grow_horizontal = 0
-text = "菜单"
+theme_override_constants/separation = 8
+
+[node name="MapMenuButton" type="Button" parent="TopMenu" unique_id=1111821090]
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+text = "地图"
+
+[node name="MapDropdown" type="PanelContainer" parent="TopMenu/MapMenuButton" unique_id=1063981455]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 4.0
+offset_bottom = 54.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("DropdownPanelStyle")
+
+[node name="DropdownVBox" type="VBoxContainer" parent="TopMenu/MapMenuButton/MapDropdown" unique_id=1180841054]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="RegenerateDropdownButton" type="Button" parent="TopMenu/MapMenuButton/MapDropdown/DropdownVBox" unique_id=1689042680]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "重新生成地图"
+
+[node name="SystemMenuButton" type="Button" parent="TopMenu" unique_id=1321736896]
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+text = "系统"
+
+[node name="SystemDropdown" type="PanelContainer" parent="TopMenu/SystemMenuButton" unique_id=580454762]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 4.0
+offset_bottom = 154.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("DropdownPanelStyle")
+
+[node name="DropdownVBox" type="VBoxContainer" parent="TopMenu/SystemMenuButton/SystemDropdown" unique_id=1854370281]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="SettingsDropdownButton" type="Button" parent="TopMenu/SystemMenuButton/SystemDropdown/DropdownVBox" unique_id=369555488]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "设置"
+
+[node name="MainMenuDropdownButton" type="Button" parent="TopMenu/SystemMenuButton/SystemDropdown/DropdownVBox" unique_id=659647827]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "返回主菜单"
+
+[node name="QuitDropdownButton" type="Button" parent="TopMenu/SystemMenuButton/SystemDropdown/DropdownVBox" unique_id=692267604]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+text = "退出游戏"

@@ -1,4 +1,5 @@
 using Godot;
+using FantasyMapGenerator.Scripts.Utils;
 
 namespace FantasyMapGenerator.Scripts.UI;
 
@@ -16,15 +17,52 @@ public partial class MainMenu : Control
 	private Button _settingsButton;
 	private Button _quitButton;
 
+	private TranslationManager _translationManager;
+
 	public override void _Ready()
 	{
 		GD.Print("MainMenu _Ready called");
-	_newGameButton = GetNode<Button>("menuPanel/menuVBox/newGameButton");
-	_loadGameButton = GetNode<Button>("menuPanel/menuVBox/loadGameButton");
-	_modManagerButton = GetNode<Button>("menuPanel/menuVBox/modManagerButton");
-	_settingsButton = GetNode<Button>("menuPanel/menuVBox/settingsButton");
-	_quitButton = GetNode<Button>("menuPanel/menuVBox/quitButton");
+		_translationManager = TranslationManager.Instance;
+		_translationManager.LanguageChanged += OnLanguageChanged;
+
+		_newGameButton = GetNode<Button>("menuPanel/menuVBox/newGameButton");
+		_loadGameButton = GetNode<Button>("menuPanel/menuVBox/loadGameButton");
+		_modManagerButton = GetNode<Button>("menuPanel/menuVBox/modManagerButton");
+		_settingsButton = GetNode<Button>("menuPanel/menuVBox/settingsButton");
+		_quitButton = GetNode<Button>("menuPanel/menuVBox/quitButton");
+		
 		SetupMenuItems();
+		UpdateUIText();
+	}
+
+	private void OnLanguageChanged(string language)
+	{
+		UpdateUIText();
+	}
+
+	private void UpdateUIText()
+	{
+		var tm = TranslationManager.Instance;
+		if (_newGameButton != null)
+		{
+			_newGameButton.Text = tm.Tr("new_game");
+		}
+		if (_loadGameButton != null)
+		{
+			_loadGameButton.Text = tm.Tr("load_game");
+		}
+		if (_modManagerButton != null)
+		{
+			_modManagerButton.Text = tm.Tr("mod_manager");
+		}
+		if (_settingsButton != null)
+		{
+			_settingsButton.Text = tm.Tr("settings");
+		}
+		if (_quitButton != null)
+		{
+			_quitButton.Text = tm.Tr("quit_game");
+		}
 	}
 
 	private void SetupMenuItems()
@@ -82,10 +120,6 @@ public partial class MainMenu : Control
 
 	private void SwitchToScene(string scenePath)
 	{
-		var error = GetTree().ChangeSceneToFile(scenePath);
-		if (error != Error.Ok)
-		{
-			GD.PrintErr($"Failed to load scene: {scenePath}");
-		}
+		SceneNavigator.Instance.NavigateTo(scenePath);
 	}
 }

@@ -54,24 +54,26 @@ public partial class LoadGame : Control
 
 	private void OnBackPressed()
 	{
-		GetTree().ChangeSceneToFile("res://Scenes/UI/MainMenu.tscn");
+		SceneNavigator.Instance.GoBack();
 	}
 
 
 
 	private void LoadSaveFiles()
 	{
+		var tm = TranslationManager.Instance;
 		var saves = new Dictionary<string, string>
 		{
-			{ "存档 001", "Save001Button" },
-			{ "存档 002", "Save002Button" },
-			{ "自动存档", "AutosaveButton" }
+			{ tm.Tr("save_slot_1"), "Save001Button" },
+			{ tm.Tr("save_slot_2"), "Save002Button" },
+			{ tm.Tr("auto_save"), "AutosaveButton" }
 		};
 		foreach (var save in saves)
 		{
 			var saveButton = GetNode<Button>($"MainPanel/MainVBox/ScrollContainer/SaveList/{save.Value}");
 			if (saveButton != null)
 			{
+				saveButton.Text = save.Key;
 				saveButton.Pressed += () => OnSavePressed(save.Key);
 			}
 		}

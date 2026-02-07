@@ -39,6 +39,17 @@ public partial class MapView : Node2D
 	[Export]
 	public bool UseBiomeColors { get; set; } = true;
 
+	[Export]
+	public float ViewScale
+	{
+		get => _viewScale;
+		set
+		{
+			_viewScale = Mathf.Clamp(value, 0.5f, 2.0f);
+			QueueRedraw();
+		}
+	}
+
 	// 颜色常量
 	private static readonly Color OceanLayerColor = new Color(0.2f, 0.5f, 0.8f);
 	private static readonly Color RiverColor = new Color(0.3f, 0.6f, 0.9f);
@@ -46,6 +57,7 @@ public partial class MapView : Node2D
 	private int _cellCount = 2000;
 	private MapGenerator _mapGenerator;
 	private bool _isGenerating = false;
+	private float _viewScale = 1f;
 
 	// 选择状态
 	private int _selectedCellId = -1;
@@ -370,7 +382,7 @@ public partial class MapView : Node2D
 		float margin = 20f;
 		float scaleX = (viewSize.X - margin * 2) / mapSize.X;
 		float scaleY = (viewSize.Y - margin * 2) / mapSize.Y;
-		_currentScale = Mathf.Min(scaleX, scaleY);
+		_currentScale = Mathf.Min(scaleX, scaleY) * _viewScale;
 
 		// 计算中心偏移
 		var scaledMapSize = mapSize * _currentScale;

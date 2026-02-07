@@ -9,6 +9,7 @@ public partial class TranslationManager : Node
 	private static TranslationManager _instance;
 	private Dictionary<string, Dictionary<string, string>> _translations;
 	private string _currentLanguage = "zh-CN";
+	private bool _initialized;
 
 	public static TranslationManager Instance
 	{
@@ -17,6 +18,7 @@ public partial class TranslationManager : Node
 			if (_instance == null)
 			{
 				_instance = new TranslationManager();
+				_instance.EnsureInitialized();
 			}
 			return _instance;
 		}
@@ -27,7 +29,7 @@ public partial class TranslationManager : Node
 		get => _currentLanguage;
 		set
 		{
-			if (_translations.ContainsKey(value))
+			if (_translations != null && _translations.ContainsKey(value))
 			{
 				_currentLanguage = value;
 				SaveLanguagePreference();
@@ -44,14 +46,21 @@ public partial class TranslationManager : Node
 		_translations = new Dictionary<string, Dictionary<string, string>>();
 	}
 
+	private void EnsureInitialized()
+	{
+		if (_initialized) return;
+		_initialized = true;
+		LoadTranslations();
+		LoadLanguagePreference();
+	}
+
 	public override void _Ready()
 	{
 		if (_instance == null)
 		{
 			_instance = this;
 		}
-		LoadTranslations();
-		LoadLanguagePreference();
+		EnsureInitialized();
 	}
 
 	private void LoadTranslations()
@@ -73,10 +82,19 @@ public partial class TranslationManager : Node
 			["load_game_title"] = "加载存档",
 			["installed_mods"] = "已安装的模组",
 			["menu"] = "菜单",
+			["map_menu"] = "地图",
+			["system_menu"] = "系统",
 			["resume"] = "返回游戏",
 			["regenerate_map"] = "重新生成地图",
+			["map_view_scale"] = "地图大小: {0}%",
 			["back_to_main_menu"] = "返回主菜单",
-			["game_paused"] = "游戏已暂停"
+			["game_paused"] = "游戏已暂停",
+			["generate_new_map"] = "生成新地图",
+			["sample_mod"] = "示例模组",
+			["save_slot_1"] = "存档 1",
+			["save_slot_2"] = "存档 2",
+			["auto_save"] = "自动存档",
+			["save_settings"] = "保存设置"
 		};
 
 		_translations["en"] = new Dictionary<string, string>
@@ -96,16 +114,28 @@ public partial class TranslationManager : Node
 			["load_game_title"] = "Load Game",
 			["installed_mods"] = "Installed Mods",
 			["menu"] = "Menu",
+			["map_menu"] = "Map",
+			["system_menu"] = "System",
 			["resume"] = "Resume",
 			["regenerate_map"] = "Regenerate Map",
+			["map_view_scale"] = "Map Size: {0}%",
 			["back_to_main_menu"] = "Back to Main Menu",
-			["game_paused"] = "Game Paused"
+			["game_paused"] = "Game Paused",
+			["generate_new_map"] = "Generate New Map",
+			["sample_mod"] = "Sample Mod",
+			["save_slot_1"] = "Save 1",
+			["save_slot_2"] = "Save 2",
+			["auto_save"] = "Auto Save",
+			["save_settings"] = "Save Settings"
 		};
 	}
 
 	private void LoadLanguagePreference()
 	{
-		_currentLanguage = "zh-CN";
+		// 先加载翻译
+		LoadTranslations();
+		
+		// 从配置文件读取保存的语言设置
 		var config = new ConfigFile();
 		var error = config.Load("user://settings.cfg");
 		if (error == Error.Ok && config.HasSection("general"))
@@ -131,6 +161,7 @@ public partial class TranslationManager : Node
 
 	public string Tr(string key)
 	{
+		EnsureInitialized();
 		if (_translations.TryGetValue(_currentLanguage, out var langDict))
 		{
 			if (langDict.TryGetValue(key, out var value))

@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://settings"]
 
-[ext_resource type="Script" path="res://Scripts/UI/Settings.cs" id="1_settings"]
+[ext_resource type="Script" uid="uid://clfoyp1odvvwn" path="res://Scripts/UI/Settings.cs" id="1_settings"]
 [ext_resource type="Theme" uid="uid://inkwashtheme" path="res://Themes/InkWashTheme.tres" id="2_theme"]
 
-[node name="Settings" type="Control"]
+[node name="Settings" type="Control" unique_id=1507304935]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -13,7 +13,7 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_settings")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1901363674]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -22,7 +22,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.961, 0.925, 0.843, 1)
 
-[node name="SettingsPanel" type="PanelContainer" parent="."]
+[node name="SettingsPanel" type="PanelContainer" parent="." unique_id=186918277]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -36,119 +36,127 @@ offset_bottom = 320.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="SettingsVBox" type="VBoxContainer" parent="SettingsPanel"]
+[node name="SettingsVBox" type="VBoxContainer" parent="SettingsPanel" unique_id=843019167]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="TitleLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
+[node name="TitleLabel" type="Label" parent="SettingsPanel/SettingsVBox" unique_id=1131341979]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
 theme_override_font_sizes/font_size = 28
 text = "设置"
 horizontal_alignment = 1
 
-[node name="TitleSpacer" type="Control" parent="SettingsPanel/SettingsVBox"]
+[node name="TitleSpacer" type="Control" parent="SettingsPanel/SettingsVBox" unique_id=1695626328]
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 
-[node name="Separator1" type="HSeparator" parent="SettingsPanel/SettingsVBox"]
+[node name="Separator1" type="HSeparator" parent="SettingsPanel/SettingsVBox" unique_id=66722644]
 layout_mode = 2
 
-[node name="AudioSpacer" type="Control" parent="SettingsPanel/SettingsVBox"]
+[node name="AudioSpacer" type="Control" parent="SettingsPanel/SettingsVBox" unique_id=1531412112]
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 
-[node name="VolumeLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
+[node name="VolumeLabel" type="Label" parent="SettingsPanel/SettingsVBox" unique_id=570314579]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "音效音量"
 
-[node name="VolumeSlider" type="HSlider" parent="SettingsPanel/SettingsVBox"]
+[node name="VolumeSlider" type="HSlider" parent="SettingsPanel/SettingsVBox" unique_id=733283513]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-min_value = 0.0
-max_value = 100.0
 value = 80.0
 
-[node name="VolumeValueLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
+[node name="VolumeValueLabel" type="Label" parent="SettingsPanel/SettingsVBox" unique_id=623129654]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.545, 0.478, 0.388, 1)
 theme_override_font_sizes/font_size = 14
 text = "80%"
 horizontal_alignment = 2
 
-[node name="MusicSpacer" type="Control" parent="SettingsPanel/SettingsVBox"]
+[node name="MusicSpacer" type="Control" parent="SettingsPanel/SettingsVBox" unique_id=646666696]
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 
-[node name="MusicLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
+[node name="MusicLabel" type="Label" parent="SettingsPanel/SettingsVBox" unique_id=929314625]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "音乐音量"
 
-[node name="MusicSlider" type="HSlider" parent="SettingsPanel/SettingsVBox"]
+[node name="MusicSlider" type="HSlider" parent="SettingsPanel/SettingsVBox" unique_id=100401526]
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
-min_value = 0.0
-max_value = 100.0
 value = 60.0
 
-[node name="MusicValueLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
+[node name="MusicValueLabel" type="Label" parent="SettingsPanel/SettingsVBox" unique_id=73343455]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.545, 0.478, 0.388, 1)
 theme_override_font_sizes/font_size = 14
 text = "60%"
 horizontal_alignment = 2
 
-[node name="Separator2" type="HSeparator" parent="SettingsPanel/SettingsVBox"]
+[node name="Separator2" type="HSeparator" parent="SettingsPanel/SettingsVBox" unique_id=1474903205]
 layout_mode = 2
 
-[node name="LangSpacer" type="Control" parent="SettingsPanel/SettingsVBox"]
+[node name="LangSpacer" type="Control" parent="SettingsPanel/SettingsVBox" unique_id=122839227]
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 
-[node name="LanguageLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
+[node name="LanguageLabel" type="Label" parent="SettingsPanel/SettingsVBox" unique_id=1842463396]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "语言"
 
-[node name="LanguageSelector" type="OptionButton" parent="SettingsPanel/SettingsVBox"]
+[node name="LanguageSelector" type="OptionButton" parent="SettingsPanel/SettingsVBox" unique_id=990907306]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 
-[node name="Separator3" type="HSeparator" parent="SettingsPanel/SettingsVBox"]
-layout_mode = 2 
+[node name="Separator3" type="HSeparator" parent="SettingsPanel/SettingsVBox" unique_id=1896998551]
+layout_mode = 2
 
-[node name="DisplaySpacer" type="Control" parent="SettingsPanel/SettingsVBox"]
+[node name="DisplaySpacer" type="Control" parent="SettingsPanel/SettingsVBox" unique_id=747446361]
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 
-[node name="ResolutionLabel" type="Label" parent="SettingsPanel/SettingsVBox"]
+[node name="ResolutionLabel" type="Label" parent="SettingsPanel/SettingsVBox" unique_id=2166542]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
 text = "分辨率"
 
-[node name="ResolutionSelector" type="OptionButton" parent="SettingsPanel/SettingsVBox"]
+[node name="ResolutionSelector" type="OptionButton" parent="SettingsPanel/SettingsVBox" unique_id=1317152500]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 
-[node name="ResolutionSpacer" type="Control" parent="SettingsPanel/SettingsVBox"]
+[node name="ResolutionSpacer" type="Control" parent="SettingsPanel/SettingsVBox" unique_id=2033924312]
 custom_minimum_size = Vector2(0, 8)
 layout_mode = 2
 
-[node name="FullscreenCheck" type="CheckButton" parent="SettingsPanel/SettingsVBox"]
+[node name="FullscreenCheck" type="CheckButton" parent="SettingsPanel/SettingsVBox" unique_id=1398521510]
 layout_mode = 2
 button_pressed = true
 text = "全屏"
 
-[node name="Separator4" type="HSeparator" parent="SettingsPanel/SettingsVBox"]
+[node name="Separator4" type="HSeparator" parent="SettingsPanel/SettingsVBox" unique_id=144749963]
 layout_mode = 2
 
-[node name="BottomSpacer" type="Control" parent="SettingsPanel/SettingsVBox"]
+[node name="SaveSpacer" type="Control" parent="SettingsPanel/SettingsVBox" unique_id=1028255294]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
+[node name="SaveButton" type="Button" parent="SettingsPanel/SettingsVBox" unique_id=1373794945]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "保存"
+
+[node name="Separator5" type="HSeparator" parent="SettingsPanel/SettingsVBox" unique_id=1203985038]
+layout_mode = 2
+
+[node name="BottomSpacer" type="Control" parent="SettingsPanel/SettingsVBox" unique_id=236627196]
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 
-[node name="BackButton" type="Button" parent="SettingsPanel/SettingsVBox"]
+[node name="BackButton" type="Button" parent="SettingsPanel/SettingsVBox" unique_id=1873583213]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 text = "返回"

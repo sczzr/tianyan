@@ -19,6 +19,7 @@ public partial class Settings : Control
 	private OptionButton _resolutionSelector;
 	private CheckButton _fullscreenCheck;
 	private Button _backButton;
+	private Button _saveButton;
 
 	private TranslationManager _translationManager;
 
@@ -31,7 +32,7 @@ public partial class Settings : Control
 		new Vector2I(2560, 1440),
 		new Vector2I(3840, 2160)
 	};
-
+	
 	public override void _Ready()
 	{
 		_backButton = GetNode<Button>("SettingsPanel/SettingsVBox/BackButton");
@@ -41,6 +42,7 @@ public partial class Settings : Control
 		_musicSlider = GetNode<HSlider>("SettingsPanel/SettingsVBox/MusicSlider");
 		_resolutionSelector = GetNode<OptionButton>("SettingsPanel/SettingsVBox/ResolutionSelector");
 		_fullscreenCheck = GetNode<CheckButton>("SettingsPanel/SettingsVBox/FullscreenCheck");
+		_saveButton = GetNode<Button>("SettingsPanel/SettingsVBox/SaveButton");
 
 		_translationManager = TranslationManager.Instance;
 		_translationManager.LanguageChanged += OnLanguageChanged;
@@ -52,6 +54,10 @@ public partial class Settings : Control
 		if (_backButton != null)
 		{
 			_backButton.Pressed += OnBackPressed;
+		}
+		if (_saveButton != null)
+		{
+			_saveButton.Pressed += OnSavePressed;
 		}
 		if (_languageSelector != null)
 		{
@@ -66,7 +72,7 @@ public partial class Settings : Control
 
 		UpdateUIText();
 	}
-
+	
 	private void SetupLanguageOptions()
 	{
 		if (_languageSelector == null) return;
@@ -85,7 +91,7 @@ public partial class Settings : Control
 			_languageSelector.Selected = 1;
 		}
 	}
-
+	
 	private void OnLanguageSelected(long index)
 	{
 		if (index == 0)
@@ -97,12 +103,12 @@ public partial class Settings : Control
 			TranslationManager.Instance.CurrentLanguage = "en";
 		}
 	}
-
+	
 	private void OnLanguageChanged(string language)
 	{
 		UpdateUIText();
 	}
-
+	
 	private void UpdateUIText()
 	{
 		var tm = TranslationManager.Instance;
@@ -134,8 +140,12 @@ public partial class Settings : Control
 		{
 			_resolutionLabel.Text = tm.Tr("resolution");
 		}
+		if (_saveButton != null)
+		{
+			_saveButton.Text = tm.Tr("save_settings");
+		}
 	}
-
+	
 	private void OnFullscreenToggled(bool pressed)
 	{
 		if (pressed)
@@ -147,10 +157,53 @@ public partial class Settings : Control
 			DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
 		}
 	}
-
+	
 	private void OnBackPressed()
 	{
-		GetTree().ChangeSceneToFile("res://Scenes/UI/MainMenu.tscn");
+		SceneNavigator.Instance.GoBack();
+	}
+
+	private void OnSavePressed()
+	{
+		var config = new ConfigFile();
+		
+		// 保存音量设置
+		if (_volumeSlider != null)
+		{
+			config.SetValue("audio", "volume", _volumeSlider.Value);
+		}
+		if (_musicSlider != null)
+		{
+			config.SetValue("audio", "music_volume", _musicSlider.Value);
+		}
+		
+		// 保存分辨率设置
+		if (_resolutionSelector != null && _resolutionSelector.Selected >= 0)
+		{
+			var res = _resolutions[_resolutionSelector.Selected];
+			config.SetValue("display", "resolution_x", res.X);
+			config.SetValue("display", "resolution_y", res.Y);
+		}
+		
+		// 保存全屏设置
+		if (_fullscreenCheck != null)
+		{
+			config.SetValue("display", "fullscreen", _fullscreenCheck.ButtonPressed);
+		}
+		
+		// 保存语言设置
+		config.SetValue("general", "language", TranslationManager.Instance.CurrentLanguage);
+		
+		// 保存到文件
+		var error = config.Save("user://settings.cfg");
+		if (error == Error.Ok)
+		{
+			GD.Print("Settings saved successfully");
+		}
+		else
+		{
+			GD.PrintErr($"Failed to save settings: {error}");
+		}
 	}
 
 	private void SetupResolutionOptions()

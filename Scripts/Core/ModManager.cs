@@ -59,6 +59,6 @@ public partial class ModManager : Control
 
 	private void OnBackPressed()
 	{
-		GetTree().ChangeSceneToFile("res://Scenes/UI/MainMenu.tscn");
+		SceneNavigator.Instance.GoBack();
 	}
 }

@@ -44,7 +44,7 @@ theme_override_constants/separation = 16
 layout_mode = 2
 theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
 theme_override_font_sizes/font_size = 28
-text = "加载存档"
+text = "load_game_title"
 horizontal_alignment = 1
 
 [node name="TitleSpacer" type="Control" parent="MainPanel/MainVBox"]
@@ -71,17 +71,17 @@ theme_override_constants/separation = 12
 [node name="Save001Button" type="Button" parent="MainPanel/MainVBox/ScrollContainer/SaveList"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
-text = "存档 001"
+text = "save_slot_1"
 
 [node name="Save002Button" type="Button" parent="MainPanel/MainVBox/ScrollContainer/SaveList"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
-text = "存档 002"
+text = "save_slot_2"
 
 [node name="AutosaveButton" type="Button" parent="MainPanel/MainVBox/ScrollContainer/SaveList"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
-text = "自动存档"
+text = "auto_save"
 
 [node name="BottomSpacer" type="Control" parent="MainPanel/MainVBox"]
 custom_minimum_size = Vector2(0, 16)
@@ -97,4 +97,4 @@ layout_mode = 2
 [node name="BackButton" type="Button" parent="MainPanel/MainVBox"]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
-text = "返回"
+text = "back"

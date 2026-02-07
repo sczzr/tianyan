@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://bnhfouhkdquv7"]
+[gd_scene format=3 uid="uid://bnhfouhkdquv7"]
 
 [ext_resource type="Script" uid="uid://bs483nvvpuvwt" path="res://Scripts/UI/MainMenu.cs" id="1_mainmenu"]
 [ext_resource type="Theme" uid="uid://inkwashtheme" path="res://Themes/InkWashTheme.tres" id="2_theme"]
@@ -13,7 +13,7 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_mainmenu")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=1508430051]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -48,14 +48,14 @@ text = "幻想地图
 生成器"
 horizontal_alignment = 1
 
-[node name="TitleSpacer" type="Control" parent="menuPanel/menuVBox"]
+[node name="TitleSpacer" type="Control" parent="menuPanel/menuVBox" unique_id=1722706785]
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 
 [node name="Separator" type="HSeparator" parent="menuPanel/menuVBox" unique_id=1547255922]
 layout_mode = 2
 
-[node name="ButtonSpacer" type="Control" parent="menuPanel/menuVBox"]
+[node name="ButtonSpacer" type="Control" parent="menuPanel/menuVBox" unique_id=1029493541]
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 
@@ -84,11 +84,11 @@ custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 text = "退出游戏"
 
-[node name="BottomSpacer" type="Control" parent="menuPanel/menuVBox"]
+[node name="BottomSpacer" type="Control" parent="menuPanel/menuVBox" unique_id=1904650929]
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
 
-[node name="Separator2" type="HSeparator" parent="menuPanel/menuVBox"]
+[node name="Separator2" type="HSeparator" parent="menuPanel/menuVBox" unique_id=1981255024]
 layout_mode = 2
 
 [node name="versionLabel" type="Label" parent="menuPanel/menuVBox" unique_id=1906896448]

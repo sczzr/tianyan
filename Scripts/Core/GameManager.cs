@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Godot;
 using FantasyMapGenerator.Scripts.Data;
 using FantasyMapGenerator.Scripts.Utils;
@@ -50,18 +51,61 @@ public class GameManager
 
     private Vector2[] GenerateRandomPoints(int count, int width, int height)
     {
-        var points = new Vector2[count];
-        int margin = 50;
-
-        for (int i = 0; i < count; i++)
+        if (count <= 0)
         {
-            points[i] = new Vector2(
-                PRNG.NextRange(margin, width - margin),
-                PRNG.NextRange(margin, height - margin)
-            );
+            return Array.Empty<Vector2>();
         }
 
-        return points;
+        float area = width * height;
+        float spacing = Mathf.Sqrt(area / Math.Max(1, count));
+        int cols = Mathf.Max(1, Mathf.CeilToInt(width / spacing));
+        int rows = Mathf.Max(1, Mathf.CeilToInt(height / spacing));
+
+        float cellWidth = width / (float)cols;
+        float cellHeight = height / (float)rows;
+        float jitterX = cellWidth * 0.45f;
+        float jitterY = cellHeight * 0.45f;
+
+        var points = new List<Vector2>(rows * cols);
+
+        for (int y = 0; y < rows; y++)
+        {
+            for (int x = 0; x < cols; x++)
+            {
+                float baseX = (x + 0.5f) * cellWidth;
+                float baseY = (y + 0.5f) * cellHeight;
+                float px = baseX + PRNG.NextRange(-jitterX, jitterX);
+                float py = baseY + PRNG.NextRange(-jitterY, jitterY);
+
+                points.Add(new Vector2(
+                    Mathf.Clamp(px, 0, width),
+                    Mathf.Clamp(py, 0, height)
+                ));
+            }
+        }
+
+        for (int i = points.Count - 1; i > 0; i--)
+        {
+            int j = PRNG.NextInt(0, i);
+            (points[i], points[j]) = (points[j], points[i]);
+        }
+
+        if (points.Count > count)
+        {
+            points.RemoveRange(count, points.Count - count);
+        }
+        else
+        {
+            while (points.Count < count)
+            {
+                points.Add(new Vector2(
+                    PRNG.NextRange(0, width),
+                    PRNG.NextRange(0, height)
+                ));
+            }
+        }
+
+        return points.ToArray();
     }
 
     public void Generate(int seed, int cellCount = 500)
