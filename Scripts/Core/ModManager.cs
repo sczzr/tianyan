@@ -51,6 +51,10 @@ public partial class ModManager : Control
 		{
 			_sampleModLabel.Text = tm.Tr("installed_mods");
 		}
+		if (_sampleModCheck != null)
+		{
+			_sampleModCheck.Text = tm.Tr("sample_mod");
+		}
 		if (_backButton != null)
 		{
 			_backButton.Text = tm.Tr("back");

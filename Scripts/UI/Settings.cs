@@ -13,6 +13,9 @@ public partial class Settings : Control
 	private Label _musicLabel;
 	private Label _languageLabel;
 	private Label _resolutionLabel;
+	private Label _fullscreenLabel;
+	private Label _controlSettingsHint;
+	private TabContainer _tabs;
 	private OptionButton _languageSelector;
 	private HSlider _volumeSlider;
 	private HSlider _musicSlider;
@@ -36,15 +39,22 @@ public partial class Settings : Control
 	
 	public override void _Ready()
 	{
-		_backButton = GetNode<Button>("SettingsPanel/SettingsVBox/BackButton");
-		_languageSelector = GetNode<OptionButton>("SettingsPanel/SettingsVBox/LanguageSelector");
-		_resolutionLabel = GetNode<Label>("SettingsPanel/SettingsVBox/ResolutionLabel");
-		_volumeSlider = GetNode<HSlider>("SettingsPanel/SettingsVBox/VolumeSlider");
-		_musicSlider = GetNode<HSlider>("SettingsPanel/SettingsVBox/MusicSlider");
-		_resolutionSelector = GetNode<OptionButton>("SettingsPanel/SettingsVBox/ResolutionSelector");
-		_fullscreenCheck = GetNode<CheckButton>("SettingsPanel/SettingsVBox/FullscreenCheck");
-		_saveButton = GetNode<Button>("SettingsPanel/SettingsVBox/SaveButton");
-		_controlSettingsButton = GetNode<Button>("SettingsPanel/SettingsVBox/ControlSettingsButton");
+		_titleLabel = GetNode<Label>("SettingsPanel/SettingsVBox/TitleLabel");
+		_tabs = GetNode<TabContainer>("SettingsPanel/SettingsVBox/Tabs");
+		_volumeLabel = GetNode<Label>("SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid/VolumeLabel");
+		_musicLabel = GetNode<Label>("SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid/MusicLabel");
+		_volumeSlider = GetNode<HSlider>("SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid/VolumeSlider");
+		_musicSlider = GetNode<HSlider>("SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid/MusicSlider");
+		_languageLabel = GetNode<Label>("SettingsPanel/SettingsVBox/Tabs/LanguagePage/LanguageGrid/LanguageLabel");
+		_languageSelector = GetNode<OptionButton>("SettingsPanel/SettingsVBox/Tabs/LanguagePage/LanguageGrid/LanguageSelector");
+		_resolutionLabel = GetNode<Label>("SettingsPanel/SettingsVBox/Tabs/DisplayPage/DisplayGrid/ResolutionLabel");
+		_resolutionSelector = GetNode<OptionButton>("SettingsPanel/SettingsVBox/Tabs/DisplayPage/DisplayGrid/ResolutionSelector");
+		_fullscreenLabel = GetNode<Label>("SettingsPanel/SettingsVBox/Tabs/DisplayPage/DisplayGrid/FullscreenLabel");
+		_fullscreenCheck = GetNode<CheckButton>("SettingsPanel/SettingsVBox/Tabs/DisplayPage/DisplayGrid/FullscreenCheck");
+		_controlSettingsHint = GetNode<Label>("SettingsPanel/SettingsVBox/Tabs/ControlsPage/ControlSettingsHint");
+		_controlSettingsButton = GetNode<Button>("SettingsPanel/SettingsVBox/Tabs/ControlsPage/ControlSettingsButton");
+		_saveButton = GetNode<Button>("SettingsPanel/SettingsVBox/ButtonsHBox/SaveButton");
+		_backButton = GetNode<Button>("SettingsPanel/SettingsVBox/ButtonsHBox/BackButton");
 
 		_translationManager = TranslationManager.Instance;
 		_translationManager.LanguageChanged += OnLanguageChanged;
@@ -146,6 +156,10 @@ public partial class Settings : Control
 		{
 			_resolutionLabel.Text = tm.Tr("resolution");
 		}
+		if (_fullscreenLabel != null)
+		{
+			_fullscreenLabel.Text = tm.Tr("fullscreen");
+		}
 		if (_saveButton != null)
 		{
 			_saveButton.Text = tm.Tr("save_settings");
@@ -153,6 +167,17 @@ public partial class Settings : Control
 		if (_controlSettingsButton != null)
 		{
 			_controlSettingsButton.Text = tm.Tr("control_settings");
+		}
+		if (_controlSettingsHint != null)
+		{
+			_controlSettingsHint.Text = tm.Tr("controls_hint");
+		}
+		if (_tabs != null)
+		{
+			_tabs.SetTabTitle(0, tm.Tr("settings_tab_audio"));
+			_tabs.SetTabTitle(1, tm.Tr("settings_tab_language"));
+			_tabs.SetTabTitle(2, tm.Tr("settings_tab_display"));
+			_tabs.SetTabTitle(3, tm.Tr("settings_tab_controls"));
 		}
 	}
 	

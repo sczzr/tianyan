@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using FantasyMapGenerator.Scripts.Data;
 
 namespace FantasyMapGenerator.Scripts.Map.Biomes;
@@ -22,12 +23,33 @@ public class BiomeAssigner
 	/// <summary>
 	/// 为所有Cell分配生物群落
 	/// </summary>
-	public void Assign()
+	public void Assign(bool useMultithreading = false)
 	{
 		// 首先生成简化的气候数据
-		GenerateClimateData();
+		GenerateClimateData(useMultithreading);
 
 		// 然后分配生物群落
+		if (useMultithreading)
+		{
+			Parallel.For(0, _cells.Length, cellId =>
+			{
+				var cell = _cells[cellId];
+
+				// 水体为海洋生物群落
+				if (cell.Height < _waterLevel)
+				{
+					cell.BiomeId = (byte)BiomeType.Marine;
+					return;
+				}
+
+				int moisture = CalculateMoisture(cellId);
+				int temperature = cell.Temperature;
+
+				cell.BiomeId = (byte)GetBiomeId(moisture, temperature, cell.Height, cell.RiverId > 0);
+			});
+			return;
+		}
+
 		for (int cellId = 0; cellId < _cells.Length; cellId++)
 		{
 			var cell = _cells[cellId];
@@ -49,7 +71,7 @@ public class BiomeAssigner
 	/// <summary>
 	/// 生成简化的气候数据
 	/// </summary>
-	private void GenerateClimateData()
+	private void GenerateClimateData(bool useMultithreading)
 	{
 		// 计算地图边界
 		float minY = float.MaxValue, maxY = float.MinValue;
@@ -64,6 +86,46 @@ public class BiomeAssigner
 
 		float heightRange = maxY - minY;
 		if (heightRange < 0.001f) heightRange = 1.0f;
+
+		if (useMultithreading)
+		{
+			Parallel.For(0, _cells.Length, i =>
+			{
+				var cell = _cells[i];
+				// 计算纬度因子 (0 = 赤道, 1 = 极地)
+				float latitudeFactor = MathF.Abs((cell.Position.Y - minY) / heightRange - 0.5f) * 2;
+
+				// 基础温度: 赤道30°C，极地-10°C
+				float baseTemp = 30 - latitudeFactor * 40;
+
+				// 海拔修正: 每100m降低0.6°C (假设高度1.0 = 1000m)
+				float heightMeters = cell.Height * 1000;
+				float tempCorrection = heightMeters * 0.006f;
+
+				cell.Temperature = (sbyte)Math.Clamp(baseTemp - tempCorrection, -40, 50);
+
+				// 计算降水量
+				// 海岸线附近降水多，内陆降水少
+				float distanceToCoast = MathF.Abs(cell.DistanceField);
+				float basePrecip = 100;
+
+				// 海岸效应
+				if (distanceToCoast <= 3)
+					basePrecip = 80 - distanceToCoast * 10;
+				else
+					basePrecip = 50 - MathF.Min(distanceToCoast - 3, 10) * 3;
+
+				// 纬度效应 (热带多雨，极地和沙漠带少雨)
+				float latitudeEffect = 1.0f;
+				if (latitudeFactor > 0.6f) // 极地
+					latitudeEffect = 0.3f;
+				else if (latitudeFactor > 0.2f && latitudeFactor < 0.4f) // 副热带高压带
+					latitudeEffect = 0.5f;
+
+				cell.Precipitation = (byte)Math.Clamp(basePrecip * latitudeEffect, 0, 100);
+			});
+			return;
+		}
 
 		foreach (var cell in _cells)
 		{

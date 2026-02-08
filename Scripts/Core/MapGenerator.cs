@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Godot;
 using FantasyMapGenerator.Scripts.Data;
 using FantasyMapGenerator.Scripts.Utils;
@@ -24,6 +25,9 @@ public class MapGenerator
     public int MapWidth { get; set; } = 512;
     public int MapHeight { get; set; } = 512;
     public float RiverDensity { get; set; } = 1f;
+    public float BoundaryPaddingScale { get; set; } = 1.5f;
+    public float BoundaryStepScale { get; set; } = 1f;
+    public bool UseMultithreading { get; set; } = true;
 
     private HeightmapProcessor _heightmapProcessor;
 
@@ -52,8 +56,10 @@ public class MapGenerator
         // 阶段1: 基础几何生成
         GD.Print("[MapGenerator] 阶段1: 生成基础几何...");
         var points = GenerateRandomPoints(cellCount, width, height);
-        var triangles = Delaunay.Triangulate(points);
-        var cells = VoronoiGenerator.GenerateVoronoi(points, width, height, triangles);
+        var triangulationPoints = BuildTriangulationPoints(points, width, height, BoundaryPaddingScale, BoundaryStepScale);
+        var triangles = Delaunay.Triangulate(triangulationPoints);
+        var cells = VoronoiGenerator.GenerateVoronoi(triangulationPoints, width, height, triangles, points.Length);
+        var displayTriangles = Delaunay.Triangulate(points);
 
         // 阶段2: 高度图生成
         GD.Print("[MapGenerator] 阶段2: 生成高度图...");
@@ -76,7 +82,20 @@ public class MapGenerator
         else
         {
             heightmap = _heightmapProcessor.GenerateHeightmap(width, height);
-            _heightmapProcessor.ApplyToCells(cells, heightmap, width, height);
+            _heightmapProcessor.ApplyToCells(cells, heightmap, width, height, UseMultithreading);
+        }
+
+        // 确保边界为陆地，避免出现海洋露出边缘
+        ForceBorderLand(cells, width, height);
+
+        Task precipitationTask = null;
+        if (UseMultithreading)
+        {
+            precipitationTask = Task.Run(() => CalculatePrecipitation(cells, width, height));
+        }
+        else
+        {
+            CalculatePrecipitation(cells, width, height);
         }
 
         // 阶段3: 特征识别
@@ -100,9 +119,16 @@ public class MapGenerator
         var depressionResolver = new DepressionResolver(cells, features, WaterLevel);
         var resolvedHeights = depressionResolver.Resolve();
 
-        // 阶段_Pre: 计算降水量
-        GD.Print("[MapGenerator] 阶段Pre: 计算降水量...");
-        CalculatePrecipitation(cells, width, height);
+        // 等待降水量计算完成
+        if (precipitationTask != null)
+        {
+            GD.Print("[MapGenerator] 阶段Pre: 等待降水量计算...");
+            precipitationTask.Wait();
+        }
+        else
+        {
+            GD.Print("[MapGenerator] 阶段Pre: 计算降水量...");
+        }
 
         // 阶段7: 河流生成
         GD.Print("[MapGenerator] 阶段7: 生成河流...");
@@ -110,17 +136,32 @@ public class MapGenerator
         var rivers = riverGenerator.Generate();
         GD.Print($"[MapGenerator] 生成了 {rivers.Count} 条河流");
 
-        // 阶段8: 生物群落分配
-        GD.Print("[MapGenerator] 阶段8: 分配生物群落...");
+        // 阶段8: 生物群落分配 / 河流路径构建（并行）
+        GD.Print("[MapGenerator] 阶段8: 分配生物群落 / 构建河流渲染路径...");
         var biomeAssigner = new BiomeAssigner(cells, WaterLevel);
-        biomeAssigner.Assign();
 
-        // 阶段9: 河流路径构建
-        GD.Print("[MapGenerator] 阶段9: 构建河流渲染路径...");
-        var riverPathBuilder = new RiverPathBuilder(cells, PRNG, width, height);
-        foreach (var river in rivers)
+        if (UseMultithreading)
         {
-            riverPathBuilder.AddMeandering(river);
+            var biomeTask = Task.Run(() => biomeAssigner.Assign(true));
+            var riverPathTask = Task.Run(() =>
+            {
+                var riverPathBuilder = new RiverPathBuilder(cells, PRNG, width, height);
+                foreach (var river in rivers)
+                {
+                    riverPathBuilder.AddMeandering(river);
+                }
+            });
+            Task.WaitAll(biomeTask, riverPathTask);
+        }
+        else
+        {
+            biomeAssigner.Assign();
+
+            var riverPathBuilder = new RiverPathBuilder(cells, PRNG, width, height);
+            foreach (var river in rivers)
+            {
+                riverPathBuilder.AddMeandering(river);
+            }
         }
 
         // 阶段10: 分配渲染颜色
@@ -132,7 +173,7 @@ public class MapGenerator
         {
             Points = points,
             Cells = cells,
-            Triangles = triangles,
+            Triangles = displayTriangles,
             Heightmap = heightmap,
             MapSize = MapSize,
             Seed = PRNG.NextInt(),
@@ -156,21 +197,24 @@ public class MapGenerator
         MapSize = new Vector2(width, height);
 
         var points = GenerateRandomPoints(cellCount, width, height);
-        var triangles = Delaunay.Triangulate(points);
-        var cells = VoronoiGenerator.GenerateVoronoi(points, width, height, triangles);
+        var triangulationPoints = BuildTriangulationPoints(points, width, height, BoundaryPaddingScale, BoundaryStepScale);
+        var triangles = Delaunay.Triangulate(triangulationPoints);
+        var cells = VoronoiGenerator.GenerateVoronoi(triangulationPoints, width, height, triangles, points.Length);
+        var displayTriangles = Delaunay.Triangulate(points);
 
         _heightmapProcessor = new HeightmapProcessor(PRNG);
         _heightmapProcessor.WaterLevel = WaterLevel;
 
         float[] heightmap = _heightmapProcessor.GenerateHeightmap(width, height);
-        _heightmapProcessor.ApplyToCells(cells, heightmap, width, height);
-        _heightmapProcessor.AssignColors(cells);
+        _heightmapProcessor.ApplyToCells(cells, heightmap, width, height, UseMultithreading);
+        ForceBorderLand(cells, width, height);
+        _heightmapProcessor.AssignColors(cells, UseMultithreading);
 
         Data = new MapData
         {
             Points = points,
             Cells = cells,
-            Triangles = triangles,
+            Triangles = displayTriangles,
             Heightmap = heightmap,
             MapSize = MapSize,
             Seed = PRNG.NextInt()
@@ -200,6 +244,25 @@ public class MapGenerator
     /// </summary>
     private void AssignRenderColors(Cell[] cells)
     {
+        if (UseMultithreading)
+        {
+            Parallel.For(0, cells.Length, i =>
+            {
+                var cell = cells[i];
+                if (cell.BiomeId > 0)
+                {
+                    // 使用生物群落颜色
+                    cell.RenderColor = BiomeData.GetColor(cell.BiomeId);
+                }
+                else
+                {
+                    // 回退到高度颜色
+                    cell.RenderColor = _heightmapProcessor.GetColorForHeight(cell.Height, cell.IsLand);
+                }
+            });
+            return;
+        }
+
         foreach (var cell in cells)
         {
             if (cell.BiomeId > 0)
@@ -303,6 +366,38 @@ public class MapGenerator
         return relaxed;
     }
 
+    private void ForceBorderLand(Cell[] cells, int width, int height)
+    {
+        float margin = 1f;
+        float minLandHeight = WaterLevel + 0.02f;
+        float maxX = width - margin;
+        float maxY = height - margin;
+
+        foreach (var cell in cells)
+        {
+            bool touchesBorder = cell.Position.X <= margin || cell.Position.X >= maxX ||
+                cell.Position.Y <= margin || cell.Position.Y >= maxY;
+
+            if (!touchesBorder && cell.Vertices != null && cell.Vertices.Count > 0)
+            {
+                foreach (var v in cell.Vertices)
+                {
+                    if (v.X <= margin || v.X >= maxX || v.Y <= margin || v.Y >= maxY)
+                    {
+                        touchesBorder = true;
+                        break;
+                    }
+                }
+            }
+
+            if (touchesBorder)
+            {
+                cell.Height = Mathf.Max(cell.Height, minLandHeight);
+                cell.IsLand = true;
+            }
+        }
+    }
+
     private Vector2[] RelaxPoints(Vector2[] points, int width, int height, int iterations)
     {
         if (iterations <= 0 || points.Length == 0)
@@ -313,8 +408,9 @@ public class MapGenerator
         var current = points;
         for (int iter = 0; iter < iterations; iter++)
         {
-            var triangles = Delaunay.Triangulate(current);
-            var cells = VoronoiGenerator.GenerateVoronoi(current, width, height, triangles);
+            var triangulationPoints = BuildTriangulationPoints(current, width, height, BoundaryPaddingScale, BoundaryStepScale);
+            var triangles = Delaunay.Triangulate(triangulationPoints);
+            var cells = VoronoiGenerator.GenerateVoronoi(triangulationPoints, width, height, triangles, current.Length);
             var next = new Vector2[current.Length];
 
             for (int i = 0; i < current.Length; i++)
@@ -338,6 +434,41 @@ public class MapGenerator
         }
 
         return current;
+    }
+
+    private static Vector2[] BuildTriangulationPoints(
+        Vector2[] points,
+        int width,
+        int height,
+        float paddingScale,
+        float stepScale)
+    {
+        if (points.Length == 0)
+        {
+            return points;
+        }
+
+        float area = width * height;
+        float spacing = Mathf.Sqrt(area / Math.Max(1, points.Length));
+        float step = Mathf.Max(1f, spacing * Math.Max(0.2f, stepScale));
+        float padding = step * Math.Max(0.5f, paddingScale);
+
+        var expanded = new List<Vector2>(points.Length + 256);
+        expanded.AddRange(points);
+
+        for (float x = -padding; x <= width + padding; x += step)
+        {
+            expanded.Add(new Vector2(x, -padding));
+            expanded.Add(new Vector2(x, height + padding));
+        }
+
+        for (float y = -padding + step; y <= height + padding - step; y += step)
+        {
+            expanded.Add(new Vector2(-padding, y));
+            expanded.Add(new Vector2(width + padding, y));
+        }
+
+        return expanded.ToArray();
     }
 
     private static Vector2 ComputePolygonCentroid(List<Vector2> vertices)

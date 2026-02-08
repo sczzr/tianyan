@@ -1,0 +1,356 @@
+[gd_scene format=3 uid="uid://sf83c2qk2c0d"]
+
+[ext_resource type="Script" uid="uid://menucontroller" path="res://Scripts/UI/MenuController.cs" id="1_menuctrl"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Toast"]
+content_margin_left = 6.0
+content_margin_top = 4.0
+content_margin_right = 6.0
+content_margin_bottom = 4.0
+bg_color = Color(0.1, 0.1, 0.12, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.9, 0.85, 0.6, 0.9)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="MenuUI" type="Control" unique_id=1070003001]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_menuctrl")
+
+[node name="MenuPanel" type="PanelContainer" parent="." unique_id=124898716]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -280.0
+offset_right = 160.0
+offset_bottom = 280.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MenuVBox" type="VBoxContainer" parent="MenuPanel" unique_id=124898717]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="PausedLabel" type="Label" parent="MenuPanel/MenuVBox" unique_id=124898718]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 32
+text = "游戏已暂停"
+horizontal_alignment = 1
+
+[node name="Spacer1" type="Control" parent="MenuPanel/MenuVBox" unique_id=124898719]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+
+[node name="Separator1" type="HSeparator" parent="MenuPanel/MenuVBox" unique_id=124898720]
+layout_mode = 2
+
+[node name="ResumeButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898721]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "返回游戏"
+
+[node name="RegenerateButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898722]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "重新生成地图"
+
+[node name="BackToParentButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898730]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "返回上级地图"
+
+[node name="MapViewScaleLabel" type="Label" parent="MenuPanel/MenuVBox" unique_id=124898728]
+layout_mode = 2
+text = "地图大小: 100%"
+
+[node name="MapViewScaleSlider" type="HSlider" parent="MenuPanel/MenuVBox" unique_id=124898729]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+min_value = 0.05
+max_value = 5.0
+step = 0.05
+value = 1.0
+
+[node name="SettingsButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898723]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "设置"
+
+[node name="Separator2" type="HSeparator" parent="MenuPanel/MenuVBox" unique_id=124898724]
+layout_mode = 2
+
+[node name="MainMenuButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898725]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "返回主菜单"
+
+[node name="QuitButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898726]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+text = "退出游戏"
+
+[node name="Spacer2" type="Control" parent="MenuPanel/MenuVBox" unique_id=124898727]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+
+[node name="MapSettingsPopup" type="PanelContainer" parent="." unique_id=923406112]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -220.0
+offset_top = -420.0
+offset_right = 220.0
+offset_bottom = 420.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PopupVBox" type="VBoxContainer" parent="MapSettingsPopup" unique_id=1473199217]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="GenerationSettingsLabel" type="Label" parent="MapSettingsPopup/PopupVBox" unique_id=1520088659]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "生成设置"
+horizontal_alignment = 1
+
+[node name="MapTypeHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=1987654333]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MapTypeLabel" type="Label" parent="MapSettingsPopup/PopupVBox/MapTypeHBox" unique_id=1987654334]
+layout_mode = 2
+text = "地图类型"
+
+[node name="MapTypeSelector" type="OptionButton" parent="MapSettingsPopup/PopupVBox/MapTypeHBox" unique_id=1987654335]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+
+[node name="CellCountHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=1889577010]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CellCountLabel" type="Label" parent="MapSettingsPopup/PopupVBox/CellCountHBox" unique_id=567768939]
+layout_mode = 2
+text = "单元数量"
+
+[node name="CellCountSpinBox" type="SpinBox" parent="MapSettingsPopup/PopupVBox/CellCountHBox" unique_id=1007578816]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+min_value = 200.0
+max_value = 20000.0
+step = 100.0
+value = 2000.0
+rounded = true
+
+[node name="RiverDensityHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=380100567]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RiverDensityLabel" type="Label" parent="MapSettingsPopup/PopupVBox/RiverDensityHBox" unique_id=2077556712]
+layout_mode = 2
+text = "河流密集度: 1.00x"
+
+[node name="RiverDensitySlider" type="HSlider" parent="MapSettingsPopup/PopupVBox/RiverDensityHBox" unique_id=620444398]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+min_value = 0.5
+max_value = 2.0
+step = 0.05
+value = 1.0
+
+[node name="MultithreadingHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=1987654330]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MultithreadingLabel" type="Label" parent="MapSettingsPopup/PopupVBox/MultithreadingHBox" unique_id=1987654331]
+layout_mode = 2
+text = "多线程生成"
+
+[node name="MultithreadingCheck" type="CheckButton" parent="MapSettingsPopup/PopupVBox/MultithreadingHBox" unique_id=1987654332]
+layout_mode = 2
+button_pressed = true
+
+[node name="CountrySectionLabel" type="Label" parent="MapSettingsPopup/PopupVBox" unique_id=2021690553]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "国家设置"
+
+[node name="CountryCountHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=107113569]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CountryCountLabel" type="Label" parent="MapSettingsPopup/PopupVBox/CountryCountHBox" unique_id=1934346429]
+layout_mode = 2
+text = "国家数量"
+
+[node name="CountryCountSpinBox" type="SpinBox" parent="MapSettingsPopup/PopupVBox/CountryCountHBox" unique_id=2093294442]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+min_value = 1.0
+max_value = 64.0
+value = 12.0
+rounded = true
+
+[node name="MinCountryCellsHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=1987654321]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MinCountryCellsLabel" type="Label" parent="MapSettingsPopup/PopupVBox/MinCountryCellsHBox" unique_id=1987654322]
+layout_mode = 2
+text = "最小国家单元"
+
+[node name="MinCountryCellsSpinBox" type="SpinBox" parent="MapSettingsPopup/PopupVBox/MinCountryCellsHBox" unique_id=1987654323]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+min_value = 1.0
+max_value = 128.0
+value = 3.0
+rounded = true
+
+[node name="HierarchySectionLabel" type="Label" parent="MapSettingsPopup/PopupVBox" unique_id=1987654336]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "层级地图设置"
+
+[node name="WorldCellCountHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=1987654337]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="WorldCellCountLabel" type="Label" parent="MapSettingsPopup/PopupVBox/WorldCellCountHBox" unique_id=1987654338]
+layout_mode = 2
+text = "世界单元数"
+
+[node name="WorldCellCountSpinBox" type="SpinBox" parent="MapSettingsPopup/PopupVBox/WorldCellCountHBox" unique_id=1987654339]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+min_value = 200.0
+max_value = 20000.0
+step = 100.0
+value = 15000.0
+rounded = true
+
+[node name="CountryCellCountHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=1987654340]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CountryCellCountLabel" type="Label" parent="MapSettingsPopup/PopupVBox/CountryCellCountHBox" unique_id=1987654341]
+layout_mode = 2
+text = "全国单元数"
+
+[node name="CountryCellCountSpinBox" type="SpinBox" parent="MapSettingsPopup/PopupVBox/CountryCellCountHBox" unique_id=1987654342]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+min_value = 200.0
+max_value = 20000.0
+step = 100.0
+value = 3000.0
+rounded = true
+
+[node name="ProvinceCellCountHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=1987654343]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ProvinceCellCountLabel" type="Label" parent="MapSettingsPopup/PopupVBox/ProvinceCellCountHBox" unique_id=1987654344]
+layout_mode = 2
+text = "省份单元数"
+
+[node name="ProvinceCellCountSpinBox" type="SpinBox" parent="MapSettingsPopup/PopupVBox/ProvinceCellCountHBox" unique_id=1987654345]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+min_value = 200.0
+max_value = 20000.0
+step = 100.0
+value = 2000.0
+rounded = true
+
+[node name="CityCellCountHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=1987654346]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CityCellCountLabel" type="Label" parent="MapSettingsPopup/PopupVBox/CityCellCountHBox" unique_id=1987654347]
+layout_mode = 2
+text = "市级单元数"
+
+[node name="CityCellCountSpinBox" type="SpinBox" parent="MapSettingsPopup/PopupVBox/CityCellCountHBox" unique_id=1987654348]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+min_value = 200.0
+max_value = 20000.0
+step = 100.0
+value = 2000.0
+rounded = true
+
+[node name="EnableDrilldownHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=1987654349]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EnableDrilldownLabel" type="Label" parent="MapSettingsPopup/PopupVBox/EnableDrilldownHBox" unique_id=1987654350]
+layout_mode = 2
+text = "点击进入下级地图"
+
+[node name="EnableDrilldownCheck" type="CheckButton" parent="MapSettingsPopup/PopupVBox/EnableDrilldownHBox" unique_id=1987654351]
+layout_mode = 2
+button_pressed = true
+
+[node name="PopupButtonsHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=1797617169]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ApplyButton" type="Button" parent="MapSettingsPopup/PopupVBox/PopupButtonsHBox" unique_id=1840872074]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "应用并生成"
+
+[node name="ResetButton" type="Button" parent="MapSettingsPopup/PopupVBox/PopupButtonsHBox" unique_id=1840872075]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "恢复默认"
+
+[node name="CloseButton" type="Button" parent="MapSettingsPopup/PopupVBox/PopupButtonsHBox" unique_id=1785190959]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "关闭"
+
+[node name="MapSettingsToast" type="PanelContainer" parent="." unique_id=1987654324]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -90.0
+offset_top = -64.0
+offset_right = 90.0
+offset_bottom = -28.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_Toast")
+
+[node name="ToastLabel" type="Label" parent="MapSettingsToast" unique_id=1987654325]
+layout_mode = 2
+text = "设置已保存"
+horizontal_alignment = 1

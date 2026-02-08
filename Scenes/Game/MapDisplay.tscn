@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://dkqweqfh0vyob"]
+
+[ext_resource type="Script" uid="uid://dgei4p0lkynu5" path="res://Scripts/Rendering/MapView.cs" id="1_mapview"]
+[ext_resource type="Script" uid="uid://dgqr4fv32gqjn" path="res://Scripts/Rendering/MapCamera.cs" id="2_mapcamera"]
+
+[node name="MapDisplay" type="Control" unique_id=1070001001]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Background" type="ColorRect" parent="." unique_id=1070001002]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.961, 0.925, 0.843, 1)
+
+[node name="MapView" type="Control" parent="." unique_id=1070001003]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_mapview")
+
+[node name="MapCamera" type="Camera2D" parent="." unique_id=1070001004]
+anchor_mode = 0
+script = ExtResource("2_mapcamera")

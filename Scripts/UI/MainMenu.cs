@@ -33,6 +33,8 @@ public partial class MainMenu : Control
 		_modManagerButton = GetNode<Button>("menuPanel/menuVBox/modManagerButton");
 		_settingsButton = GetNode<Button>("menuPanel/menuVBox/settingsButton");
 		_quitButton = GetNode<Button>("menuPanel/menuVBox/quitButton");
+		_titleLabel ??= GetNodeOrNull<Label>("menuPanel/menuVBox/titleLabel");
+		_versionLabel ??= GetNodeOrNull<Label>("menuPanel/menuVBox/versionLabel");
 		
 		SetupMenuItems();
 		UpdateUIText();
@@ -114,6 +116,14 @@ public partial class MainMenu : Control
 		if (_quitButton != null)
 		{
 			_quitButton.Text = tm.Tr("quit_game");
+		}
+		if (_titleLabel != null)
+		{
+			_titleLabel.Text = tm.Tr("app_title");
+		}
+		if (_versionLabel != null)
+		{
+			_versionLabel.Text = tm.Tr("version");
 		}
 	}
 

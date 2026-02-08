@@ -33,6 +33,9 @@ public partial class MapCamera : Camera2D
 	private float _targetViewScale = 1f;
 	private float _zoomVelocity = 0f;
 	private Vector2 _moveVelocity = Vector2.Zero;
+	private bool _hasZoomFocus = false;
+	private Vector2 _zoomFocusScreenPos = Vector2.Zero;
+	private Vector2 _zoomFocusMapPos = Vector2.Zero;
 
 	public override void _Ready()
 	{
@@ -40,7 +43,9 @@ public partial class MapCamera : Camera2D
 		LoadControlSettings();
 		if (_mapView != null)
 		{
-			_targetViewScale = Mathf.Clamp(_mapView.ViewScale, MinViewScale, MaxViewScale);
+			var effectiveMin = GetEffectiveMinViewScale();
+			var effectiveMax = Mathf.Max(MaxViewScale, effectiveMin);
+			_targetViewScale = Mathf.Clamp(_mapView.ViewScale, effectiveMin, effectiveMax);
 			if (!UseSmoothing)
 			{
 				_mapView.ViewScale = _targetViewScale;
@@ -64,16 +69,19 @@ public partial class MapCamera : Camera2D
 		{
 			if (mouseButton.ButtonIndex == MouseButton.WheelUp)
 			{
+				CaptureZoomFocus();
 				AdjustZoom(1, GetZoomStep(mouseButton));
 			}
 			else if (mouseButton.ButtonIndex == MouseButton.WheelDown)
 			{
+				CaptureZoomFocus();
 				AdjustZoom(-1, GetZoomStep(mouseButton));
 			}
 		}
 		else if (@event is InputEventMagnifyGesture magnifyGesture)
 		{
 			var direction = magnifyGesture.Factor >= 1f ? 1 : -1;
+			CaptureZoomFocus();
 			AdjustZoom(direction, ZoomStep, Mathf.Abs(magnifyGesture.Factor - 1f));
 		}
 	}
@@ -107,6 +115,7 @@ public partial class MapCamera : Camera2D
 
 		var lerpT = 1f - Mathf.Exp(-ZoomSpeed * dt);
 		_mapView.ViewScale = Mathf.Lerp(current, _targetViewScale, lerpT);
+		ApplyZoomFocus(_mapView.ViewScale);
 	}
 
 	private void AdjustZoom(int direction, float step, float factor = 1f)
@@ -211,7 +220,9 @@ public partial class MapCamera : Camera2D
 	{
 		if (Mathf.Abs(_zoomVelocity) > 0.000001f)
 		{
-			_targetViewScale = Mathf.Clamp(_targetViewScale + _zoomVelocity * dt, MinViewScale, MaxViewScale);
+			var effectiveMin = GetEffectiveMinViewScale();
+			var effectiveMax = Mathf.Max(MaxViewScale, effectiveMin);
+			_targetViewScale = Mathf.Clamp(_targetViewScale + _zoomVelocity * dt, effectiveMin, effectiveMax);
 			_zoomVelocity = Mathf.MoveToward(_zoomVelocity, 0f, ZoomDamping * dt);
 		}
 		else
@@ -222,6 +233,7 @@ public partial class MapCamera : Camera2D
 		if (!UseSmoothing)
 		{
 			_mapView.ViewScale = _targetViewScale;
+			ApplyZoomFocus(_mapView.ViewScale);
 		}
 		else if (Mathf.Abs(_mapView.ViewScale - _targetViewScale) > 0.0001f && Mathf.Abs(_zoomVelocity) < 0.000001f)
 		{
@@ -319,5 +331,43 @@ public partial class MapCamera : Camera2D
 		}
 
 		return hovered == _mapView || _mapView.IsAncestorOf(hovered);
+	}
+
+	private float GetEffectiveMinViewScale()
+	{
+		if (_mapView == null)
+		{
+			return MinViewScale;
+		}
+
+		return Mathf.Max(MinViewScale, _mapView.GetMinViewScaleForArea());
+	}
+
+	private void CaptureZoomFocus()
+	{
+		if (_mapView == null)
+		{
+			return;
+		}
+
+		_zoomFocusScreenPos = _mapView.GetLocalMousePosition();
+		_zoomFocusMapPos = _mapView.ScreenToMap(_zoomFocusScreenPos);
+		_hasZoomFocus = true;
+	}
+
+	private void ApplyZoomFocus(float viewScale)
+	{
+		if (!_hasZoomFocus || _mapView == null)
+		{
+			return;
+		}
+
+		var newOffset = _mapView.GetCameraOffsetForZoomFocus(_zoomFocusMapPos, _zoomFocusScreenPos, viewScale);
+		_mapView.CameraMapOffset = newOffset;
+
+		if (Mathf.Abs(_zoomVelocity) < 0.000001f && Mathf.Abs(_mapView.ViewScale - _targetViewScale) < 0.0001f)
+		{
+			_hasZoomFocus = false;
+		}
 	}
 }

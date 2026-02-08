@@ -14,6 +14,9 @@ public class GameManager
     public int CellCount { get; private set; }
     public MapData Data { get; private set; }
     public AleaPRNG PRNG { get; private set; }
+    public bool UseMultithreading { get; set; } = true;
+    public float BoundaryPaddingScale { get; set; } = 1.5f;
+    public float BoundaryStepScale { get; set; } = 1f;
 
     private HeightmapProcessor _heightmapProcessor;
     private const int LloydRelaxIterations = 2;
@@ -28,22 +31,23 @@ public class GameManager
         MapSize = new Vector2(width, height);
 
         var points = GenerateRandomPoints(cellCount, width, height);
-
-        var triangles = Delaunay.Triangulate(points);
-        var cells = VoronoiGenerator.GenerateVoronoi(points, width, height, triangles);
+        var triangulationPoints = BuildTriangulationPoints(points, width, height, BoundaryPaddingScale, BoundaryStepScale);
+        var triangles = Delaunay.Triangulate(triangulationPoints);
+        var cells = VoronoiGenerator.GenerateVoronoi(triangulationPoints, width, height, triangles, points.Length);
+        var displayTriangles = Delaunay.Triangulate(points);
 
         _heightmapProcessor = new HeightmapProcessor(PRNG);
         _heightmapProcessor.WaterLevel = 0.38f;
 
         float[] heightmap = _heightmapProcessor.GenerateHeightmap(width, height);
-        _heightmapProcessor.ApplyToCells(cells, heightmap, width, height);
-        _heightmapProcessor.AssignColors(cells);
+        _heightmapProcessor.ApplyToCells(cells, heightmap, width, height, UseMultithreading);
+        _heightmapProcessor.AssignColors(cells, UseMultithreading);
 
         Data = new MapData
         {
             Points = points,
             Cells = cells,
-            Triangles = triangles,
+            Triangles = displayTriangles,
             Heightmap = heightmap,
             MapSize = MapSize,
             Seed = PRNG.NextInt()
@@ -119,8 +123,9 @@ public class GameManager
         var current = points;
         for (int iter = 0; iter < iterations; iter++)
         {
-            var triangles = Delaunay.Triangulate(current);
-            var cells = VoronoiGenerator.GenerateVoronoi(current, width, height, triangles);
+            var triangulationPoints = BuildTriangulationPoints(current, width, height, BoundaryPaddingScale, BoundaryStepScale);
+            var triangles = Delaunay.Triangulate(triangulationPoints);
+            var cells = VoronoiGenerator.GenerateVoronoi(triangulationPoints, width, height, triangles, current.Length);
             var next = new Vector2[current.Length];
 
             for (int i = 0; i < current.Length; i++)
@@ -144,6 +149,41 @@ public class GameManager
         }
 
         return current;
+    }
+
+    private static Vector2[] BuildTriangulationPoints(
+        Vector2[] points,
+        int width,
+        int height,
+        float paddingScale,
+        float stepScale)
+    {
+        if (points.Length == 0)
+        {
+            return points;
+        }
+
+        float area = width * height;
+        float spacing = Mathf.Sqrt(area / Math.Max(1, points.Length));
+        float step = Mathf.Max(1f, spacing * Math.Max(0.2f, stepScale));
+        float padding = step * Math.Max(0.5f, paddingScale);
+
+        var expanded = new List<Vector2>(points.Length + 256);
+        expanded.AddRange(points);
+
+        for (float x = -padding; x <= width + padding; x += step)
+        {
+            expanded.Add(new Vector2(x, -padding));
+            expanded.Add(new Vector2(x, height + padding));
+        }
+
+        for (float y = -padding + step; y <= height + padding - step; y += step)
+        {
+            expanded.Add(new Vector2(-padding, y));
+            expanded.Add(new Vector2(width + padding, y));
+        }
+
+        return expanded.ToArray();
     }
 
     private static Vector2 ComputePolygonCentroid(List<Vector2> vertices)

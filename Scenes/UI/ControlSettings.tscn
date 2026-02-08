@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://dmfliwwgw3ys5"]
+[gd_scene format=3 uid="uid://controlsettings"]
 
 [ext_resource type="Script" uid="uid://controlsettingsscript" path="res://Scripts/UI/ControlSettings.cs" id="1_controlsettings"]
 [ext_resource type="Theme" uid="uid://inkwashtheme" path="res://Themes/InkWashTheme.tres" id="2_theme"]
@@ -13,7 +13,7 @@ grow_vertical = 2
 theme = ExtResource("2_theme")
 script = ExtResource("1_controlsettings")
 
-[node name="Background" type="ColorRect" parent="." unique_id=2023134248]
+[node name="Background" type="ColorRect" parent="." unique_id=1901363675]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -30,292 +30,225 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -320.0
-offset_top = -360.0
+offset_top = -260.0
 offset_right = 320.0
-offset_bottom = 360.0
+offset_bottom = 260.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="SettingsPanel" unique_id=1259957071]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="SettingsVBox" type="VBoxContainer" parent="SettingsPanel/ScrollContainer" unique_id=1099283264]
+[node name="SettingsVBox" type="VBoxContainer" parent="SettingsPanel" unique_id=1099283264]
 layout_mode = 2
-size_flags_horizontal = 3
 theme_override_constants/separation = 12
 
-[node name="TitleLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=2013306929]
+[node name="TitleLabel" type="Label" parent="SettingsPanel/SettingsVBox" unique_id=2013306929]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 26
 text = "操作设置"
 horizontal_alignment = 1
 
-[node name="TitleSpacer" type="Control" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=2006911783]
-custom_minimum_size = Vector2(0, 12)
+[node name="Separator1" type="HSeparator" parent="SettingsPanel/SettingsVBox" unique_id=1290620289]
 layout_mode = 2
 
-[node name="Separator1" type="HSeparator" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1290620289]
+[node name="Tabs" type="TabContainer" parent="SettingsPanel/SettingsVBox" unique_id=1259957071]
+custom_minimum_size = Vector2(0, 320)
 layout_mode = 2
+size_flags_vertical = 3
 
-[node name="ZoomSectionLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1643516034]
+[node name="ZoomPage" type="VBoxContainer" parent="SettingsPanel/SettingsVBox/Tabs" unique_id=1643516034]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "缩放设置"
+theme_override_constants/separation = 10
 
-[node name="ZoomSmoothingCheck" type="CheckButton" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1990104265]
+[node name="ZoomGrid" type="GridContainer" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage" unique_id=1092388940]
 layout_mode = 2
-button_pressed = true
-text = "平滑缩放"
+columns = 3
 
-[node name="ZoomSpeedLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1757473165]
+[node name="ZoomSpeedLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1757473165]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
 text = "缩放速度"
 
-[node name="ZoomSpeedSlider" type="HSlider" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1406753933]
-custom_minimum_size = Vector2(0, 32)
+[node name="ZoomSpeedSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1406753933]
+custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
-min_value = 1.0
-max_value = 30.0
-step = 0.5
-value = 10.0
 
-[node name="ZoomSpeedValueLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1121698947]
+[node name="ZoomSpeedValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1121698947]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.545, 0.478, 0.388, 1)
-theme_override_font_sizes/font_size = 14
 text = "10.0"
 horizontal_alignment = 2
 
-[node name="ZoomImpulseLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1498474272]
+[node name="ZoomImpulseLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1498474272]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
 text = "缩放惯性力度"
 
-[node name="ZoomImpulseSlider" type="HSlider" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1711834771]
-custom_minimum_size = Vector2(0, 32)
+[node name="ZoomImpulseSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1711834771]
+custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
-min_value = 1.0
-max_value = 20.0
-step = 0.5
-value = 6.0
 
-[node name="ZoomImpulseValueLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1216708231]
+[node name="ZoomImpulseValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1216708231]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.545, 0.478, 0.388, 1)
-theme_override_font_sizes/font_size = 14
 text = "6.0"
 horizontal_alignment = 2
 
-[node name="ZoomDampingLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=2044851822]
+[node name="ZoomDampingLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=2044851822]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
 text = "缩放惯性阻尼"
 
-[node name="ZoomDampingSlider" type="HSlider" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=2023821147]
-custom_minimum_size = Vector2(0, 32)
+[node name="ZoomDampingSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=2023821147]
+custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
-min_value = 1.0
-max_value = 30.0
-step = 0.5
-value = 12.0
 
-[node name="ZoomDampingValueLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1765686216]
+[node name="ZoomDampingValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1765686216]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.545, 0.478, 0.388, 1)
-theme_override_font_sizes/font_size = 14
 text = "12.0"
 horizontal_alignment = 2
 
-[node name="MaxZoomVelocityLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1793847281]
+[node name="MaxZoomVelocityLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1793847281]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
 text = "缩放最大速度"
 
-[node name="MaxZoomVelocitySlider" type="HSlider" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1959808976]
-custom_minimum_size = Vector2(0, 32)
+[node name="MaxZoomVelocitySlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1959808976]
+custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
-min_value = 0.5
-max_value = 10.0
-step = 0.1
-value = 3.0
 
-[node name="MaxZoomVelocityValueLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1992690660]
+[node name="MaxZoomVelocityValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1992690660]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.545, 0.478, 0.388, 1)
-theme_override_font_sizes/font_size = 14
-text = "3.0"
+text = "3.00"
 horizontal_alignment = 2
 
-[node name="ZoomStepLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1672023031]
+[node name="ZoomStepLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1672023031]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
 text = "缩放步进"
 
-[node name="ZoomStepSlider" type="HSlider" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1784348188]
-custom_minimum_size = Vector2(0, 32)
+[node name="ZoomStepSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1784348188]
+custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
-min_value = 0.01
-max_value = 0.2
-step = 0.005
-value = 0.05
 
-[node name="ZoomStepValueLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1466991726]
+[node name="ZoomStepValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1466991726]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.545, 0.478, 0.388, 1)
-theme_override_font_sizes/font_size = 14
 text = "0.050"
 horizontal_alignment = 2
 
-[node name="FineZoomStepLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1088960567]
+[node name="FineZoomStepLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1088960567]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
 text = "细调步进 (Ctrl)"
 
-[node name="FineZoomStepSlider" type="HSlider" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1908340897]
-custom_minimum_size = Vector2(0, 32)
+[node name="FineZoomStepSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1908340897]
+custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
-min_value = 0.001
-max_value = 0.05
-step = 0.001
-value = 0.01
 
-[node name="FineZoomStepValueLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=2076157784]
+[node name="FineZoomStepValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=2076157784]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.545, 0.478, 0.388, 1)
-theme_override_font_sizes/font_size = 14
 text = "0.010"
 horizontal_alignment = 2
 
-[node name="CoarseZoomStepLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1662391043]
+[node name="CoarseZoomStepLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1662391043]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
 text = "粗调步进 (Shift)"
 
-[node name="CoarseZoomStepSlider" type="HSlider" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=2059250720]
-custom_minimum_size = Vector2(0, 32)
+[node name="CoarseZoomStepSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=2059250720]
+custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
-min_value = 0.05
-max_value = 0.5
-step = 0.01
-value = 0.1
 
-[node name="CoarseZoomStepValueLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1674285822]
+[node name="CoarseZoomStepValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1674285822]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.545, 0.478, 0.388, 1)
-theme_override_font_sizes/font_size = 14
 text = "0.100"
 horizontal_alignment = 2
 
-[node name="Separator2" type="HSeparator" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1712702260]
+[node name="MovePage" type="VBoxContainer" parent="SettingsPanel/SettingsVBox/Tabs" unique_id=2090481637]
 layout_mode = 2
+theme_override_constants/separation = 10
 
-[node name="MoveSectionLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=2090481637]
+[node name="MoveGrid" type="GridContainer" parent="SettingsPanel/SettingsVBox/Tabs/MovePage" unique_id=1260409398]
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "移动设置"
+columns = 3
 
-[node name="EnableKeyboardPanCheck" type="CheckButton" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1641230953]
+[node name="MoveSpeedLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=2000019440]
 layout_mode = 2
-button_pressed = true
-text = "启用键盘移动"
-
-[node name="ScaleMoveSpeedCheck" type="CheckButton" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1688324234]
-layout_mode = 2
-button_pressed = true
-text = "移动速度随缩放调整"
-
-[node name="MoveSpeedLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=2000019440]
-layout_mode = 2
-theme_override_font_sizes/font_size = 18
 text = "移动速度"
 
-[node name="MoveSpeedSlider" type="HSlider" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1964180148]
-custom_minimum_size = Vector2(0, 32)
+[node name="MoveSpeedSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1964180148]
+custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
-min_value = 50.0
-max_value = 1000.0
-step = 10.0
-value = 240.0
 
-[node name="MoveSpeedValueLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1331386371]
+[node name="MoveSpeedValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1331386371]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.545, 0.478, 0.388, 1)
-theme_override_font_sizes/font_size = 14
 text = "240"
 horizontal_alignment = 2
 
-[node name="MoveAccelerationLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1872964114]
+[node name="MoveAccelerationLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1872964114]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
 text = "移动加速度"
 
-[node name="MoveAccelerationSlider" type="HSlider" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1541042212]
-custom_minimum_size = Vector2(0, 32)
+[node name="MoveAccelerationSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1541042212]
+custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
-min_value = 200.0
-max_value = 4000.0
-step = 50.0
-value = 1200.0
 
-[node name="MoveAccelerationValueLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1421125742]
+[node name="MoveAccelerationValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1421125742]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.545, 0.478, 0.388, 1)
-theme_override_font_sizes/font_size = 14
 text = "1200"
 horizontal_alignment = 2
 
-[node name="MoveDampingLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1260409397]
+[node name="MoveDampingLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1260409397]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
 text = "移动阻尼"
 
-[node name="MoveDampingSlider" type="HSlider" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1974575890]
-custom_minimum_size = Vector2(0, 32)
+[node name="MoveDampingSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1974575890]
+custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
-min_value = 200.0
-max_value = 4000.0
-step = 50.0
-value = 1600.0
 
-[node name="MoveDampingValueLabel" type="Label" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1092388939]
+[node name="MoveDampingValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1092388939]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.545, 0.478, 0.388, 1)
-theme_override_font_sizes/font_size = 14
 text = "1600"
 horizontal_alignment = 2
 
-[node name="Separator3" type="HSeparator" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=2106693089]
+[node name="AdvancedPage" type="VBoxContainer" parent="SettingsPanel/SettingsVBox/Tabs" unique_id=1841230073]
 layout_mode = 2
+theme_override_constants/separation = 10
 
-[node name="ButtonsHBox" type="HBoxContainer" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1884378584]
+[node name="AdvancedGrid" type="GridContainer" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage" unique_id=2140934512]
 layout_mode = 2
-theme_override_constants/separation = 12
+columns = 2
 
-[node name="SaveButton" type="Button" parent="SettingsPanel/ScrollContainer/SettingsVBox/ButtonsHBox" unique_id=1747002744]
-custom_minimum_size = Vector2(0, 44)
+[node name="ZoomSmoothingLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=100492104]
 layout_mode = 2
-size_flags_horizontal = 3
+text = "平滑缩放"
+
+[node name="ZoomSmoothingCheck" type="CheckButton" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1990104265]
+layout_mode = 2
+text = ""
+
+[node name="EnableKeyboardPanLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1662391044]
+layout_mode = 2
+text = "启用键盘移动"
+
+[node name="EnableKeyboardPanCheck" type="CheckButton" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1641230953]
+layout_mode = 2
+text = ""
+
+[node name="ScaleMoveSpeedLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1662391045]
+layout_mode = 2
+text = "移动速度随缩放调整"
+
+[node name="ScaleMoveSpeedCheck" type="CheckButton" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1688324234]
+layout_mode = 2
+text = ""
+
+[node name="ButtonsHBox" type="HBoxContainer" parent="SettingsPanel/SettingsVBox" unique_id=1884378584]
+layout_mode = 2
+alignment = 2
+theme_override_constants/separation = 10
+
+[node name="SaveButton" type="Button" parent="SettingsPanel/SettingsVBox/ButtonsHBox" unique_id=1747002744]
+custom_minimum_size = Vector2(120, 44)
+layout_mode = 2
 text = "保存"
 
-[node name="ResetButton" type="Button" parent="SettingsPanel/ScrollContainer/SettingsVBox/ButtonsHBox" unique_id=2016210020]
-custom_minimum_size = Vector2(0, 44)
+[node name="ResetButton" type="Button" parent="SettingsPanel/SettingsVBox/ButtonsHBox" unique_id=2016210020]
+custom_minimum_size = Vector2(120, 44)
 layout_mode = 2
-size_flags_horizontal = 3
 text = "恢复默认"
 
-[node name="BackButton" type="Button" parent="SettingsPanel/ScrollContainer/SettingsVBox/ButtonsHBox" unique_id=1433253290]
-custom_minimum_size = Vector2(0, 44)
+[node name="BackButton" type="Button" parent="SettingsPanel/SettingsVBox/ButtonsHBox" unique_id=1433253290]
+custom_minimum_size = Vector2(120, 44)
 layout_mode = 2
-size_flags_horizontal = 3
 text = "返回"
-
-[node name="BottomSpacer" type="Control" parent="SettingsPanel/ScrollContainer/SettingsVBox" unique_id=1626463244]
-custom_minimum_size = Vector2(0, 12)
-layout_mode = 2

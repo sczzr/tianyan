@@ -26,8 +26,6 @@ public partial class ControlSettings : Control
 	private const bool DefaultScaleMoveSpeedByZoom = true;
 
 	private Label _titleLabel;
-	private Label _zoomSectionLabel;
-	private Label _moveSectionLabel;
 	private Label _zoomSpeedLabel;
 	private Label _zoomImpulseLabel;
 	private Label _zoomDampingLabel;
@@ -38,6 +36,10 @@ public partial class ControlSettings : Control
 	private Label _moveSpeedLabel;
 	private Label _moveAccelerationLabel;
 	private Label _moveDampingLabel;
+	private TabContainer _tabs;
+	private Label _zoomSmoothingLabel;
+	private Label _enableKeyboardPanLabel;
+	private Label _scaleMoveSpeedLabel;
 
 	private CheckButton _zoomSmoothingCheck;
 	private CheckButton _enableKeyboardPanCheck;
@@ -73,49 +75,51 @@ public partial class ControlSettings : Control
 
 	public override void _Ready()
 	{
-		_titleLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/TitleLabel");
-		_zoomSectionLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/ZoomSectionLabel");
-		_moveSectionLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/MoveSectionLabel");
-		_zoomSpeedLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/ZoomSpeedLabel");
-		_zoomImpulseLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/ZoomImpulseLabel");
-		_zoomDampingLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/ZoomDampingLabel");
-		_maxZoomVelocityLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/MaxZoomVelocityLabel");
-		_zoomStepLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/ZoomStepLabel");
-		_fineZoomStepLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/FineZoomStepLabel");
-		_coarseZoomStepLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/CoarseZoomStepLabel");
-		_moveSpeedLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/MoveSpeedLabel");
-		_moveAccelerationLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/MoveAccelerationLabel");
-		_moveDampingLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/MoveDampingLabel");
+		_titleLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/TitleLabel");
+		_tabs = GetNodeOrNull<TabContainer>("SettingsPanel/SettingsVBox/Tabs");
+		_zoomSpeedLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/ZoomSpeedLabel");
+		_zoomImpulseLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/ZoomImpulseLabel");
+		_zoomDampingLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/ZoomDampingLabel");
+		_maxZoomVelocityLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/MaxZoomVelocityLabel");
+		_zoomStepLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/ZoomStepLabel");
+		_fineZoomStepLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/FineZoomStepLabel");
+		_coarseZoomStepLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/CoarseZoomStepLabel");
+		_moveSpeedLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid/MoveSpeedLabel");
+		_moveAccelerationLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid/MoveAccelerationLabel");
+		_moveDampingLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid/MoveDampingLabel");
 
-		_zoomSmoothingCheck = GetNode<CheckButton>("SettingsPanel/ScrollContainer/SettingsVBox/ZoomSmoothingCheck");
-		_enableKeyboardPanCheck = GetNode<CheckButton>("SettingsPanel/ScrollContainer/SettingsVBox/EnableKeyboardPanCheck");
-		_scaleMoveSpeedCheck = GetNode<CheckButton>("SettingsPanel/ScrollContainer/SettingsVBox/ScaleMoveSpeedCheck");
+		_enableKeyboardPanCheck = GetNodeOrNull<CheckButton>("SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid/EnableKeyboardPanCheck");
+		_scaleMoveSpeedCheck = GetNodeOrNull<CheckButton>("SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid/ScaleMoveSpeedCheck");
+		_zoomSmoothingLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid/ZoomSmoothingLabel");
+		_enableKeyboardPanLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid/EnableKeyboardPanLabel");
+		_scaleMoveSpeedLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid/ScaleMoveSpeedLabel");
+		_zoomSmoothingCheck = GetNodeOrNull<CheckButton>("SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid/ZoomSmoothingCheck");
 
-		_zoomSpeedSlider = GetNode<HSlider>("SettingsPanel/ScrollContainer/SettingsVBox/ZoomSpeedSlider");
-		_zoomImpulseSlider = GetNode<HSlider>("SettingsPanel/ScrollContainer/SettingsVBox/ZoomImpulseSlider");
-		_zoomDampingSlider = GetNode<HSlider>("SettingsPanel/ScrollContainer/SettingsVBox/ZoomDampingSlider");
-		_maxZoomVelocitySlider = GetNode<HSlider>("SettingsPanel/ScrollContainer/SettingsVBox/MaxZoomVelocitySlider");
-		_zoomStepSlider = GetNode<HSlider>("SettingsPanel/ScrollContainer/SettingsVBox/ZoomStepSlider");
-		_fineZoomStepSlider = GetNode<HSlider>("SettingsPanel/ScrollContainer/SettingsVBox/FineZoomStepSlider");
-		_coarseZoomStepSlider = GetNode<HSlider>("SettingsPanel/ScrollContainer/SettingsVBox/CoarseZoomStepSlider");
-		_moveSpeedSlider = GetNode<HSlider>("SettingsPanel/ScrollContainer/SettingsVBox/MoveSpeedSlider");
-		_moveAccelerationSlider = GetNode<HSlider>("SettingsPanel/ScrollContainer/SettingsVBox/MoveAccelerationSlider");
-		_moveDampingSlider = GetNode<HSlider>("SettingsPanel/ScrollContainer/SettingsVBox/MoveDampingSlider");
+		_zoomSpeedSlider = GetNodeOrNull<HSlider>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/ZoomSpeedSlider");
+		_zoomImpulseSlider = GetNodeOrNull<HSlider>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/ZoomImpulseSlider");
+		_zoomDampingSlider = GetNodeOrNull<HSlider>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/ZoomDampingSlider");
+		_maxZoomVelocitySlider = GetNodeOrNull<HSlider>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/MaxZoomVelocitySlider");
+		_zoomStepSlider = GetNodeOrNull<HSlider>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/ZoomStepSlider");
+		_fineZoomStepSlider = GetNodeOrNull<HSlider>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/FineZoomStepSlider");
+		_coarseZoomStepSlider = GetNodeOrNull<HSlider>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/CoarseZoomStepSlider");
+		_moveSpeedSlider = GetNodeOrNull<HSlider>("SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid/MoveSpeedSlider");
+		_moveAccelerationSlider = GetNodeOrNull<HSlider>("SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid/MoveAccelerationSlider");
+		_moveDampingSlider = GetNodeOrNull<HSlider>("SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid/MoveDampingSlider");
 
-		_zoomSpeedValueLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/ZoomSpeedValueLabel");
-		_zoomImpulseValueLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/ZoomImpulseValueLabel");
-		_zoomDampingValueLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/ZoomDampingValueLabel");
-		_maxZoomVelocityValueLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/MaxZoomVelocityValueLabel");
-		_zoomStepValueLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/ZoomStepValueLabel");
-		_fineZoomStepValueLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/FineZoomStepValueLabel");
-		_coarseZoomStepValueLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/CoarseZoomStepValueLabel");
-		_moveSpeedValueLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/MoveSpeedValueLabel");
-		_moveAccelerationValueLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/MoveAccelerationValueLabel");
-		_moveDampingValueLabel = GetNode<Label>("SettingsPanel/ScrollContainer/SettingsVBox/MoveDampingValueLabel");
+		_zoomSpeedValueLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/ZoomSpeedValueLabel");
+		_zoomImpulseValueLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/ZoomImpulseValueLabel");
+		_zoomDampingValueLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/ZoomDampingValueLabel");
+		_maxZoomVelocityValueLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/MaxZoomVelocityValueLabel");
+		_zoomStepValueLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/ZoomStepValueLabel");
+		_fineZoomStepValueLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/FineZoomStepValueLabel");
+		_coarseZoomStepValueLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/CoarseZoomStepValueLabel");
+		_moveSpeedValueLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid/MoveSpeedValueLabel");
+		_moveAccelerationValueLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid/MoveAccelerationValueLabel");
+		_moveDampingValueLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid/MoveDampingValueLabel");
 
-		_saveButton = GetNode<Button>("SettingsPanel/ScrollContainer/SettingsVBox/ButtonsHBox/SaveButton");
-		_resetButton = GetNode<Button>("SettingsPanel/ScrollContainer/SettingsVBox/ButtonsHBox/ResetButton");
-		_backButton = GetNode<Button>("SettingsPanel/ScrollContainer/SettingsVBox/ButtonsHBox/BackButton");
+		_saveButton = GetNodeOrNull<Button>("SettingsPanel/SettingsVBox/ButtonsHBox/SaveButton");
+		_resetButton = GetNodeOrNull<Button>("SettingsPanel/SettingsVBox/ButtonsHBox/ResetButton");
+		_backButton = GetNodeOrNull<Button>("SettingsPanel/SettingsVBox/ButtonsHBox/BackButton");
 
 		_translationManager = TranslationManager.Instance;
 		_translationManager.LanguageChanged += OnLanguageChanged;
@@ -312,17 +316,19 @@ public partial class ControlSettings : Control
 		{
 			_titleLabel.Text = tm.Tr("controls_title");
 		}
-		if (_zoomSectionLabel != null)
+		if (_tabs != null)
 		{
-			_zoomSectionLabel.Text = tm.Tr("controls_zoom_section");
-		}
-		if (_moveSectionLabel != null)
-		{
-			_moveSectionLabel.Text = tm.Tr("controls_move_section");
+		_tabs.SetTabTitle(0, tm.Tr("controls_tab_zoom"));
+		_tabs.SetTabTitle(1, tm.Tr("controls_tab_move"));
+		_tabs.SetTabTitle(2, tm.Tr("controls_tab_advanced"));
 		}
 		if (_zoomSmoothingCheck != null)
 		{
-			_zoomSmoothingCheck.Text = tm.Tr("controls_zoom_smoothing");
+			_zoomSmoothingCheck.Text = string.Empty;
+		}
+		if (_zoomSmoothingLabel != null)
+		{
+			_zoomSmoothingLabel.Text = tm.Tr("controls_zoom_smoothing");
 		}
 		if (_zoomSpeedLabel != null)
 		{
@@ -354,11 +360,19 @@ public partial class ControlSettings : Control
 		}
 		if (_enableKeyboardPanCheck != null)
 		{
-			_enableKeyboardPanCheck.Text = tm.Tr("controls_enable_keyboard_pan");
+			_enableKeyboardPanCheck.Text = string.Empty;
+		}
+		if (_enableKeyboardPanLabel != null)
+		{
+			_enableKeyboardPanLabel.Text = tm.Tr("controls_enable_keyboard_pan");
 		}
 		if (_scaleMoveSpeedCheck != null)
 		{
-			_scaleMoveSpeedCheck.Text = tm.Tr("controls_scale_move_speed");
+			_scaleMoveSpeedCheck.Text = string.Empty;
+		}
+		if (_scaleMoveSpeedLabel != null)
+		{
+			_scaleMoveSpeedLabel.Text = tm.Tr("controls_scale_move_speed");
 		}
 		if (_moveSpeedLabel != null)
 		{

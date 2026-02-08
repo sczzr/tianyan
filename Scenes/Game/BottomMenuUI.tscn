@@ -1,0 +1,224 @@
+[gd_scene format=3 uid="uid://bdwdbef3lbio8"]
+
+[ext_resource type="Script" uid="uid://bottommenucontroller" path="res://Scripts/UI/BottomMenuController.cs" id="1_bottommenuctrl"]
+
+[sub_resource type="StyleBoxFlat" id="BottomMenuButtonStyle"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.2, 0.19, 0.16, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.72, 0.66, 0.52, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="BottomMenuButtonPressedStyle"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.16, 0.15, 0.12, 0.95)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.86, 0.78, 0.62, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="BottomMenuButtonHoverStyle"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.26, 0.24, 0.2, 0.92)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.78, 0.71, 0.56, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="DropdownPanelStyle"]
+bg_color = Color(0.91, 0.835, 0.71, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.788, 0.722, 0.588, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.15)
+shadow_size = 8
+shadow_offset = Vector2(2, 2)
+
+[node name="BottomMenuUI" type="Control" unique_id=1070005001]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_bottommenuctrl")
+
+[node name="BottomMenu" type="HBoxContainer" parent="." unique_id=508882228]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -64.0
+offset_right = 516.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_constants/separation = 8
+
+[node name="MapDisplayButton" type="Button" parent="BottomMenu" unique_id=1090608450]
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.96, 0.9, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("BottomMenuButtonStyle")
+theme_override_styles/pressed = SubResource("BottomMenuButtonPressedStyle")
+theme_override_styles/hover = SubResource("BottomMenuButtonHoverStyle")
+text = "地图显示"
+
+[node name="MapDisplayDropdown" type="PanelContainer" parent="BottomMenu/MapDisplayButton" unique_id=208411769]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = -186.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("DropdownPanelStyle")
+
+[node name="DropdownVBox" type="VBoxContainer" parent="BottomMenu/MapDisplayButton/MapDisplayDropdown" unique_id=1315232094]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="LayersTabButton" type="Button" parent="BottomMenu/MapDisplayButton/MapDisplayDropdown/DropdownVBox" unique_id=621178773]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
+theme_override_font_sizes/font_size = 14
+text = "图层"
+
+[node name="EditTabButton" type="Button" parent="BottomMenu/MapDisplayButton/MapDisplayDropdown/DropdownVBox" unique_id=1613828577]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
+theme_override_font_sizes/font_size = 14
+text = "编辑"
+
+[node name="BorderTabButton" type="Button" parent="BottomMenu/MapDisplayButton/MapDisplayDropdown/DropdownVBox" unique_id=668847837]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
+theme_override_font_sizes/font_size = 14
+text = "边界"
+
+[node name="ThemeTabButton" type="Button" parent="BottomMenu/MapDisplayButton/MapDisplayDropdown/DropdownVBox" unique_id=2015734444]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
+theme_override_font_sizes/font_size = 14
+text = "主题"
+
+[node name="SettingsMenuButton" type="Button" parent="BottomMenu" unique_id=1621974801]
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.96, 0.9, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("BottomMenuButtonStyle")
+theme_override_styles/pressed = SubResource("BottomMenuButtonPressedStyle")
+theme_override_styles/hover = SubResource("BottomMenuButtonHoverStyle")
+text = "设置"
+
+[node name="SettingsDropdown" type="PanelContainer" parent="BottomMenu/SettingsMenuButton" unique_id=375404561]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = -98.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("DropdownPanelStyle")
+
+[node name="DropdownVBox" type="VBoxContainer" parent="BottomMenu/SettingsMenuButton/SettingsDropdown" unique_id=602401696]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="RegenerateDropdownButton" type="Button" parent="BottomMenu/SettingsMenuButton/SettingsDropdown/DropdownVBox" unique_id=960334134]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
+theme_override_font_sizes/font_size = 14
+text = "重新生成地图"
+
+[node name="MapSettingsDropdownButton" type="Button" parent="BottomMenu/SettingsMenuButton/SettingsDropdown/DropdownVBox" unique_id=1234239205]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
+theme_override_font_sizes/font_size = 14
+text = "地图设置"
+
+[node name="SystemMenuButton" type="Button" parent="BottomMenu" unique_id=1321736896]
+custom_minimum_size = Vector2(160, 48)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.98, 0.96, 0.9, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("BottomMenuButtonStyle")
+theme_override_styles/pressed = SubResource("BottomMenuButtonPressedStyle")
+theme_override_styles/hover = SubResource("BottomMenuButtonHoverStyle")
+text = "系统"
+
+[node name="SystemDropdown" type="PanelContainer" parent="BottomMenu/SystemMenuButton" unique_id=580454762]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = -154.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("DropdownPanelStyle")
+
+[node name="DropdownVBox" type="VBoxContainer" parent="BottomMenu/SystemMenuButton/SystemDropdown" unique_id=1854370281]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="SettingsDropdownButton" type="Button" parent="BottomMenu/SystemMenuButton/SystemDropdown/DropdownVBox" unique_id=369555488]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
+theme_override_font_sizes/font_size = 14
+text = "设置"
+
+[node name="MainMenuDropdownButton" type="Button" parent="BottomMenu/SystemMenuButton/SystemDropdown/DropdownVBox" unique_id=659647827]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
+theme_override_font_sizes/font_size = 14
+text = "返回主菜单"
+
+[node name="QuitDropdownButton" type="Button" parent="BottomMenu/SystemMenuButton/SystemDropdown/DropdownVBox" unique_id=692267604]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
+theme_override_font_sizes/font_size = 14
+text = "退出游戏"

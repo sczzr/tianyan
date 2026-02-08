@@ -1,6 +1,8 @@
-using System.Collections.Generic;
+using System;
 using Godot;
+using FantasyMapGenerator.Scripts.Map;
 using FantasyMapGenerator.Scripts.Rendering;
+using FantasyMapGenerator.Scripts.UI;
 using FantasyMapGenerator.Scripts.Utils;
 
 namespace FantasyMapGenerator.Scripts.Core;
@@ -10,128 +12,45 @@ namespace FantasyMapGenerator.Scripts.Core;
 /// </summary>
 public partial class Game : Control
 {
+	private const int DefaultCellCount = 2000;
+	private const bool DefaultEnableMapDrilldown = true;
+	private const int GlobalCityCellCount = 15000;
+	private const int NationalCountyCellCount = 3000;
+
 	private ColorRect _background;
 	private Window _rootWindow;
 	private MapView _mapView;
-	private HBoxContainer _topMenu;
-	private Button _mapMenuButton;
-	private Button _systemMenuButton;
-	private PanelContainer _mapDropdown;
-	private PanelContainer _systemDropdown;
-	private Button _mapDropdownRegenerateButton;
-	private Button _mapDropdownSettingsButton;
-	private Button _systemDropdownSettingsButton;
-	private Button _systemDropdownMainMenuButton;
-	private Button _systemDropdownQuitButton;
-	private PanelContainer _menuPanel;
-	private PanelContainer _mapSettingsPopup;
-	private VBoxContainer _menuVBox;
-	private Label _pausedLabel;
-	private Label _generationSettingsLabel;
-	private Label _mapWidthLabel;
-	private Label _mapHeightLabel;
-	private Label _cellCountLabel;
-	private Label _riverDensityLabel;
-	private Label _countrySectionLabel;
-	private Label _countryCountLabel;
-	private Label _countryBorderWidthLabel;
-	private Label _countryFillAlphaLabel;
-	private Label _countryBorderColorLabel;
-	private Label _mapDisplayTitleLabel;
-	private Label _layerSectionLabel;
-	private Label _overlaySectionLabel;
-	private Label _themeSectionLabel;
-	private Label _themeLabel;
-	private SpinBox _mapWidthSpinBox;
-	private SpinBox _mapHeightSpinBox;
-	private SpinBox _cellCountSpinBox;
-	private SpinBox _countryCountSpinBox;
-	private HSlider _riverDensitySlider;
-	private HSlider _countryBorderWidthSlider;
-	private HSlider _countryFillAlphaSlider;
-	private CheckButton _terrainLayerCheck;
-	private CheckButton _showCountriesCheck;
-	private CheckButton _showCountryBordersCheck;
-	private CheckButton _ecologyLayerCheck;
-	private CheckButton _showRiversCheck;
-	private CheckButton _showNamesCheck;
-	private ColorPickerButton _countryBorderColorPicker;
-	private OptionButton _mapThemeSelector;
-	private Button _mapSettingsApplyButton;
-	private Button _mapSettingsCloseButton;
-	private Label _mapViewScaleLabel;
-	private Button _resumeButton;
-	private Button _regenerateButton;
-	private Button _settingsButton;
-	private Button _mainMenuButton;
-	private Button _quitButton;
-	private HSlider _mapViewScaleSlider;
+	private MapHierarchyController _mapHierarchyController;
+	private MapLevel _rootMapLevel = MapLevel.World;
+	private BottomMenuController _bottomMenuController;
+	private MapDisplayPanelController _mapDisplayPanelController;
+	private MenuController _menuController;
 
 	private bool _isMenuVisible;
 	private TranslationManager _translationManager;
+	private MapHierarchyConfig _mapHierarchyConfig;
+	private bool _enableMapDrilldown = DefaultEnableMapDrilldown;
+
+	private enum MapType
+	{
+		GlobalCity = 0,
+		NationalCounty = 1,
+		Custom = 2
+	}
 
 	public override void _Ready()
 	{
 		_translationManager = TranslationManager.Instance;
 		_translationManager.LanguageChanged += OnLanguageChanged;
 
-		_background = GetNode<ColorRect>("Background");
-		_mapView = GetNode<MapView>("MapView");
-		_topMenu = GetNode<HBoxContainer>("TopMenu");
-		_mapMenuButton = GetNode<Button>("TopMenu/MapMenuButton");
-		_systemMenuButton = GetNode<Button>("TopMenu/SystemMenuButton");
-		_mapDropdown = GetNode<PanelContainer>("TopMenu/MapMenuButton/MapDropdown");
-		_systemDropdown = GetNode<PanelContainer>("TopMenu/SystemMenuButton/SystemDropdown");
-		_mapDropdownRegenerateButton = GetNode<Button>("TopMenu/MapMenuButton/MapDropdown/DropdownVBox/RegenerateDropdownButton");
-		_mapDropdownSettingsButton = GetNode<Button>("TopMenu/MapMenuButton/MapDropdown/DropdownVBox/MapSettingsDropdownButton");
-		_systemDropdownSettingsButton = GetNode<Button>("TopMenu/SystemMenuButton/SystemDropdown/DropdownVBox/SettingsDropdownButton");
-		_systemDropdownMainMenuButton = GetNode<Button>("TopMenu/SystemMenuButton/SystemDropdown/DropdownVBox/MainMenuDropdownButton");
-		_systemDropdownQuitButton = GetNode<Button>("TopMenu/SystemMenuButton/SystemDropdown/DropdownVBox/QuitDropdownButton");
+		_background = GetNode<ColorRect>("MapDisplay/Background");
+		_mapView = GetNode<MapView>("MapDisplay/MapView");
+		InitializeMapHierarchy();
+		_mapDisplayPanelController = GetNodeOrNull<MapDisplayPanelController>("GameUI/MapDisplayPanelUI");
+		_bottomMenuController = GetNodeOrNull<BottomMenuController>("GameUI/BottomMenuUI");
 		
 		// 获取菜单面板
-		_menuPanel = GetNode<PanelContainer>("MenuPanel");
-		_mapSettingsPopup = GetNode<PanelContainer>("MapSettingsPopup");
-		_menuVBox = GetNode<VBoxContainer>("MenuPanel/MenuVBox");
-		_pausedLabel = GetNode<Label>("MenuPanel/MenuVBox/PausedLabel");
-		_generationSettingsLabel = GetNode<Label>("MapSettingsPopup/PopupVBox/GenerationSettingsLabel");
-		_mapWidthLabel = GetNode<Label>("MapSettingsPopup/PopupVBox/MapSizeHBox/MapWidthLabel");
-		_mapWidthSpinBox = GetNode<SpinBox>("MapSettingsPopup/PopupVBox/MapSizeHBox/MapWidthSpinBox");
-		_mapHeightLabel = GetNode<Label>("MapSettingsPopup/PopupVBox/MapSizeHBox/MapHeightLabel");
-		_mapHeightSpinBox = GetNode<SpinBox>("MapSettingsPopup/PopupVBox/MapSizeHBox/MapHeightSpinBox");
-		_cellCountLabel = GetNode<Label>("MapSettingsPopup/PopupVBox/CellCountHBox/CellCountLabel");
-		_cellCountSpinBox = GetNode<SpinBox>("MapSettingsPopup/PopupVBox/CellCountHBox/CellCountSpinBox");
-		_riverDensityLabel = GetNode<Label>("MapSettingsPopup/PopupVBox/RiverDensityHBox/RiverDensityLabel");
-		_riverDensitySlider = GetNode<HSlider>("MapSettingsPopup/PopupVBox/RiverDensityHBox/RiverDensitySlider");
-		_countrySectionLabel = GetNode<Label>("MapSettingsPopup/PopupVBox/CountrySectionLabel");
-		_countryCountLabel = GetNode<Label>("MapSettingsPopup/PopupVBox/CountryCountHBox/CountryCountLabel");
-		_countryCountSpinBox = GetNode<SpinBox>("MapSettingsPopup/PopupVBox/CountryCountHBox/CountryCountSpinBox");
-		_mapDisplayTitleLabel = GetNode<Label>("MapDisplayPanel/MapDisplayVBox/MapDisplayTitle");
-		_layerSectionLabel = GetNode<Label>("MapDisplayPanel/MapDisplayVBox/LayerSectionLabel");
-		_overlaySectionLabel = GetNode<Label>("MapDisplayPanel/MapDisplayVBox/OverlaySectionLabel");
-		_themeSectionLabel = GetNode<Label>("MapDisplayPanel/MapDisplayVBox/ThemeSectionLabel");
-		_themeLabel = GetNode<Label>("MapDisplayPanel/MapDisplayVBox/ThemeSelectorHBox/ThemeLabel");
-		_terrainLayerCheck = GetNode<CheckButton>("MapDisplayPanel/MapDisplayVBox/TerrainLayerCheck");
-		_showCountriesCheck = GetNode<CheckButton>("MapDisplayPanel/MapDisplayVBox/CountryLayerCheck");
-		_ecologyLayerCheck = GetNode<CheckButton>("MapDisplayPanel/MapDisplayVBox/EcologyLayerCheck");
-		_showCountryBordersCheck = GetNode<CheckButton>("MapDisplayPanel/MapDisplayVBox/ShowBordersCheck");
-		_countryBorderWidthLabel = GetNode<Label>("MapDisplayPanel/MapDisplayVBox/CountryBorderWidthHBox/CountryBorderWidthLabel");
-		_countryBorderWidthSlider = GetNode<HSlider>("MapDisplayPanel/MapDisplayVBox/CountryBorderWidthHBox/CountryBorderWidthSlider");
-		_countryFillAlphaLabel = GetNode<Label>("MapDisplayPanel/MapDisplayVBox/CountryFillAlphaHBox/CountryFillAlphaLabel");
-		_countryFillAlphaSlider = GetNode<HSlider>("MapDisplayPanel/MapDisplayVBox/CountryFillAlphaHBox/CountryFillAlphaSlider");
-		_countryBorderColorLabel = GetNode<Label>("MapDisplayPanel/MapDisplayVBox/CountryBorderColorHBox/CountryBorderColorLabel");
-		_countryBorderColorPicker = GetNode<ColorPickerButton>("MapDisplayPanel/MapDisplayVBox/CountryBorderColorHBox/CountryBorderColorPicker");
-		_showRiversCheck = GetNode<CheckButton>("MapDisplayPanel/MapDisplayVBox/ShowRiversCheck");
-		_showNamesCheck = GetNode<CheckButton>("MapDisplayPanel/MapDisplayVBox/ShowNamesCheck");
-		_mapThemeSelector = GetNode<OptionButton>("MapDisplayPanel/MapDisplayVBox/ThemeSelectorHBox/MapThemeSelector");
-		_mapSettingsApplyButton = GetNode<Button>("MapSettingsPopup/PopupVBox/PopupButtonsHBox/ApplyButton");
-		_mapSettingsCloseButton = GetNode<Button>("MapSettingsPopup/PopupVBox/PopupButtonsHBox/CloseButton");
-		_mapViewScaleLabel = GetNode<Label>("MenuPanel/MenuVBox/MapViewScaleLabel");
-		_resumeButton = GetNode<Button>("MenuPanel/MenuVBox/ResumeButton");
-		_regenerateButton = GetNode<Button>("MenuPanel/MenuVBox/RegenerateButton");
-		_settingsButton = GetNode<Button>("MenuPanel/MenuVBox/SettingsButton");
-		_mainMenuButton = GetNode<Button>("MenuPanel/MenuVBox/MainMenuButton");
-		_quitButton = GetNode<Button>("MenuPanel/MenuVBox/QuitButton");
-		_mapViewScaleSlider = GetNode<HSlider>("MenuPanel/MenuVBox/MapViewScaleSlider");
+		_menuController = GetNodeOrNull<MenuController>("GameUI/MenuUI");
 
 		SetupUI();
 		UpdateUIText();
@@ -150,6 +69,15 @@ public partial class Game : Control
 		{
 			_rootWindow.SizeChanged -= OnWindowSizeChanged;
 		}
+
+		if (_mapView != null)
+		{
+			var cellSelectedCallable = new Callable(this, nameof(OnMapCellSelected));
+			if (_mapView.IsConnected(MapView.SignalName.CellSelected, cellSelectedCallable))
+			{
+				_mapView.Disconnect(MapView.SignalName.CellSelected, cellSelectedCallable);
+			}
+		}
 	}
 
 	private void OnWindowSizeChanged()
@@ -161,6 +89,53 @@ public partial class Game : Control
 			_background.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
 			_background.Size = targetSize;
 		}
+		if (_mapView != null)
+		{
+			_mapView.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+			_mapView.Size = targetSize;
+		}
+	}
+
+	private void SyncMapGenerationSizeToWindow()
+	{
+		if (_mapView == null)
+		{
+			return;
+		}
+
+		var targetSize = _rootWindow?.Size ?? GetViewportRect().Size;
+		int width = Mathf.Clamp(Mathf.RoundToInt(targetSize.X), 128, 4096);
+		int height = Mathf.Clamp(Mathf.RoundToInt(targetSize.Y), 128, 4096);
+
+		if (_mapView.MapWidth != width)
+		{
+			_mapView.MapWidth = width;
+		}
+
+		if (_mapView.MapHeight != height)
+		{
+			_mapView.MapHeight = height;
+		}
+	}
+
+	private void RegenerateMapForWindow()
+	{
+		SyncMapGenerationSizeToWindow();
+		if (_mapHierarchyController != null)
+		{
+			if (_mapHierarchyController.HasContext)
+			{
+				_mapHierarchyController.RegenerateCurrentMap();
+			}
+			else
+			{
+				ApplyRootContextAndGenerate();
+			}
+			UpdateBackToParentButton();
+			return;
+		}
+
+		_mapView?.GenerateMap();
 	}
 
 	private void OnLanguageChanged(string language)
@@ -170,352 +145,66 @@ public partial class Game : Control
 
 	private void UpdateUIText()
 	{
-		var tm = TranslationManager.Instance;
-		_mapMenuButton.Text = tm.Tr("map_menu");
-		_systemMenuButton.Text = tm.Tr("system_menu");
-
-		if (_pausedLabel != null)
-		{
-			_pausedLabel.Text = tm.Tr("game_paused");
-		}
-
-		if (_generationSettingsLabel != null)
-		{
-			_generationSettingsLabel.Text = tm.Tr("generation_settings");
-		}
-
-		if (_mapWidthLabel != null)
-		{
-			_mapWidthLabel.Text = tm.Tr("map_width");
-		}
-
-		if (_mapHeightLabel != null)
-		{
-			_mapHeightLabel.Text = tm.Tr("map_height");
-		}
-
-		if (_cellCountLabel != null)
-		{
-			_cellCountLabel.Text = tm.Tr("cell_count");
-		}
-
-		if (_countrySectionLabel != null)
-		{
-			_countrySectionLabel.Text = tm.Tr("country_settings");
-		}
-
-		if (_countryCountLabel != null)
-		{
-			_countryCountLabel.Text = tm.Tr("country_count");
-		}
-
-		if (_countryBorderColorLabel != null)
-		{
-			_countryBorderColorLabel.Text = tm.Tr("country_border_color");
-		}
-
-		if (_mapDisplayTitleLabel != null)
-		{
-			_mapDisplayTitleLabel.Text = tm.Tr("map_display");
-		}
-
-		if (_layerSectionLabel != null)
-		{
-			_layerSectionLabel.Text = tm.Tr("map_layers");
-		}
-
-		if (_overlaySectionLabel != null)
-		{
-			_overlaySectionLabel.Text = tm.Tr("map_overlay");
-		}
-
-		if (_themeSectionLabel != null)
-		{
-			_themeSectionLabel.Text = tm.Tr("map_theme");
-		}
-
-		if (_themeLabel != null)
-		{
-			_themeLabel.Text = tm.Tr("map_theme_style");
-		}
-
-		if (_resumeButton != null)
-		{
-			_resumeButton.Text = tm.Tr("resume");
-		}
-
-		if (_regenerateButton != null)
-		{
-			_regenerateButton.Text = tm.Tr("regenerate_map");
-		}
-
-		if (_settingsButton != null)
-		{
-			_settingsButton.Text = tm.Tr("settings");
-		}
-
-		if (_mainMenuButton != null)
-		{
-			_mainMenuButton.Text = tm.Tr("back_to_main_menu");
-		}
-
-		if (_quitButton != null)
-		{
-			_quitButton.Text = tm.Tr("quit_game");
-		}
-
-		if (_mapDropdownRegenerateButton != null)
-		{
-			_mapDropdownRegenerateButton.Text = tm.Tr("regenerate_map");
-		}
-
-		if (_mapDropdownSettingsButton != null)
-		{
-			_mapDropdownSettingsButton.Text = tm.Tr("map_settings");
-		}
-
-		if (_systemDropdownSettingsButton != null)
-		{
-			_systemDropdownSettingsButton.Text = tm.Tr("settings");
-		}
-
-		if (_systemDropdownMainMenuButton != null)
-		{
-			_systemDropdownMainMenuButton.Text = tm.Tr("back_to_main_menu");
-		}
-
-		if (_systemDropdownQuitButton != null)
-		{
-			_systemDropdownQuitButton.Text = tm.Tr("quit_game");
-		}
-
-		if (_mapSettingsApplyButton != null)
-		{
-			_mapSettingsApplyButton.Text = tm.Tr("apply_generate");
-		}
-
-		if (_mapSettingsCloseButton != null)
-		{
-			_mapSettingsCloseButton.Text = tm.Tr("close");
-		}
-
-		RefreshMapThemeOptions();
-		UpdateRiverDensityLabel();
-		UpdateCountryBorderWidthLabel();
-		UpdateCountryFillAlphaLabel();
-		UpdateMapDisplayLabels();
-		UpdateMapViewScaleLabel();
-	}
-
-	private void SetupMapView()
-	{
-		if (_mapView == null)
-		{
-			_mapView = new MapView();
-			_mapView.Name = "MapView";
-			AddChild(_mapView);
-			MoveChild(_mapView, 0);
-		}
+		_bottomMenuController?.UpdateUIText();
+		_mapDisplayPanelController?.UpdateUIText();
+		_menuController?.UpdateUIText();
 	}
 
 	private void SetupUI()
 	{
-		SetupTopMenu();
+		SetupBottomMenu();
 
-		// 菜单内按钮点击事件
-		if (_resumeButton != null)
+		if (_menuController != null)
 		{
-			_resumeButton.Pressed += OnResumePressed;
+			_menuController.Initialize(_mapView, _mapHierarchyConfig, _enableMapDrilldown);
+			_menuController.OnResumeRequested += OnResumePressed;
+			_menuController.OnRegenerateRequested += OnRegeneratePressed;
+			_menuController.OnSettingsRequested += OnSettingsPressed;
+			_menuController.OnMainMenuRequested += OnMainMenuPressed;
+			_menuController.OnQuitRequested += OnQuitPressed;
+			_menuController.OnBackToParentRequested += OnBackToParentPressed;
+			_menuController.OnApplySettingsRequested += OnMapSettingsApplyPressed;
+			_menuController.OnResetSettingsRequested += OnMapSettingsResetPressed;
+			_menuController.OnCloseSettingsRequested += OnMapSettingsClosePressed;
+			_menuController.OnMapViewScaleChanged += OnMapViewScaleChanged;
+			_menuController.OnMapTypeSelectionChanged += OnMapTypeSelectionChanged;
 		}
 
-		if (_regenerateButton != null)
-		{
-			_regenerateButton.Pressed += OnRegeneratePressed;
-		}
-
-		SetupGenerationSettings();
-		SetupMapDisplaySettings();
-
-		if (_settingsButton != null)
-		{
-			_settingsButton.Pressed += OnSettingsPressed;
-		}
-
-		if (_mainMenuButton != null)
-		{
-			_mainMenuButton.Pressed += OnMainMenuPressed;
-		}
-
-		if (_quitButton != null)
-		{
-			_quitButton.Pressed += OnQuitPressed;
-		}
-
-		if (_mapViewScaleSlider != null)
-		{
-			_mapViewScaleSlider.ValueChanged += OnMapViewScaleChanged;
-			OnMapViewScaleChanged(_mapViewScaleSlider.Value);
-		}
+		InitializeMenuSettings();
+		_mapDisplayPanelController?.Initialize(_mapView);
 
 		_isMenuVisible = false;
-		_menuPanel.Visible = false;
+		_menuController?.SetMenuVisible(false);
 		HideDropdowns();
+		UpdateBackToParentButton();
 	}
 
-	private void SetupGenerationSettings()
+	private void InitializeMenuSettings()
 	{
-		if (_mapView != null)
+		if (_menuController == null)
 		{
-			_mapView.AutoRegenerate = false;
+			return;
 		}
 
-		if (_mapWidthSpinBox != null)
+		bool settingsLoaded = _menuController.LoadMapSettings();
+		_enableMapDrilldown = _menuController.IsEnableDrilldownChecked;
+		RefreshRootMapLevelFromSelector();
+		ApplyRootContextAndGenerate();
+		if (!settingsLoaded)
 		{
-			_mapWidthSpinBox.Value = _mapView?.MapWidth ?? 512;
-			_mapWidthSpinBox.ValueChanged += OnMapWidthChanged;
+			_menuController.SaveMapSettings(_enableMapDrilldown);
 		}
-
-		if (_mapHeightSpinBox != null)
-		{
-			_mapHeightSpinBox.Value = _mapView?.MapHeight ?? 512;
-			_mapHeightSpinBox.ValueChanged += OnMapHeightChanged;
-		}
-
-		if (_cellCountSpinBox != null)
-		{
-			_cellCountSpinBox.Value = _mapView?.CellCount ?? 2000;
-			_cellCountSpinBox.ValueChanged += OnCellCountChanged;
-		}
-
-		if (_riverDensitySlider != null)
-		{
-			_riverDensitySlider.Value = _mapView?.RiverDensity ?? 1f;
-			_riverDensitySlider.ValueChanged += OnRiverDensityChanged;
-		}
-
-		if (_countryCountSpinBox != null)
-		{
-			_countryCountSpinBox.Value = _mapView?.CountryCount ?? 12;
-			_countryCountSpinBox.ValueChanged += OnCountryCountChanged;
-		}
-
-		if (_mapSettingsApplyButton != null)
-		{
-			_mapSettingsApplyButton.Pressed += OnMapSettingsApplyPressed;
-		}
-
-		if (_mapSettingsCloseButton != null)
-		{
-			_mapSettingsCloseButton.Pressed += OnMapSettingsClosePressed;
-		}
-
-		UpdateRiverDensityLabel();
 	}
 
-	private void SetupMapDisplaySettings()
+	private void SetupBottomMenu()
 	{
-		if (_terrainLayerCheck != null)
-		{
-			_terrainLayerCheck.ButtonPressed = _mapView?.ShowTerrainLayer ?? true;
-			_terrainLayerCheck.Toggled += OnTerrainLayerToggled;
-		}
-
-		if (_showCountriesCheck != null)
-		{
-			_showCountriesCheck.ButtonPressed = _mapView?.ShowCountries ?? true;
-			_showCountriesCheck.Toggled += OnShowCountriesToggled;
-		}
-
-		if (_ecologyLayerCheck != null)
-		{
-			_ecologyLayerCheck.ButtonPressed = _mapView?.UseBiomeColors ?? true;
-			_ecologyLayerCheck.Toggled += OnEcologyLayerToggled;
-		}
-
-		if (_showCountryBordersCheck != null)
-		{
-			_showCountryBordersCheck.ButtonPressed = _mapView?.ShowCountryBorders ?? true;
-			_showCountryBordersCheck.Toggled += OnShowCountryBordersToggled;
-		}
-
-		if (_countryBorderWidthSlider != null)
-		{
-			_countryBorderWidthSlider.Value = _mapView?.CountryBorderWidth ?? 2f;
-			_countryBorderWidthSlider.ValueChanged += OnCountryBorderWidthChanged;
-		}
-
-		if (_countryFillAlphaSlider != null)
-		{
-			_countryFillAlphaSlider.Value = _mapView?.CountryFillAlpha ?? 0.85f;
-			_countryFillAlphaSlider.ValueChanged += OnCountryFillAlphaChanged;
-		}
-
-		if (_countryBorderColorPicker != null)
-		{
-			_countryBorderColorPicker.Color = _mapView?.CountryBorderColor ?? new Color(0.12f, 0.1f, 0.08f, 0.9f);
-			_countryBorderColorPicker.ColorChanged += OnCountryBorderColorChanged;
-		}
-
-		if (_showRiversCheck != null)
-		{
-			_showRiversCheck.ButtonPressed = _mapView?.ShowRivers ?? true;
-			_showRiversCheck.Toggled += OnShowRiversToggled;
-		}
-
-		if (_showNamesCheck != null)
-		{
-			_showNamesCheck.ButtonPressed = _mapView?.ShowNames ?? true;
-			_showNamesCheck.Toggled += OnShowNamesToggled;
-		}
-
-		if (_mapThemeSelector != null)
-		{
-			RefreshMapThemeOptions();
-			_mapThemeSelector.ItemSelected += OnMapThemeSelected;
-		}
-
-		UpdateCountryBorderWidthLabel();
-		UpdateCountryFillAlphaLabel();
-		UpdateMapDisplayLabels();
-	}
-
-	private void SetupTopMenu()
-	{
-		if (_mapMenuButton != null)
-		{
-			_mapMenuButton.Pressed += OnMapMenuButtonPressed;
-		}
-
-		if (_systemMenuButton != null)
-		{
-			_systemMenuButton.Pressed += OnSystemMenuButtonPressed;
-		}
-
-		if (_mapDropdownRegenerateButton != null)
-		{
-			_mapDropdownRegenerateButton.Pressed += OnMapDropdownRegeneratePressed;
-		}
-
-		if (_mapDropdownSettingsButton != null)
-		{
-			_mapDropdownSettingsButton.Pressed += OnMapDropdownSettingsPressed;
-		}
-
-		if (_systemDropdownSettingsButton != null)
-		{
-			_systemDropdownSettingsButton.Pressed += OnSystemDropdownSettingsPressed;
-		}
-
-		if (_systemDropdownMainMenuButton != null)
-		{
-			_systemDropdownMainMenuButton.Pressed += OnSystemDropdownMainMenuPressed;
-		}
-
-		if (_systemDropdownQuitButton != null)
-		{
-			_systemDropdownQuitButton.Pressed += OnSystemDropdownQuitPressed;
-		}
-
+		_bottomMenuController?.Initialize(
+			OnDisplayTabSelected,
+			OnMapDropdownRegeneratePressed,
+			OnMapDropdownSettingsPressed,
+			OnSystemDropdownSettingsPressed,
+			OnSystemDropdownMainMenuPressed,
+			OnSystemDropdownQuitPressed);
 		HideDropdowns();
 	}
 
@@ -523,14 +212,14 @@ public partial class Game : Control
 	{
 		HideDropdowns();
 		_isMenuVisible = !_isMenuVisible;
-		_menuPanel.Visible = _isMenuVisible;
+		_menuController?.SetMenuVisible(_isMenuVisible);
 	}
 
 	private void OnResumePressed()
 	{
 		HideDropdowns();
 		_isMenuVisible = false;
-		_menuPanel.Visible = false;
+		_menuController?.SetMenuVisible(false);
 	}
 
 	private void OnRegeneratePressed()
@@ -538,10 +227,10 @@ public partial class Game : Control
 		// 隐藏菜单并重新生成地图
 		HideDropdowns();
 		_isMenuVisible = false;
-		_menuPanel.Visible = false;
+		_menuController?.SetMenuVisible(false);
 		
 		// 触发地图重新生成
-		_mapView?.GenerateMap();
+		RegenerateMapForWindow();
 	}
 
 	private void OnSettingsPressed()
@@ -568,247 +257,52 @@ public partial class Game : Control
 		{
 			_mapView.ViewScale = (float)value;
 		}
-		UpdateMapViewScaleLabel();
+		_menuController?.UpdateMapViewScaleLabel(value);
 	}
 
-	private void UpdateMapViewScaleLabel()
+	private void OnMapTypeSelectionChanged(MapTypeSelection selection)
 	{
-		if (_mapViewScaleLabel == null || _mapViewScaleSlider == null)
+		var type = selection switch
+		{
+			MapTypeSelection.GlobalCity => MapType.GlobalCity,
+			MapTypeSelection.NationalCounty => MapType.NationalCounty,
+			_ => MapType.Custom
+		};
+
+		ApplyMapTypePreset(type);
+	}
+
+	private void ApplyMapTypePreset(MapType type)
+	{
+		if (_mapView == null)
 		{
 			return;
 		}
 
-		var tm = TranslationManager.Instance;
-		var percent = Mathf.RoundToInt((float)_mapViewScaleSlider.Value * 100f);
-		_mapViewScaleLabel.Text = tm.TrWithFormat("map_view_scale", percent.ToString());
+		_rootMapLevel = ResolveRootLevelFromMapType(type);
+
+		int preset;
+		switch (type)
+		{
+			case MapType.GlobalCity:
+				preset = _mapHierarchyConfig?.WorldCellCount ?? GlobalCityCellCount;
+				break;
+			case MapType.NationalCounty:
+				preset = _mapHierarchyConfig?.CountryCellCount ?? NationalCountyCellCount;
+				break;
+			case MapType.Custom:
+			default:
+				return;
+		}
+
+		_menuController?.UpdateCellCountValue(preset);
+		_mapView.CellCount = preset;
 	}
-
-	private void OnMapWidthChanged(double value)
-	{
-		if (_mapView != null)
-		{
-			_mapView.MapWidth = (int)value;
-		}
-	}
-
-	private void OnMapHeightChanged(double value)
-	{
-		if (_mapView != null)
-		{
-			_mapView.MapHeight = (int)value;
-		}
-	}
-
-	private void OnCellCountChanged(double value)
-	{
-		if (_mapView != null)
-		{
-			_mapView.CellCount = (int)value;
-		}
-	}
-
-	private void OnRiverDensityChanged(double value)
-	{
-		if (_mapView != null)
-		{
-			_mapView.RiverDensity = (float)value;
-		}
-		UpdateRiverDensityLabel();
-	}
-
-	private void OnCountryCountChanged(double value)
-	{
-		if (_mapView != null)
-		{
-			_mapView.CountryCount = (int)value;
-		}
-	}
-
-	private void OnShowCountriesToggled(bool pressed)
-	{
-		if (_mapView != null)
-		{
-			_mapView.ShowCountries = pressed;
-		}
-	}
-
-	private void OnShowCountryBordersToggled(bool pressed)
-	{
-		if (_mapView != null)
-		{
-			_mapView.ShowCountryBorders = pressed;
-		}
-	}
-
-	private void OnTerrainLayerToggled(bool pressed)
-	{
-		if (_mapView != null)
-		{
-			_mapView.ShowTerrainLayer = pressed;
-		}
-	}
-
-	private void OnEcologyLayerToggled(bool pressed)
-	{
-		if (_mapView != null)
-		{
-			_mapView.UseBiomeColors = pressed;
-			_mapView.QueueRedraw();
-		}
-	}
-
-	private void OnShowRiversToggled(bool pressed)
-	{
-		if (_mapView != null)
-		{
-			_mapView.ShowRivers = pressed;
-		}
-	}
-
-	private void OnShowNamesToggled(bool pressed)
-	{
-		if (_mapView != null)
-		{
-			_mapView.ShowNames = pressed;
-		}
-	}
-
-	private void OnMapThemeSelected(long index)
-	{
-		if (_mapView == null || _mapThemeSelector == null)
-		{
-			return;
-		}
-
-		_mapView.TerrainStyleMode = (MapView.TerrainStyle)_mapThemeSelector.GetItemId((int)index);
-	}
-
-	private void OnCountryBorderWidthChanged(double value)
-	{
-		if (_mapView != null)
-		{
-			_mapView.CountryBorderWidth = (float)value;
-		}
-		UpdateCountryBorderWidthLabel();
-	}
-
-	private void OnCountryFillAlphaChanged(double value)
-	{
-		if (_mapView != null)
-		{
-			_mapView.CountryFillAlpha = (float)value;
-		}
-		UpdateCountryFillAlphaLabel();
-	}
-
-	private void OnCountryBorderColorChanged(Color color)
-	{
-		if (_mapView != null)
-		{
-			_mapView.CountryBorderColor = color;
-			_mapView.QueueRedraw();
-		}
-	}
-
-	private void UpdateRiverDensityLabel()
-	{
-		if (_riverDensityLabel == null || _riverDensitySlider == null)
-		{
-			return;
-		}
-
-		var tm = TranslationManager.Instance;
-		string densityText = _riverDensitySlider.Value.ToString("0.00");
-		_riverDensityLabel.Text = tm.TrWithFormat("river_density", densityText);
-	}
-
-	private void UpdateCountryBorderWidthLabel()
-	{
-		if (_countryBorderWidthLabel == null || _countryBorderWidthSlider == null)
-		{
-			return;
-		}
-
-		var tm = TranslationManager.Instance;
-		string widthText = _countryBorderWidthSlider.Value.ToString("0.0");
-		_countryBorderWidthLabel.Text = tm.TrWithFormat("country_border_width", widthText);
-	}
-
-	private void UpdateCountryFillAlphaLabel()
-	{
-		if (_countryFillAlphaLabel == null || _countryFillAlphaSlider == null)
-		{
-			return;
-		}
-
-		var tm = TranslationManager.Instance;
-		string alphaText = _countryFillAlphaSlider.Value.ToString("0.00");
-		_countryFillAlphaLabel.Text = tm.TrWithFormat("country_fill_alpha", alphaText);
-	}
-
-	private void UpdateMapDisplayLabels()
-	{
-		var tm = TranslationManager.Instance;
-		if (_terrainLayerCheck != null)
-		{
-			_terrainLayerCheck.Text = tm.Tr("map_layer_terrain");
-		}
-
-		if (_showCountriesCheck != null)
-		{
-			_showCountriesCheck.Text = tm.Tr("map_layer_countries");
-		}
-
-		if (_ecologyLayerCheck != null)
-		{
-			_ecologyLayerCheck.Text = tm.Tr("map_layer_ecology");
-		}
-
-		if (_showCountryBordersCheck != null)
-		{
-			_showCountryBordersCheck.Text = tm.Tr("show_country_borders");
-		}
-
-		if (_showRiversCheck != null)
-		{
-			_showRiversCheck.Text = tm.Tr("map_show_rivers");
-		}
-
-		if (_showNamesCheck != null)
-		{
-			_showNamesCheck.Text = tm.Tr("map_show_names");
-		}
-	}
-
-	private void RefreshMapThemeOptions()
-	{
-		if (_mapThemeSelector == null)
-		{
-			return;
-		}
-
-		var tm = TranslationManager.Instance;
-		var selected = _mapThemeSelector.Selected;
-		_mapThemeSelector.Clear();
-		_mapThemeSelector.AddItem(tm.Tr("map_theme_heightmap"), (int)MapView.TerrainStyle.Heightmap);
-		_mapThemeSelector.AddItem(tm.Tr("map_theme_contour"), (int)MapView.TerrainStyle.Contour);
-		_mapThemeSelector.AddItem(tm.Tr("map_theme_heatmap"), (int)MapView.TerrainStyle.Heatmap);
-
-		if (_mapView != null)
-		{
-			_mapThemeSelector.Selected = (int)_mapView.TerrainStyleMode;
-		}
-		else if (selected >= 0 && selected < _mapThemeSelector.ItemCount)
-		{
-			_mapThemeSelector.Selected = selected;
-		}
-	}
-
 	public override void _Input(InputEvent @event)
 	{
 		if (@event is InputEventKey keyEvent && keyEvent.Pressed && !keyEvent.Echo && keyEvent.Keycode == Key.Escape)
 		{
-			if (_mapSettingsPopup != null && _mapSettingsPopup.Visible)
+			if (_menuController != null && _menuController.IsMapSettingsVisible)
 			{
 				HideMapSettingsPopup();
 				return;
@@ -820,7 +314,7 @@ public partial class Game : Control
 
 		if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed && mouseButton.ButtonIndex == MouseButton.Left)
 		{
-			if (_mapSettingsPopup != null && _mapSettingsPopup.Visible && !IsPointInsideControl(_mapSettingsPopup, mouseButton.Position))
+			if (_menuController != null && _menuController.IsMapSettingsVisible && !_menuController.IsPointInsideSettings(mouseButton.Position))
 			{
 				HideMapSettingsPopup();
 				return;
@@ -835,40 +329,13 @@ public partial class Game : Control
 
 	private void HideDropdowns()
 	{
-		if (_mapDropdown != null)
-		{
-			_mapDropdown.Visible = false;
-		}
-
-		if (_systemDropdown != null)
-		{
-			_systemDropdown.Visible = false;
-		}
+		_bottomMenuController?.HideDropdowns();
 	}
 
-	private void OnMapMenuButtonPressed()
+	private void OnDisplayTabSelected(int tabIndex)
 	{
-		ToggleDropdown(_mapDropdown, _mapMenuButton);
-	}
-
-	private void OnSystemMenuButtonPressed()
-	{
-		ToggleDropdown(_systemDropdown, _systemMenuButton);
-	}
-
-	private void ToggleDropdown(PanelContainer dropdown, Control anchor)
-	{
-		if (dropdown == null)
-		{
-			return;
-		}
-
-		var shouldShow = !dropdown.Visible;
 		HideDropdowns();
-		if (shouldShow)
-		{
-			dropdown.Visible = true;
-		}
+		_mapDisplayPanelController?.OnDisplayTabSelected(tabIndex);
 	}
 
 	private void OnMapDropdownRegeneratePressed()
@@ -886,13 +353,136 @@ public partial class Game : Control
 	private void OnMapSettingsApplyPressed()
 	{
 		HideMapSettingsPopup();
-		_mapView?.GenerateMap();
+		_menuController?.ApplyCurrentValuesToMap();
+		_enableMapDrilldown = _menuController?.IsEnableDrilldownChecked ?? _enableMapDrilldown;
+		_menuController?.SaveMapSettings(_enableMapDrilldown);
+		RefreshRootMapLevelFromSelector();
+		RegenerateMapForWindow();
+		_menuController?.ShowMapSettingsNotice("map_settings_saved");
+	}
+
+	private void OnMapSettingsResetPressed()
+	{
+		_menuController?.ApplyDefaultMapSettings();
+		_menuController?.ApplyCurrentValuesToMap();
+		_enableMapDrilldown = _menuController?.IsEnableDrilldownChecked ?? _enableMapDrilldown;
+		_menuController?.SaveMapSettings(_enableMapDrilldown);
+		RefreshRootMapLevelFromSelector();
+		RegenerateMapForWindow();
+		_menuController?.ShowMapSettingsNotice("map_settings_saved");
 	}
 
 	private void OnMapSettingsClosePressed()
 	{
 		HideMapSettingsPopup();
 	}
+
+	private void InitializeMapHierarchy()
+	{
+		if (_mapView == null)
+		{
+			return;
+		}
+
+		_mapHierarchyConfig = new MapHierarchyConfig
+		{
+			WorldCellCount = GlobalCityCellCount,
+			CountryCellCount = NationalCountyCellCount,
+			ProvinceCellCount = DefaultCellCount,
+			CityCellCount = DefaultCellCount
+		};
+
+		_mapHierarchyController = new MapHierarchyController(_mapView, _mapHierarchyConfig);
+
+		var cellSelectedCallable = new Callable(this, nameof(OnMapCellSelected));
+		if (!_mapView.IsConnected(MapView.SignalName.CellSelected, cellSelectedCallable))
+		{
+			_mapView.Connect(MapView.SignalName.CellSelected, cellSelectedCallable);
+		}
+	}
+
+	private void OnMapCellSelected(int cellId)
+	{
+		if (cellId < 0 || _mapHierarchyController == null || !_enableMapDrilldown)
+		{
+			return;
+		}
+
+		_mapHierarchyController.TryEnterChild(cellId);
+		UpdateBackToParentButton();
+	}
+
+	private void ApplyRootContextAndGenerate()
+	{
+		if (_mapHierarchyController == null)
+		{
+			return;
+		}
+
+		SyncMapGenerationSizeToWindow();
+		int cellCount = _mapView?.CellCount ?? DefaultCellCount;
+		_mapHierarchyController.SetRoot(_rootMapLevel, cellCount);
+		UpdateBackToParentButton();
+	}
+
+	private void RefreshRootMapLevelFromSelector()
+	{
+		_rootMapLevel = ResolveRootLevelFromMapType(GetSelectedMapType());
+	}
+
+	private MapType GetSelectedMapType()
+	{
+		if (_menuController == null)
+		{
+			return MapType.Custom;
+		}
+
+		return _menuController.GetMapTypeSelection() switch
+		{
+			MapTypeSelection.GlobalCity => MapType.GlobalCity,
+			MapTypeSelection.NationalCounty => MapType.NationalCounty,
+			_ => MapType.Custom
+		};
+	}
+
+	private MapLevel ResolveRootLevelFromMapType(MapType type)
+	{
+		return type switch
+		{
+			MapType.GlobalCity => MapLevel.World,
+			MapType.NationalCounty => MapLevel.Country,
+			MapType.Custom => _rootMapLevel,
+			_ => MapLevel.World
+		};
+	}
+
+	private void OnBackToParentPressed()
+	{
+		HideDropdowns();
+		_isMenuVisible = false;
+		_menuController?.SetMenuVisible(false);
+
+		if (_mapHierarchyController == null)
+		{
+			return;
+		}
+
+		if (_mapHierarchyController.TryReturnToParent())
+		{
+			UpdateBackToParentButton();
+		}
+	}
+
+	private void UpdateBackToParentButton()
+	{
+		if (_menuController == null || _mapHierarchyController == null)
+		{
+			return;
+		}
+
+		_menuController.UpdateBackToParentButton(_mapHierarchyController.CanReturnToParent);
+	}
+
 
 	private void OnSystemDropdownSettingsPressed()
 	{
@@ -914,30 +504,20 @@ public partial class Game : Control
 
 	private void ShowMapSettingsPopup()
 	{
-		if (_mapSettingsPopup != null)
-		{
-			_mapSettingsPopup.Visible = true;
-		}
+		_menuController?.ShowMapSettingsPopup();
 	}
 
 	private void HideMapSettingsPopup()
 	{
-		if (_mapSettingsPopup != null)
-		{
-			_mapSettingsPopup.Visible = false;
-		}
+		_menuController?.HideMapSettingsPopup();
 	}
 
 	private bool IsPointerInsideMenu(Vector2 globalPosition)
 	{
-		return IsPointInsideControl(_topMenu, globalPosition)
-			   || IsPointInsideControl(_mapDropdown, globalPosition)
-			   || IsPointInsideControl(_systemDropdown, globalPosition);
-	}
-
-	private static bool IsPointInsideControl(Control control, Vector2 globalPosition)
-	{
-		return control != null && control.Visible && control.GetGlobalRect().HasPoint(globalPosition);
+		bool inBottom = _bottomMenuController != null && _bottomMenuController.IsPointerInsideMenu(globalPosition);
+		bool inMenu = _menuController != null && _menuController.IsPointInsideMenu(globalPosition);
+		bool inSettings = _menuController != null && _menuController.IsPointInsideSettings(globalPosition);
+		return inBottom || inMenu || inSettings;
 	}
 
 	private void SwitchToScene(string scenePath)

@@ -1,6 +1,7 @@
 using System;
 using Godot;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using FantasyMapGenerator.Scripts.Data;
 using FantasyMapGenerator.Scripts.Utils;
 
@@ -200,8 +201,26 @@ public class HeightmapProcessor
 		}
 	}
 
-	public void ApplyToCells(Cell[] cells, float[] heightmap, int width, int height)
+	public void ApplyToCells(Cell[] cells, float[] heightmap, int width, int height, bool useMultithreading = false)
 	{
+		if (useMultithreading)
+		{
+			Parallel.For(0, cells.Length, i =>
+			{
+				var cell = cells[i];
+				int mapX = (int)Mathf.Clamp(cell.Position.X, 0, width - 1);
+				int mapY = (int)Mathf.Clamp(cell.Position.Y, 0, height - 1);
+
+				int heightIndex = mapY * width + mapX;
+				if (heightIndex >= 0 && heightIndex < heightmap.Length)
+				{
+					cell.Height = heightmap[heightIndex];
+					cell.IsLand = cell.Height > WaterLevel;
+				}
+			});
+			return;
+		}
+
 		for (int i = 0; i < cells.Length; i++)
 		{
 			var cell = cells[i];
@@ -242,8 +261,18 @@ public class HeightmapProcessor
 		}
 	}
 
-	public void AssignColors(Cell[] cells)
+	public void AssignColors(Cell[] cells, bool useMultithreading = false)
 	{
+		if (useMultithreading)
+		{
+			Parallel.For(0, cells.Length, i =>
+			{
+				var cell = cells[i];
+				cell.RenderColor = GetColorForHeight(cell.Height, cell.IsLand);
+			});
+			return;
+		}
+
 		foreach (var cell in cells)
 		{
 			cell.RenderColor = GetColorForHeight(cell.Height, cell.IsLand);
