@@ -10,7 +10,6 @@ namespace FantasyMapGenerator.Scripts.Utils;
 public class AleaPRNG
 {
 	private readonly double[] _state = new double[4];
-	private int _k;
 	private double _floatState;
 
 	public AleaPRNG(uint seed)

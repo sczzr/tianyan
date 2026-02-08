@@ -19,6 +19,8 @@ public partial class MenuController : Control
 	private Label _pausedLabel;
 	private Label _generationSettingsLabel;
 	private Label _mapTypeLabel;
+	private Label _mapStyleLabel;
+	private Label _mapStyleDescriptionLabel;
 	private Label _cellCountLabel;
 	private Label _riverDensityLabel;
 	private Label _useMultithreadingLabel;
@@ -34,6 +36,27 @@ public partial class MenuController : Control
 	private Button _backToParentButton;
 	private SpinBox _cellCountSpinBox;
 	private OptionButton _mapTypeSelector;
+	private OptionButton _mapStyleSelector;
+	private Control _mapStyleHBox;
+	private Control _mapStylePreviewPanel;
+	private ColorRect _miniOcean;
+	private ColorRect _miniLandMain;
+	private ColorRect _miniLandNorth;
+	private ColorRect _miniLandEast;
+	private ColorRect _miniLandSouth;
+	private ColorRect _miniRidgeA;
+	private ColorRect _miniRidgeB;
+	private ColorRect _miniRiverA;
+	private ColorRect _miniRiverB;
+	private ColorRect _miniBorderA;
+	private ColorRect _miniBorderB;
+	private ColorRect _miniCityA;
+	private ColorRect _miniCityB;
+	private ColorRect _miniCityC;
+	private ColorRect _miniTint;
+	private ColorRect _previewColorA;
+	private ColorRect _previewColorB;
+	private ColorRect _previewColorC;
 	private SpinBox _countryCountSpinBox;
 	private SpinBox _minCountryCellsSpinBox;
 	private SpinBox _worldCellCountSpinBox;
@@ -56,6 +79,7 @@ public partial class MenuController : Control
 	private Button _quitButton;
 	private HSlider _mapViewScaleSlider;
 	private bool _mapTypeSelectorWired;
+	private bool _mapStyleSelectorWired;
 
 	private MapView _mapView;
 	private MapHierarchyConfig _mapHierarchyConfig;
@@ -82,6 +106,29 @@ public partial class MenuController : Control
 		_generationSettingsLabel = GetNodeOrNull<Label>("MapSettingsPopup/PopupVBox/GenerationSettingsLabel");
 		_mapTypeLabel = GetNodeOrNull<Label>("MapSettingsPopup/PopupVBox/MapTypeHBox/MapTypeLabel");
 		_mapTypeSelector = GetNodeOrNull<OptionButton>("MapSettingsPopup/PopupVBox/MapTypeHBox/MapTypeSelector");
+		_mapStyleHBox = GetNodeOrNull<Control>("MapSettingsPopup/PopupVBox/MapStyleHBox");
+		_mapStylePreviewPanel = GetNodeOrNull<Control>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel");
+		_mapStyleLabel = GetNodeOrNull<Label>("MapSettingsPopup/PopupVBox/MapStyleHBox/MapStyleLabel");
+		_mapStyleSelector = GetNodeOrNull<OptionButton>("MapSettingsPopup/PopupVBox/MapStyleHBox/MapStyleSelector");
+		_mapStyleDescriptionLabel = GetNodeOrNull<Label>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleDescriptionLabel");
+		_miniOcean = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot/MiniOcean");
+		_miniLandMain = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot/MiniLandMain");
+		_miniLandNorth = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot/MiniLandNorth");
+		_miniLandEast = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot/MiniLandEast");
+		_miniLandSouth = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot/MiniLandSouth");
+		_miniRidgeA = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot/MiniRidgeA");
+		_miniRidgeB = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot/MiniRidgeB");
+		_miniRiverA = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot/MiniRiverA");
+		_miniRiverB = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot/MiniRiverB");
+		_miniBorderA = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot/MiniBorderA");
+		_miniBorderB = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot/MiniBorderB");
+		_miniCityA = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot/MiniCityA");
+		_miniCityB = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot/MiniCityB");
+		_miniCityC = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot/MiniCityC");
+		_miniTint = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot/MiniTint");
+		_previewColorA = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/PreviewPaletteHBox/PreviewColorA");
+		_previewColorB = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/PreviewPaletteHBox/PreviewColorB");
+		_previewColorC = GetNodeOrNull<ColorRect>("MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/PreviewPaletteHBox/PreviewColorC");
 		_cellCountLabel = GetNodeOrNull<Label>("MapSettingsPopup/PopupVBox/CellCountHBox/CellCountLabel");
 		_cellCountSpinBox = GetNodeOrNull<SpinBox>("MapSettingsPopup/PopupVBox/CellCountHBox/CellCountSpinBox");
 		_riverDensityLabel = GetNodeOrNull<Label>("MapSettingsPopup/PopupVBox/RiverDensityHBox/RiverDensityLabel");
@@ -125,6 +172,16 @@ public partial class MenuController : Control
 	{
 		_mapView = mapView;
 		_mapHierarchyConfig = mapHierarchyConfig;
+
+		if (_mapStyleHBox != null)
+		{
+			_mapStyleHBox.Visible = false;
+		}
+
+		if (_mapStylePreviewPanel != null)
+		{
+			_mapStylePreviewPanel.Visible = false;
+		}
 
 		if (_enableDrilldownCheck != null)
 		{
@@ -386,6 +443,11 @@ public partial class MenuController : Control
 			_mapTypeLabel.Text = tm.Tr("map_type");
 		}
 
+		if (_mapStyleLabel != null)
+		{
+			_mapStyleLabel.Text = tm.Tr("map_style");
+		}
+
 		if (_cellCountLabel != null)
 		{
 			_cellCountLabel.Text = tm.Tr("cell_count");
@@ -487,6 +549,8 @@ public partial class MenuController : Control
 		}
 
 		UpdateMapTypeLabelOptions();
+		UpdateMapStyleLabelOptions();
+		UpdateMapStylePreview(GetMapStyleSelection());
 		UpdateRiverDensityLabel();
 		UpdateMapViewScaleLabel(_mapViewScaleSlider?.Value ?? 1.0);
 	}
@@ -513,6 +577,12 @@ public partial class MenuController : Control
 			{
 				_mapTypeSelector.Selected = index;
 			}
+		}
+
+		var mapStyle = (int)ReadInt(config, "map_style", (int)MapVisualStyleSelection.InkFantasy);
+		if (_mapView != null)
+		{
+			_mapView.ApplyVisualStyle((MapVisualStyleSelection)mapStyle);
 		}
 
 		if (_enableDrilldownCheck != null)
@@ -597,6 +667,10 @@ public partial class MenuController : Control
 			var mapType = _mapTypeSelector.GetItemId(_mapTypeSelector.Selected);
 			config.SetValue(MapSettingsSection, "map_type", mapType);
 		}
+		if (_mapView != null)
+		{
+			config.SetValue(MapSettingsSection, "map_style", (int)_mapView.VisualStyleMode);
+		}
 		config.SetValue(MapSettingsSection, "cell_count", _mapView.CellCount);
 		config.SetValue(MapSettingsSection, "river_density", _mapView.RiverDensity);
 		config.SetValue(MapSettingsSection, "use_multithreading", _mapView.UseMultithreading);
@@ -625,6 +699,10 @@ public partial class MenuController : Control
 		_mapView.UseMultithreading = true;
 		_mapView.CountryCount = 12;
 		_mapView.MinCountryCells = 3;
+		if (_mapView != null)
+		{
+			_mapView.ApplyVisualStyle(MapVisualStyleSelection.InkFantasy);
+		}
 
 		if (_cellCountSpinBox != null)
 		{
@@ -704,6 +782,31 @@ public partial class MenuController : Control
 		}
 	}
 
+	public MapVisualStyleSelection GetMapStyleSelection()
+	{
+		if (_mapStyleSelector == null)
+		{
+			return MapVisualStyleSelection.InkFantasy;
+		}
+
+		return (MapVisualStyleSelection)_mapStyleSelector.GetItemId(_mapStyleSelector.Selected);
+	}
+
+	public void SetMapStyleSelection(MapVisualStyleSelection selection)
+	{
+		if (_mapStyleSelector == null)
+		{
+			return;
+		}
+
+		var index = _mapStyleSelector.GetItemIndex((int)selection);
+		if (index >= 0)
+		{
+			_mapStyleSelector.Selected = index;
+			UpdateMapStylePreview(selection);
+		}
+	}
+
 	public bool IsEnableDrilldownChecked => _enableDrilldownCheck?.ButtonPressed ?? false;
 
 	public void ApplyMapTypeSelection(MapTypeSelection selection)
@@ -717,6 +820,21 @@ public partial class MenuController : Control
 		{
 			_cellCountSpinBox.Value = value;
 		}
+	}
+
+	public void SyncGenerationControlsFromMap()
+	{
+		if (_mapView == null)
+		{
+			return;
+		}
+
+		if (_riverDensitySlider != null)
+		{
+			_riverDensitySlider.Value = _mapView.RiverDensity;
+		}
+
+		UpdateRiverDensityLabel();
 	}
 
 	public void UpdateRiverDensityLabel()
@@ -824,6 +942,7 @@ public partial class MenuController : Control
 		}
 
 		WireMapTypeSelector();
+		WireMapStyleSelector();
 
 		if (_cellCountSpinBox != null)
 		{
@@ -902,6 +1021,40 @@ public partial class MenuController : Control
 		_mapTypeSelector.Selected = index >= 0 ? index : _mapTypeSelector.GetItemIndex((int)MapTypeSelection.Custom);
 	}
 
+	private void WireMapStyleSelector()
+	{
+		if (_mapStyleSelector == null || _mapStyleSelectorWired)
+		{
+			return;
+		}
+
+		_mapStyleSelectorWired = true;
+		_mapStyleSelector.ItemSelected += OnMapStyleSelected;
+		UpdateMapStyleLabelOptions();
+	}
+
+	private void UpdateMapStyleLabelOptions()
+	{
+		if (_mapStyleSelector == null)
+		{
+			return;
+		}
+
+		var tm = TranslationManager.Instance;
+		var selectedId = _mapStyleSelector.ItemCount > 0
+			? _mapStyleSelector.GetItemId(_mapStyleSelector.Selected)
+			: (int)MapVisualStyleSelection.InkFantasy;
+		_mapStyleSelector.Clear();
+		_mapStyleSelector.AddItem(tm.Tr("map_style_ink_fantasy"), (int)MapVisualStyleSelection.InkFantasy);
+		_mapStyleSelector.AddItem(tm.Tr("map_style_parchment"), (int)MapVisualStyleSelection.Parchment);
+		_mapStyleSelector.AddItem(tm.Tr("map_style_naval_chart"), (int)MapVisualStyleSelection.NavalChart);
+		_mapStyleSelector.AddItem(tm.Tr("map_style_relief"), (int)MapVisualStyleSelection.Relief);
+		_mapStyleSelector.AddItem(tm.Tr("map_style_heatmap"), (int)MapVisualStyleSelection.Heatmap);
+		_mapStyleSelector.AddItem(tm.Tr("map_style_monochrome"), (int)MapVisualStyleSelection.Monochrome);
+		var index = _mapStyleSelector.GetItemIndex((int)selectedId);
+		_mapStyleSelector.Selected = index >= 0 ? index : _mapStyleSelector.GetItemIndex((int)MapVisualStyleSelection.InkFantasy);
+	}
+
 	private void OnMapTypeSelected(long index)
 	{
 		if (_mapTypeSelector == null)
@@ -911,6 +1064,188 @@ public partial class MenuController : Control
 
 		var selection = (MapTypeSelection)_mapTypeSelector.GetItemId((int)index);
 		OnMapTypeSelectionChanged?.Invoke(selection);
+	}
+
+	private void OnMapStyleSelected(long index)
+	{
+		if (_mapStyleSelector == null)
+		{
+			return;
+		}
+
+		var selection = (MapVisualStyleSelection)_mapStyleSelector.GetItemId((int)index);
+		UpdateMapStylePreview(selection);
+	}
+
+	private void UpdateMapStylePreview(MapVisualStyleSelection selection)
+	{
+		if (_mapStyleDescriptionLabel != null)
+		{
+			var key = selection switch
+			{
+				MapVisualStyleSelection.InkFantasy => "map_style_desc_ink_fantasy",
+				MapVisualStyleSelection.Parchment => "map_style_desc_parchment",
+				MapVisualStyleSelection.NavalChart => "map_style_desc_naval_chart",
+				MapVisualStyleSelection.Relief => "map_style_desc_relief",
+				MapVisualStyleSelection.Heatmap => "map_style_desc_heatmap",
+				MapVisualStyleSelection.Monochrome => "map_style_desc_monochrome",
+				_ => "map_style_desc_ink_fantasy"
+			};
+			_mapStyleDescriptionLabel.Text = TranslationManager.Instance.Tr(key);
+		}
+
+		var (colorA, colorB, colorC) = selection switch
+		{
+			MapVisualStyleSelection.InkFantasy => (
+				new Color(0.24f, 0.37f, 0.27f),
+				new Color(0.43f, 0.26f, 0.15f),
+				new Color(0.16f, 0.37f, 0.59f)
+			),
+			MapVisualStyleSelection.Parchment => (
+				new Color(0.83f, 0.74f, 0.56f),
+				new Color(0.58f, 0.47f, 0.32f),
+				new Color(0.38f, 0.31f, 0.21f)
+			),
+			MapVisualStyleSelection.NavalChart => (
+				new Color(0.19f, 0.43f, 0.66f),
+				new Color(0.55f, 0.76f, 0.86f),
+				new Color(0.5f, 0.66f, 0.54f)
+			),
+			MapVisualStyleSelection.Relief => (
+				new Color(0.61f, 0.54f, 0.38f),
+				new Color(0.41f, 0.6f, 0.36f),
+				new Color(0.28f, 0.39f, 0.56f)
+			),
+			MapVisualStyleSelection.Heatmap => (
+				new Color(0.2f, 0.35f, 0.75f),
+				new Color(0.55f, 0.3f, 0.5f),
+				new Color(0.9f, 0.35f, 0.2f)
+			),
+			MapVisualStyleSelection.Monochrome => (
+				new Color(0.2f, 0.2f, 0.2f),
+				new Color(0.5f, 0.5f, 0.5f),
+				new Color(0.82f, 0.82f, 0.82f)
+			),
+			_ => (
+				new Color(0.24f, 0.37f, 0.27f),
+				new Color(0.43f, 0.26f, 0.15f),
+				new Color(0.16f, 0.37f, 0.59f)
+			)
+		};
+
+		if (_previewColorA != null)
+		{
+			_previewColorA.Color = colorA;
+		}
+
+		if (_previewColorB != null)
+		{
+			_previewColorB.Color = colorB;
+		}
+
+		if (_previewColorC != null)
+		{
+			_previewColorC.Color = colorC;
+		}
+
+		var (ocean, land, ridge, river, border, city, tint) = selection switch
+		{
+			MapVisualStyleSelection.InkFantasy => (
+				new Color(0.17f, 0.37f, 0.59f),
+				new Color(0.31f, 0.49f, 0.3f),
+				new Color(0.45f, 0.29f, 0.18f),
+				new Color(0.24f, 0.58f, 0.86f),
+				new Color(0.15f, 0.11f, 0.08f),
+				new Color(0.95f, 0.9f, 0.72f),
+				new Color(0f, 0f, 0f, 0.08f)
+			),
+			MapVisualStyleSelection.Parchment => (
+				new Color(0.65f, 0.54f, 0.35f),
+				new Color(0.83f, 0.74f, 0.56f),
+				new Color(0.58f, 0.47f, 0.32f),
+				new Color(0.46f, 0.38f, 0.26f),
+				new Color(0.34f, 0.27f, 0.18f),
+				new Color(0.97f, 0.91f, 0.78f),
+				new Color(0.22f, 0.17f, 0.1f, 0.08f)
+			),
+			MapVisualStyleSelection.NavalChart => (
+				new Color(0.16f, 0.39f, 0.63f),
+				new Color(0.55f, 0.72f, 0.58f),
+				new Color(0.37f, 0.5f, 0.42f),
+				new Color(0.58f, 0.8f, 0.92f),
+				new Color(0.1f, 0.25f, 0.42f),
+				new Color(0.94f, 0.97f, 0.96f),
+				new Color(0f, 0.06f, 0.12f, 0.08f)
+			),
+			MapVisualStyleSelection.Relief => (
+				new Color(0.29f, 0.42f, 0.56f),
+				new Color(0.55f, 0.62f, 0.42f),
+				new Color(0.43f, 0.35f, 0.21f),
+				new Color(0.31f, 0.58f, 0.81f),
+				new Color(0.24f, 0.19f, 0.12f),
+				new Color(0.94f, 0.89f, 0.71f),
+				new Color(0f, 0f, 0f, 0.09f)
+			),
+			MapVisualStyleSelection.Heatmap => (
+				new Color(0.17f, 0.24f, 0.48f),
+				new Color(0.53f, 0.32f, 0.43f),
+				new Color(0.88f, 0.37f, 0.24f),
+				new Color(0.95f, 0.82f, 0.29f),
+				new Color(0.25f, 0.12f, 0.18f),
+				new Color(1f, 0.96f, 0.88f),
+				new Color(0f, 0f, 0f, 0.06f)
+			),
+			MapVisualStyleSelection.Monochrome => (
+				new Color(0.22f, 0.22f, 0.22f),
+				new Color(0.6f, 0.6f, 0.6f),
+				new Color(0.42f, 0.42f, 0.42f),
+				new Color(0.78f, 0.78f, 0.78f),
+				new Color(0.12f, 0.12f, 0.12f),
+				new Color(0.95f, 0.95f, 0.95f),
+				new Color(0f, 0f, 0f, 0.08f)
+			),
+			_ => (
+				new Color(0.17f, 0.37f, 0.59f),
+				new Color(0.31f, 0.49f, 0.3f),
+				new Color(0.45f, 0.29f, 0.18f),
+				new Color(0.24f, 0.58f, 0.86f),
+				new Color(0.15f, 0.11f, 0.08f),
+				new Color(0.95f, 0.9f, 0.72f),
+				new Color(0f, 0f, 0f, 0.08f)
+			)
+		};
+
+		if (_miniOcean != null)
+		{
+			_miniOcean.Color = ocean;
+		}
+
+		ApplyMiniColor(_miniLandMain, land);
+		ApplyMiniColor(_miniLandNorth, land);
+		ApplyMiniColor(_miniLandEast, land);
+		ApplyMiniColor(_miniLandSouth, land);
+		ApplyMiniColor(_miniRidgeA, ridge);
+		ApplyMiniColor(_miniRidgeB, ridge);
+		ApplyMiniColor(_miniRiverA, river);
+		ApplyMiniColor(_miniRiverB, river);
+		ApplyMiniColor(_miniBorderA, border);
+		ApplyMiniColor(_miniBorderB, border);
+		ApplyMiniColor(_miniCityA, city);
+		ApplyMiniColor(_miniCityB, city);
+		ApplyMiniColor(_miniCityC, city);
+
+		if (_miniTint != null)
+		{
+			_miniTint.Color = tint;
+		}
+	}
+
+	private static void ApplyMiniColor(ColorRect node, Color color)
+	{
+		if (node != null)
+		{
+			node.Color = color;
+		}
 	}
 
 	private int ReadInt(ConfigFile config, string key, int defaultValue)

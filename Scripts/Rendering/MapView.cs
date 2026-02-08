@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Godot;
 using FantasyMapGenerator.Scripts.Core;
 using FantasyMapGenerator.Scripts.Data;
+using FantasyMapGenerator.Scripts.Map;
 using FantasyMapGenerator.Scripts.Map.Heightmap;
 
 namespace FantasyMapGenerator.Scripts.Rendering;
@@ -163,6 +165,22 @@ public partial class MapView : Control
 	}
 
 	[Export]
+	public MapVisualStyleSelection VisualStyleMode
+	{
+		get => _visualStyleMode;
+		set
+		{
+			if (_visualStyleMode == value)
+			{
+				return;
+			}
+
+			_visualStyleMode = value;
+			ApplyVisualStyle(value);
+		}
+	}
+
+	[Export]
 	public TerrainStyle TerrainStyleMode
 	{
 		get => _terrainStyleMode;
@@ -170,6 +188,62 @@ public partial class MapView : Control
 		{
 			_terrainStyleMode = value;
 			QueueRedraw();
+		}
+	}
+
+	[Export]
+	public float GenerationWaterLevel
+	{
+		get => _generationWaterLevel;
+		set
+		{
+			_generationWaterLevel = Mathf.Clamp(value, 0.05f, 0.95f);
+			if (_mapGenerator != null)
+			{
+				_mapGenerator.WaterLevel = _generationWaterLevel;
+			}
+		}
+	}
+
+	[Export]
+	public bool UseTemplateGeneration
+	{
+		get => _useTemplateGeneration;
+		set
+		{
+			_useTemplateGeneration = value;
+			if (_mapGenerator != null)
+			{
+				_mapGenerator.UseTemplate = _useTemplateGeneration;
+			}
+		}
+	}
+
+	[Export]
+	public bool UseRandomTemplateGeneration
+	{
+		get => _useRandomTemplateGeneration;
+		set
+		{
+			_useRandomTemplateGeneration = value;
+			if (_mapGenerator != null)
+			{
+				_mapGenerator.RandomTemplate = _useRandomTemplateGeneration;
+			}
+		}
+	}
+
+	[Export]
+	public HeightmapTemplateType GenerationTemplateType
+	{
+		get => _generationTemplateType;
+		set
+		{
+			_generationTemplateType = value;
+			if (_mapGenerator != null)
+			{
+				_mapGenerator.TemplateType = _generationTemplateType;
+			}
 		}
 	}
 
@@ -555,6 +629,15 @@ public partial class MapView : Control
 	private const float RouteRiverValleyBonus = 0.92f;
 	private const float RouteTurnDotThreshold = 0.995f;
 	private const float SharedVertexEpsilon = 0.01f;
+	private const string ControlsConfigPath = "user://settings.cfg";
+	private const string ControlsConfigSection = "controls";
+	private const float DefaultZoomStep = 0.05f;
+	private const float DefaultFineZoomStep = 0.01f;
+	private const float DefaultCoarseZoomStep = 0.1f;
+	private const float DefaultMoveSpeed = 240f;
+	private const float ZoomOutMinFactor = 0.2f;
+	private const float ZoomOutMaxFactor = 2.0f;
+	private const float ZoomOutCurvePower = 1.6f;
 	private static readonly MapLayer[] DefaultLayerOrder =
 	{
 		MapLayer.Texture,
@@ -600,7 +683,12 @@ public partial class MapView : Control
 	private Vector2 _canvasSize = new Vector2(512, 512);
 	private Vector2 _cameraMapOffset = Vector2.Zero;
 	private bool _showOceanLayers = true;
+	private MapVisualStyleSelection _visualStyleMode = MapVisualStyleSelection.InkFantasy;
 	private TerrainStyle _terrainStyleMode = TerrainStyle.Heightmap;
+	private float _generationWaterLevel = 0.35f;
+	private bool _useTemplateGeneration = true;
+	private bool _useRandomTemplateGeneration = false;
+	private HeightmapTemplateType _generationTemplateType = HeightmapTemplateType.Continents;
 	private int _countryCount = 12;
 	private int _minCountryCells = 3;
 	private float _countryBorderWidth = 2f;
@@ -618,6 +706,14 @@ public partial class MapView : Control
 	private float _routeWaterPenalty = 800f;
 	private int _routeBridgeFluxThreshold = 45;
 	private float _routeBridgePenaltyMultiplier = 0.78f;
+	private float _zoomStep = DefaultZoomStep;
+	private float _fineZoomStep = DefaultFineZoomStep;
+	private float _coarseZoomStep = DefaultCoarseZoomStep;
+	private bool _enableKeyboardPan = true;
+	private bool _scaleMoveSpeedByZoom = true;
+	private float _moveSpeed = DefaultMoveSpeed;
+	private bool _isMiddleDragging = false;
+	private Vector2 _lastPointerCanvasPos = Vector2.Zero;
 	private int[] _cellCountryIds;
 	private List<Country> _countries = new();
 	private readonly List<MapLayer> _layerOrder = new(DefaultLayerOrder);
@@ -765,6 +861,10 @@ public partial class MapView : Control
 
 	public override void _Ready()
 	{
+		SetProcess(true);
+		SetProcessInput(true);
+		LoadControlSettings();
+
 		bool suppressGenerateOnReady = _suppressGenerateOnReadyOnce;
 		_suppressGenerateOnReadyOnce = false;
 
@@ -777,6 +877,10 @@ public partial class MapView : Control
 			_useMultithreading = _mapGenerator.UseMultithreading;
 			_boundaryPaddingScale = _mapGenerator.BoundaryPaddingScale;
 			_boundaryStepScale = _mapGenerator.BoundaryStepScale;
+			_generationWaterLevel = _mapGenerator.WaterLevel;
+			_useTemplateGeneration = _mapGenerator.UseTemplate;
+			_useRandomTemplateGeneration = _mapGenerator.RandomTemplate;
+			_generationTemplateType = _mapGenerator.TemplateType;
 			if (_mapGenerator.CellCount > 0)
 			{
 				_cellCount = _mapGenerator.CellCount;
@@ -795,8 +899,13 @@ public partial class MapView : Control
 		_mapGenerator.UseMultithreading = _useMultithreading;
 		_mapGenerator.BoundaryPaddingScale = _boundaryPaddingScale;
 		_mapGenerator.BoundaryStepScale = _boundaryStepScale;
+		_mapGenerator.WaterLevel = _generationWaterLevel;
+		_mapGenerator.UseTemplate = _useTemplateGeneration;
+		_mapGenerator.RandomTemplate = _useRandomTemplateGeneration;
+		_mapGenerator.TemplateType = _generationTemplateType;
 		_canvasSize = new Vector2(_mapWidth, _mapHeight);
 		ApplyLayerPreset(_layerPresetMode);
+		ApplyVisualStyle(_visualStyleMode);
 		if (!suppressGenerateOnReady)
 		{
 			GenerateMap();
@@ -816,6 +925,7 @@ public partial class MapView : Control
 		if (_isGenerating) return;
 		_isGenerating = true;
 		_selectedCellId = -1;
+		SyncGeneratorSettings();
 
 		_mapGenerator.GenerateWithNewSeed(_cellCount);
 		GenerateCountries();
@@ -829,6 +939,7 @@ public partial class MapView : Control
 		if (_isGenerating) return;
 		_isGenerating = true;
 		_selectedCellId = -1;
+		SyncGeneratorSettings();
 
 		_mapGenerator.Generate(seed, _cellCount);
 		GenerateCountries();
@@ -842,8 +953,114 @@ public partial class MapView : Control
 		GenerateMapWithSeed(seed.ToString());
 	}
 
+	public async Task GenerateMapForContextAsync(MapContext context, Action<float> progressCallback = null)
+	{
+		if (context == null)
+		{
+			return;
+		}
+
+		if (context.ParentMapData != null && context.ParentCellId.HasValue)
+		{
+			progressCallback?.Invoke(0f);
+			GenerateChildMapFromParent(context);
+			progressCallback?.Invoke(1f);
+			return;
+		}
+
+		SetCellCountWithoutRegenerate(context.CellCount);
+		await GenerateMapWithSeedAsync(context.Seed, _cellCount, progressCallback);
+	}
+
+	public void GenerateMapForContext(MapContext context)
+	{
+		if (context == null)
+		{
+			return;
+		}
+
+		if (context.ParentMapData != null && context.ParentCellId.HasValue)
+		{
+			GenerateChildMapFromParent(context);
+			return;
+		}
+
+		SetCellCountWithoutRegenerate(context.CellCount);
+		GenerateMapWithSeed(context.Seed);
+	}
+
+	public async Task GenerateMapWithSeedAsync(string seed, int cellCount, Action<float> progressCallback = null)
+	{
+		if (_isGenerating || _mapGenerator == null)
+		{
+			return;
+		}
+
+		_isGenerating = true;
+		_selectedCellId = -1;
+		SetCellCountWithoutRegenerate(cellCount);
+		SyncGeneratorSettings();
+
+		object progressLock = new object();
+		float latestProgress = 0f;
+
+		void OnProgress(float value)
+		{
+			lock (progressLock)
+			{
+				latestProgress = Mathf.Clamp(value, 0f, 1f);
+			}
+		}
+
+		_mapGenerator.ProgressChanged += OnProgress;
+		progressCallback?.Invoke(0f);
+
+		try
+		{
+			var generationTask = Task.Run(() => _mapGenerator.Generate(seed, _cellCount));
+
+			while (!generationTask.IsCompleted)
+			{
+				float currentProgress;
+				lock (progressLock)
+				{
+					currentProgress = latestProgress;
+				}
+
+				progressCallback?.Invoke(currentProgress);
+				await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+			}
+
+			await generationTask;
+			progressCallback?.Invoke(1f);
+			GenerateCountries();
+			QueueRedraw();
+		}
+		finally
+		{
+			_mapGenerator.ProgressChanged -= OnProgress;
+			_isGenerating = false;
+		}
+	}
+
+	public void SetCellCountWithoutGeneration(int value)
+	{
+		SetCellCountWithoutRegenerate(value);
+	}
+
+	private void SetCellCountWithoutRegenerate(int value)
+	{
+		_cellCount = Mathf.Max(1, value);
+	}
+
 	public void SetWaterLevel(float level)
 	{
+		_generationWaterLevel = Mathf.Clamp(level, 0.05f, 0.95f);
+		if (_mapGenerator != null)
+		{
+			_mapGenerator.WaterLevel = _generationWaterLevel;
+		}
+
 		if (_mapGenerator?.Data != null)
 		{
 			var heightmap = _mapGenerator.Data.Heightmap;
@@ -852,7 +1069,7 @@ public partial class MapView : Control
 			int height = (int)_mapGenerator.Data.MapSize.Y;
 
 			var processor = new HeightmapProcessor(_mapGenerator.PRNG);
-			processor.WaterLevel = level;
+			processor.WaterLevel = _generationWaterLevel;
 			processor.ApplyToCells(cells, heightmap, width, height);
 			processor.AssignColors(cells);
 
@@ -869,7 +1086,14 @@ public partial class MapView : Control
 		var topLeft = TransformToScreenCoordinates(Vector2.Zero);
 		var bottomRight = TransformToScreenCoordinates(mapSize);
 		var baseRect = new Rect2(topLeft, bottomRight - topLeft);
-		DrawRect(baseRect, OceanLayerColor, true);
+		if (_visualStyleMode == MapVisualStyleSelection.Parchment)
+		{
+			DrawParchmentBackground(baseRect);
+		}
+		else
+		{
+			DrawRect(baseRect, OceanLayerColor, true);
+		}
 
 		foreach (var layer in _layerOrder)
 		{
@@ -969,6 +1193,280 @@ public partial class MapView : Control
 					break;
 			}
 		}
+
+		if (_visualStyleMode == MapVisualStyleSelection.Parchment)
+		{
+			DrawParchmentPostEffects(baseRect);
+		}
+	}
+
+	private void DrawParchmentBackground(Rect2 mapRect)
+	{
+		var light = new Color(0.96f, 0.88f, 0.68f, 1f);
+		var dark = new Color(0.78f, 0.65f, 0.42f, 1f);
+
+		const int bands = 28;
+		for (int i = 0; i < bands; i++)
+		{
+			float y0 = (float)i / bands;
+			float y1 = (float)(i + 1) / bands;
+			float tintNoise = Hash01(i, _cellCount, 71) - 0.5f;
+			float blend = Mathf.Clamp(y0 * 0.78f + tintNoise * 0.16f, 0f, 1f);
+			var bandColor = LerpColor(light, dark, blend);
+			var bandRect = new Rect2(
+				mapRect.Position.X,
+				mapRect.Position.Y + mapRect.Size.Y * y0,
+				mapRect.Size.X,
+				mapRect.Size.Y * (y1 - y0));
+			DrawRect(bandRect, bandColor, true);
+		}
+
+		const int blotchCols = 14;
+		const int blotchRows = 10;
+		float blotchWidth = mapRect.Size.X / blotchCols;
+		float blotchHeight = mapRect.Size.Y / blotchRows;
+		for (int row = 0; row < blotchRows; row++)
+		{
+			for (int col = 0; col < blotchCols; col++)
+			{
+				float n = Hash01(col, row, 113);
+				float n2 = Hash01(col, row, 127);
+				float alpha = 0.03f + n * 0.06f;
+				var tone = new Color(0.52f + n2 * 0.18f, 0.43f + n2 * 0.15f, 0.28f + n2 * 0.1f, alpha);
+
+				var blotchRect = new Rect2(
+					mapRect.Position.X + col * blotchWidth + (n - 0.5f) * blotchWidth * 0.35f,
+					mapRect.Position.Y + row * blotchHeight + (n2 - 0.5f) * blotchHeight * 0.35f,
+					blotchWidth * (0.62f + n * 0.35f),
+					blotchHeight * (0.62f + n2 * 0.35f));
+				DrawRect(blotchRect, tone, true);
+			}
+		}
+
+		int fiberCount = Mathf.Clamp((int)(mapRect.Size.X * mapRect.Size.Y / 4200f), 120, 360);
+		for (int i = 0; i < fiberCount; i++)
+		{
+			float px = mapRect.Position.X + Hash01(i, fiberCount, 211) * mapRect.Size.X;
+			float py = mapRect.Position.Y + Hash01(i, fiberCount, 223) * mapRect.Size.Y;
+			float angle = (Hash01(i, fiberCount, 239) - 0.5f) * 0.9f;
+			float length = 4f + Hash01(i, fiberCount, 251) * 10f;
+			var start = new Vector2(px, py);
+			var end = start + new Vector2(length, 0f).Rotated(angle);
+			DrawLine(start, end, new Color(0.29f, 0.22f, 0.14f, 0.08f), 1f);
+		}
+	}
+
+	private void DrawParchmentPostEffects(Rect2 mapRect)
+	{
+		DrawParchmentCoastlineInk();
+		DrawParchmentDecorations(mapRect);
+		DrawParchmentFrame(mapRect);
+	}
+
+	private void DrawParchmentDecorations(Rect2 mapRect)
+	{
+		DrawParchmentLatitudeGuides(mapRect);
+		DrawParchmentCompassRose(mapRect);
+		DrawParchmentCornerCurls(mapRect);
+	}
+
+	private void DrawParchmentLatitudeGuides(Rect2 mapRect)
+	{
+		const int guideCount = 4;
+		const int segments = 30;
+		for (int guide = 1; guide <= guideCount; guide++)
+		{
+			float t = guide / (guideCount + 1f);
+			float baseY = mapRect.Position.Y + mapRect.Size.Y * t;
+			float amplitude = 2f + guide * 0.45f;
+			for (int segment = 0; segment < segments; segment++)
+			{
+				if ((segment & 1) != 0)
+				{
+					continue;
+				}
+
+				float x0t = (float)segment / segments;
+				float x1t = (float)(segment + 1) / segments;
+				float x0 = mapRect.Position.X + mapRect.Size.X * x0t;
+				float x1 = mapRect.Position.X + mapRect.Size.X * x1t;
+				float y0 = baseY + Mathf.Sin(x0t * Mathf.Pi * 2f + guide * 0.7f) * amplitude;
+				float y1 = baseY + Mathf.Sin(x1t * Mathf.Pi * 2f + guide * 0.7f) * amplitude;
+				DrawLine(new Vector2(x0, y0), new Vector2(x1, y1), new Color(0.22f, 0.16f, 0.1f, 0.11f), 1f);
+			}
+		}
+	}
+
+	private void DrawParchmentCompassRose(Rect2 mapRect)
+	{
+		float radiusOuter = Mathf.Clamp(Mathf.Min(mapRect.Size.X, mapRect.Size.Y) * 0.055f, 22f, 34f);
+		float margin = radiusOuter + 20f;
+		var center = new Vector2(mapRect.End.X - margin, mapRect.Position.Y + margin);
+
+		if (!mapRect.HasPoint(center))
+		{
+			return;
+		}
+
+		const int rays = 16;
+		for (int i = 0; i < rays; i++)
+		{
+			float angle = i / (float)rays * Mathf.Pi * 2f - Mathf.Pi * 0.5f;
+			var dir = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle));
+			float length = (i % 2 == 0) ? radiusOuter : radiusOuter * 0.58f;
+			float width = (i % 4 == 0) ? 2.2f : 1.2f;
+			DrawLine(center, center + dir * length, new Color(0.16f, 0.11f, 0.07f, 0.78f), width);
+		}
+
+		DrawCircle(center, radiusOuter + 3f, new Color(0.19f, 0.13f, 0.08f, 0.55f), false, 1.2f);
+		DrawCircle(center, radiusOuter * 0.55f, new Color(0.19f, 0.13f, 0.08f, 0.45f), false, 1f);
+
+		var font = GetThemeFont("font", "Label");
+		if (font != null)
+		{
+			int fontSize = Mathf.Max(12, GetThemeFontSize("font_size", "Label") - 1);
+			var northPos = center + new Vector2(0f, -radiusOuter - 5f);
+			DrawString(font, northPos, "N", HorizontalAlignment.Center, -1, fontSize, new Color(0.16f, 0.11f, 0.07f, 0.9f));
+		}
+	}
+
+	private void DrawParchmentCornerCurls(Rect2 mapRect)
+	{
+		float curl = Mathf.Clamp(Mathf.Min(mapRect.Size.X, mapRect.Size.Y) * 0.09f, 26f, 46f);
+		var shadow = new Color(0.18f, 0.12f, 0.07f, 0.09f);
+		var highlight = new Color(0.96f, 0.9f, 0.74f, 0.32f);
+
+		DrawPolygon(
+			new[]
+			{
+				mapRect.Position,
+				mapRect.Position + new Vector2(curl, 0f),
+				mapRect.Position + new Vector2(0f, curl)
+			},
+			new[] { shadow, shadow, shadow });
+
+		DrawPolygon(
+			new[]
+			{
+				new Vector2(mapRect.End.X, mapRect.Position.Y),
+				new Vector2(mapRect.End.X - curl, mapRect.Position.Y),
+				new Vector2(mapRect.End.X, mapRect.Position.Y + curl)
+			},
+			new[] { shadow, shadow, shadow });
+
+		DrawPolygon(
+			new[]
+			{
+				new Vector2(mapRect.Position.X, mapRect.End.Y),
+				new Vector2(mapRect.Position.X + curl, mapRect.End.Y),
+				new Vector2(mapRect.Position.X, mapRect.End.Y - curl)
+			},
+			new[] { shadow, shadow, shadow });
+
+		DrawPolygon(
+			new[]
+			{
+				mapRect.End,
+				new Vector2(mapRect.End.X - curl, mapRect.End.Y),
+				new Vector2(mapRect.End.X, mapRect.End.Y - curl)
+			},
+			new[] { shadow, shadow, shadow });
+
+		DrawLine(mapRect.Position + new Vector2(2f, curl * 0.68f), mapRect.Position + new Vector2(curl * 0.68f, 2f), highlight, 1.4f);
+		DrawLine(new Vector2(mapRect.End.X - curl * 0.68f, mapRect.Position.Y + 2f), new Vector2(mapRect.End.X - 2f, mapRect.Position.Y + curl * 0.68f), highlight, 1.4f);
+		DrawLine(new Vector2(mapRect.Position.X + 2f, mapRect.End.Y - curl * 0.68f), new Vector2(mapRect.Position.X + curl * 0.68f, mapRect.End.Y - 2f), highlight, 1.4f);
+		DrawLine(new Vector2(mapRect.End.X - curl * 0.68f, mapRect.End.Y - 2f), new Vector2(mapRect.End.X - 2f, mapRect.End.Y - curl * 0.68f), highlight, 1.4f);
+	}
+
+	private void DrawParchmentCoastlineInk()
+	{
+		if (_mapGenerator?.Data?.Cells == null)
+		{
+			return;
+		}
+
+		var cells = _mapGenerator.Data.Cells;
+		for (int i = 0; i < cells.Length; i++)
+		{
+			var cell = cells[i];
+			if (cell.Vertices == null || cell.Vertices.Count < 2)
+			{
+				continue;
+			}
+
+			foreach (var neighborId in cell.NeighborIds)
+			{
+				if (neighborId <= cell.Id || neighborId < 0 || neighborId >= cells.Length)
+				{
+					continue;
+				}
+
+				var neighbor = cells[neighborId];
+				if (neighbor.Vertices == null || neighbor.Vertices.Count < 2)
+				{
+					continue;
+				}
+
+				if (cell.IsLand == neighbor.IsLand)
+				{
+					continue;
+				}
+
+				if (!TryGetSharedEdge(cell.Vertices, neighbor.Vertices, out var v1, out var v2))
+				{
+					continue;
+				}
+
+				var p1 = TransformToScreenCoordinates(v1);
+				var p2 = TransformToScreenCoordinates(v2);
+				DrawLine(p1, p2, new Color(0.15f, 0.1f, 0.06f, 0.9f), 2.2f);
+				DrawLine(p1, p2, new Color(0.96f, 0.87f, 0.68f, 0.45f), 0.9f);
+			}
+		}
+	}
+
+	private void DrawParchmentFrame(Rect2 mapRect)
+	{
+		const int ringCount = 5;
+		for (int i = 0; i < ringCount; i++)
+		{
+			float inset = 2f + i * 2.2f;
+			var frameRect = new Rect2(
+				mapRect.Position.X + inset,
+				mapRect.Position.Y + inset,
+				mapRect.Size.X - inset * 2f,
+				mapRect.Size.Y - inset * 2f);
+
+			if (frameRect.Size.X <= 2f || frameRect.Size.Y <= 2f)
+			{
+				continue;
+			}
+
+			float alpha = 0.18f - i * 0.028f;
+			var frameColor = new Color(0.19f, 0.13f, 0.08f, Mathf.Max(0.03f, alpha));
+			DrawRect(frameRect, frameColor, false, 1.2f);
+		}
+
+		int stainCount = 8;
+		for (int i = 0; i < stainCount; i++)
+		{
+			float px = mapRect.Position.X + Hash01(i, stainCount, 307) * mapRect.Size.X;
+			float py = mapRect.Position.Y + Hash01(i, stainCount, 311) * mapRect.Size.Y;
+			float radius = 8f + Hash01(i, stainCount, 313) * 18f;
+			DrawCircle(new Vector2(px, py), radius, new Color(0.22f, 0.15f, 0.08f, 0.035f));
+		}
+	}
+
+	private static float Hash01(int x, int y, int salt)
+	{
+		unchecked
+		{
+			uint h = (uint)(x * 374761393 + y * 668265263 + salt * 1274126177);
+			h ^= h >> 13;
+			h *= 1274126177;
+			h ^= h >> 16;
+			return (h & 0x00FFFFFF) / 16777215f;
+		}
 	}
 
 	/// <summary>
@@ -1048,8 +1546,43 @@ public partial class MapView : Control
 
 	public override void _Input(InputEvent @event)
 	{
-		if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed)
+		if (@event is InputEventMouseButton mouseButton)
 		{
+			if (mouseButton.ButtonIndex == MouseButton.Middle)
+			{
+				if (mouseButton.Pressed && IsPointerOverMapView())
+				{
+					_isMiddleDragging = true;
+					_lastPointerCanvasPos = mouseButton.Position;
+				}
+				else if (!mouseButton.Pressed)
+				{
+					_isMiddleDragging = false;
+				}
+			}
+
+			if (!mouseButton.Pressed)
+			{
+				return;
+			}
+
+			if (!IsPointerOverMapView())
+			{
+				return;
+			}
+
+			if (mouseButton.ButtonIndex == MouseButton.WheelUp)
+			{
+				ZoomAtPointer(1, GetZoomStep(mouseButton), mouseButton.Position);
+				return;
+			}
+
+			if (mouseButton.ButtonIndex == MouseButton.WheelDown)
+			{
+				ZoomAtPointer(-1, GetZoomStep(mouseButton), mouseButton.Position);
+				return;
+			}
+
 			if (mouseButton.ButtonIndex == MouseButton.Left)
 			{
 				var localPos = GetLocalMousePosition();
@@ -1069,9 +1602,226 @@ public partial class MapView : Control
 			{
 				GenerateMap();
 			}
+
+			return;
+		}
+
+		if (@event is InputEventMouseMotion mouseMotion && _isMiddleDragging)
+		{
+			var previousLocalPos = GetGlobalTransformWithCanvas().AffineInverse() * _lastPointerCanvasPos;
+			var currentLocalPos = GetGlobalTransformWithCanvas().AffineInverse() * mouseMotion.Position;
+			var previousMapPos = ScreenToMap(previousLocalPos);
+			var currentMapPos = ScreenToMap(currentLocalPos);
+
+			CameraMapOffset += previousMapPos - currentMapPos;
+			_lastPointerCanvasPos = mouseMotion.Position;
+			return;
+		}
+
+		if (@event is InputEventMagnifyGesture magnifyGesture && IsPointerOverMapView())
+		{
+			float intensity = Mathf.Max(0.05f, Mathf.Abs(magnifyGesture.Factor - 1f));
+			float step = _zoomStep * intensity;
+			int direction = magnifyGesture.Factor >= 1f ? 1 : -1;
+			var viewport = GetViewport();
+			var pointerPos = viewport?.GetMousePosition() ?? Vector2.Zero;
+			ZoomAtPointer(direction, step, pointerPos);
 		}
 	}
 
+	public override void _Process(double delta)
+	{
+		if (!_enableKeyboardPan || _isGenerating)
+		{
+			return;
+		}
+
+		var direction = GetMoveDirection();
+		if (direction == Vector2.Zero)
+		{
+			return;
+		}
+
+		float speed = _moveSpeed;
+		if (_scaleMoveSpeedByZoom && ViewScale > 0.001f)
+		{
+			speed /= ViewScale;
+		}
+
+		CameraMapOffset += direction * speed * (float)delta;
+	}
+
+	private Vector2 GetMoveDirection()
+	{
+		float x = 0f;
+		float y = 0f;
+
+		if (Input.IsActionPressed("ui_right") || Input.IsKeyPressed(Key.D))
+		{
+			x += 1f;
+		}
+
+		if (Input.IsActionPressed("ui_left") || Input.IsKeyPressed(Key.A))
+		{
+			x -= 1f;
+		}
+
+		if (Input.IsActionPressed("ui_down") || Input.IsKeyPressed(Key.S))
+		{
+			y += 1f;
+		}
+
+		if (Input.IsActionPressed("ui_up") || Input.IsKeyPressed(Key.W))
+		{
+			y -= 1f;
+		}
+
+		var direction = new Vector2(x, y);
+		return direction.LengthSquared() > 1f ? direction.Normalized() : direction;
+	}
+
+	private void ZoomAtPointer(int direction, float step, Vector2 pointerCanvasPos)
+	{
+		if (direction == 0 || step <= 0f)
+		{
+			return;
+		}
+
+		float currentScale = ViewScale;
+		float adjustedStep = direction < 0 ? step * GetZoomOutFactor(currentScale) : step;
+		float targetScale = ClampViewScale(currentScale + direction * adjustedStep);
+		if (Mathf.IsEqualApprox(currentScale, targetScale))
+		{
+			return;
+		}
+
+		var localPointerPos = GetGlobalTransformWithCanvas().AffineInverse() * pointerCanvasPos;
+		var mapPos = ScreenToMap(localPointerPos);
+		ViewScale = targetScale;
+		CameraMapOffset = GetCameraOffsetForZoomFocus(mapPos, localPointerPos, targetScale);
+	}
+
+	private float GetZoomStep(InputEventWithModifiers inputEvent)
+	{
+		if (inputEvent != null && inputEvent.ShiftPressed)
+		{
+			return _coarseZoomStep;
+		}
+
+		if (inputEvent != null && inputEvent.CtrlPressed)
+		{
+			return _fineZoomStep;
+		}
+
+		return _zoomStep;
+	}
+
+	private float GetZoomOutFactor(float currentScale)
+	{
+		var minScale = Mathf.Max(0.05f, GetMinViewScaleForArea());
+		if (currentScale <= minScale)
+		{
+			return ZoomOutMinFactor;
+		}
+
+		float maxScale = Mathf.Max(5.0f, minScale);
+		float t = Mathf.Clamp((currentScale - minScale) / Mathf.Max(0.0001f, maxScale - minScale), 0f, 1f);
+		float curved = Mathf.Pow(t, ZoomOutCurvePower);
+		return Mathf.Lerp(ZoomOutMinFactor, ZoomOutMaxFactor, curved);
+	}
+
+	private bool IsPointerOverMapView()
+	{
+		var viewport = GetViewport();
+		if (viewport == null)
+		{
+			return true;
+		}
+
+		var pointerPos = viewport.GetMousePosition();
+		if (!GetGlobalRect().HasPoint(pointerPos))
+		{
+			return false;
+		}
+
+		var hovered = viewport.GuiGetHoveredControl();
+		if (hovered == null)
+		{
+			return true;
+		}
+
+		if (hovered == this || IsAncestorOf(hovered) || hovered.IsAncestorOf(this))
+		{
+			return true;
+		}
+
+		return hovered.MouseFilter != Control.MouseFilterEnum.Stop;
+	}
+
+	private void LoadControlSettings()
+	{
+		var config = new ConfigFile();
+		if (config.Load(ControlsConfigPath) != Error.Ok)
+		{
+			return;
+		}
+
+		_zoomStep = Mathf.Max(0.001f, ReadFloat(config, "zoom_step", DefaultZoomStep));
+		_fineZoomStep = Mathf.Max(0.001f, ReadFloat(config, "fine_zoom_step", DefaultFineZoomStep));
+		_coarseZoomStep = Mathf.Max(0.001f, ReadFloat(config, "coarse_zoom_step", DefaultCoarseZoomStep));
+		_enableKeyboardPan = ReadBool(config, "enable_keyboard_pan", _enableKeyboardPan);
+		_scaleMoveSpeedByZoom = ReadBool(config, "scale_move_speed_by_zoom", _scaleMoveSpeedByZoom);
+		_moveSpeed = Mathf.Max(0f, ReadFloat(config, "move_speed", DefaultMoveSpeed));
+	}
+
+	private float ReadFloat(ConfigFile config, string key, float defaultValue)
+	{
+		if (!config.HasSectionKey(ControlsConfigSection, key))
+		{
+			return defaultValue;
+		}
+
+		var value = config.GetValue(ControlsConfigSection, key, defaultValue);
+		var text = value.AsString();
+		if (float.TryParse(text, out var parsed))
+		{
+			return parsed;
+		}
+
+		if (bool.TryParse(text, out var parsedBool))
+		{
+			return parsedBool ? 1f : 0f;
+		}
+
+		return defaultValue;
+	}
+
+	private bool ReadBool(ConfigFile config, string key, bool defaultValue)
+	{
+		if (!config.HasSectionKey(ControlsConfigSection, key))
+		{
+			return defaultValue;
+		}
+
+		var value = config.GetValue(ControlsConfigSection, key, defaultValue);
+		var text = value.AsString();
+		if (bool.TryParse(text, out var parsed))
+		{
+			return parsed;
+		}
+
+		if (int.TryParse(text, out var parsedInt))
+		{
+			return parsedInt != 0;
+		}
+
+		if (float.TryParse(text, out var parsedFloat))
+		{
+			return Mathf.Abs(parsedFloat) > 0.0001f;
+		}
+
+		return defaultValue;
+	}
 	private void DrawCellPolygons(Func<Cell, Color> colorSelector)
 	{
 		var cells = _mapGenerator.Data.Cells;
@@ -1587,6 +2337,7 @@ public partial class MapView : Control
 				break;
 		}
 
+		SyncGeneratorSettings();
 		QueueRedraw();
 	}
 
@@ -1594,6 +2345,115 @@ public partial class MapView : Control
 	{
 		SetLayer(layer, enabled);
 		QueueRedraw();
+	}
+
+	public void ApplyVisualStyle(MapVisualStyleSelection style)
+	{
+		_visualStyleMode = style;
+
+		switch (style)
+		{
+			case MapVisualStyleSelection.InkFantasy:
+				TerrainStyleMode = TerrainStyle.Heightmap;
+				UseBiomeColors = true;
+				ShowOceanLayers = true;
+				CountryFillAlpha = 0.88f;
+				CountryBorderWidth = 2f;
+				CountryBorderColor = new Color(0.19f, 0.13f, 0.08f, 0.9f);
+				_riverDensity = 1.05f;
+				GenerationWaterLevel = 0.35f;
+				UseTemplateGeneration = true;
+				UseRandomTemplateGeneration = false;
+				GenerationTemplateType = HeightmapTemplateType.Continents;
+				break;
+			case MapVisualStyleSelection.Parchment:
+				TerrainStyleMode = TerrainStyle.Contour;
+				UseBiomeColors = false;
+				ShowOceanLayers = false;
+				CountryFillAlpha = 0.52f;
+				CountryBorderWidth = 2.4f;
+				CountryBorderColor = new Color(0.28f, 0.2f, 0.12f, 0.92f);
+				_riverDensity = 0.78f;
+				GenerationWaterLevel = 0.28f;
+				UseTemplateGeneration = true;
+				UseRandomTemplateGeneration = false;
+				GenerationTemplateType = HeightmapTemplateType.Pangea;
+				break;
+			case MapVisualStyleSelection.NavalChart:
+				TerrainStyleMode = TerrainStyle.Heightmap;
+				UseBiomeColors = false;
+				ShowOceanLayers = true;
+				CountryFillAlpha = 0.68f;
+				CountryBorderWidth = 1.4f;
+				CountryBorderColor = new Color(0.1f, 0.23f, 0.39f, 0.9f);
+				_riverDensity = 1.35f;
+				GenerationWaterLevel = 0.42f;
+				UseTemplateGeneration = true;
+				UseRandomTemplateGeneration = false;
+				GenerationTemplateType = HeightmapTemplateType.Archipelago;
+				break;
+			case MapVisualStyleSelection.Relief:
+				TerrainStyleMode = TerrainStyle.Contour;
+				UseBiomeColors = true;
+				ShowOceanLayers = true;
+				CountryFillAlpha = 0.74f;
+				CountryBorderWidth = 1.8f;
+				CountryBorderColor = new Color(0.24f, 0.18f, 0.08f, 0.85f);
+				_riverDensity = 1.15f;
+				GenerationWaterLevel = 0.33f;
+				UseTemplateGeneration = true;
+				UseRandomTemplateGeneration = false;
+				GenerationTemplateType = HeightmapTemplateType.Peninsula;
+				break;
+			case MapVisualStyleSelection.Heatmap:
+				TerrainStyleMode = TerrainStyle.Heatmap;
+				UseBiomeColors = false;
+				ShowOceanLayers = false;
+				CountryFillAlpha = 0.55f;
+				CountryBorderWidth = 1.2f;
+				CountryBorderColor = new Color(0.18f, 0.09f, 0.12f, 0.85f);
+				_riverDensity = 0.92f;
+				GenerationWaterLevel = 0.24f;
+				UseTemplateGeneration = true;
+				UseRandomTemplateGeneration = false;
+				GenerationTemplateType = HeightmapTemplateType.Fractious;
+				break;
+			case MapVisualStyleSelection.Monochrome:
+				TerrainStyleMode = TerrainStyle.Contour;
+				UseBiomeColors = false;
+				ShowOceanLayers = false;
+				CountryFillAlpha = 0.4f;
+				CountryBorderWidth = 2.1f;
+				CountryBorderColor = new Color(0.08f, 0.08f, 0.08f, 0.95f);
+				_riverDensity = 0.6f;
+				GenerationWaterLevel = 0.2f;
+				UseTemplateGeneration = true;
+				UseRandomTemplateGeneration = false;
+				GenerationTemplateType = HeightmapTemplateType.OldWorld;
+				break;
+		}
+
+		SyncGeneratorSettings();
+		QueueRedraw();
+	}
+
+	private void SyncGeneratorSettings()
+	{
+		if (_mapGenerator == null)
+		{
+			return;
+		}
+
+		_mapGenerator.MapWidth = _mapWidth;
+		_mapGenerator.MapHeight = _mapHeight;
+		_mapGenerator.RiverDensity = _riverDensity;
+		_mapGenerator.UseMultithreading = _useMultithreading;
+		_mapGenerator.BoundaryPaddingScale = _boundaryPaddingScale;
+		_mapGenerator.BoundaryStepScale = _boundaryStepScale;
+		_mapGenerator.WaterLevel = _generationWaterLevel;
+		_mapGenerator.UseTemplate = _useTemplateGeneration;
+		_mapGenerator.RandomTemplate = _useRandomTemplateGeneration;
+		_mapGenerator.TemplateType = _generationTemplateType;
 	}
 
 	private void EnableLayers(params MapLayer[] layers)
@@ -1705,6 +2565,19 @@ public partial class MapView : Control
 			{
 				var color = _countries[countryId].Color;
 				color.A *= _countryFillAlpha;
+				if (_visualStyleMode == MapVisualStyleSelection.Parchment)
+				{
+					color = color.Lerp(new Color(0.83f, 0.74f, 0.56f, color.A), 0.42f);
+				}
+				else if (_visualStyleMode == MapVisualStyleSelection.NavalChart)
+				{
+					color = color.Lerp(new Color(0.6f, 0.78f, 0.9f, color.A), 0.35f);
+				}
+				else if (_visualStyleMode == MapVisualStyleSelection.Monochrome)
+				{
+					float gray = color.R * 0.3f + color.G * 0.59f + color.B * 0.11f;
+					color = new Color(gray, gray, gray, color.A);
+				}
 				return color;
 			}
 		}
@@ -1716,21 +2589,61 @@ public partial class MapView : Control
 	{
 		if (!cell.IsLand)
 		{
-			return new Color(OceanLayerColor.R, OceanLayerColor.G, OceanLayerColor.B, 0.8f);
+			return GetWaterColor(cell.Height);
 		}
 
 		float height = Mathf.Clamp(cell.Height, 0f, 1f);
+		var baseHeightmapColor = cell.RenderColor;
+		if (_visualStyleMode == MapVisualStyleSelection.Parchment)
+		{
+			var parchmentLow = new Color(0.66f, 0.57f, 0.41f, 0.92f);
+			var parchmentHigh = new Color(0.95f, 0.87f, 0.66f, 0.96f);
+			baseHeightmapColor = LerpColor(parchmentLow, parchmentHigh, height);
+		}
+		else if (_visualStyleMode == MapVisualStyleSelection.NavalChart)
+		{
+			var coastTint = new Color(0.79f, 0.88f, 0.74f, 0.9f);
+			var uplandTint = new Color(0.52f, 0.72f, 0.58f, 0.9f);
+			baseHeightmapColor = LerpColor(coastTint, uplandTint, height);
+		}
+		else if (_visualStyleMode == MapVisualStyleSelection.Monochrome)
+		{
+			var lowGray = new Color(0.42f, 0.42f, 0.42f, 0.92f);
+			var highGray = new Color(0.88f, 0.88f, 0.88f, 0.94f);
+			baseHeightmapColor = LerpColor(lowGray, highGray, height);
+		}
+
 		switch (_terrainStyleMode)
 		{
 			case TerrainStyle.Contour:
 				const int bands = 8;
 				float bandValue = Mathf.Floor(height * bands) / bands;
+				if (_visualStyleMode == MapVisualStyleSelection.Parchment)
+				{
+					return LerpColor(new Color(0.53f, 0.44f, 0.31f, 0.95f), new Color(0.9f, 0.8f, 0.58f, 0.96f), bandValue);
+				}
+				if (_visualStyleMode == MapVisualStyleSelection.Monochrome)
+				{
+					return LerpColor(new Color(0.35f, 0.35f, 0.35f, 0.95f), new Color(0.88f, 0.88f, 0.88f, 0.96f), bandValue);
+				}
 				return LerpColor(HeatmapLowColor, HeatmapHighColor, bandValue);
 			case TerrainStyle.Heatmap:
 				return LerpColor(HeatmapLowColor, HeatmapHighColor, height);
 			default:
-				return cell.RenderColor;
+				return baseHeightmapColor;
 		}
+	}
+
+	private Color GetWaterColor(float cellHeight)
+	{
+		float depth = Mathf.Clamp(1f - Mathf.Max(0f, cellHeight), 0f, 1f);
+		return _visualStyleMode switch
+		{
+			MapVisualStyleSelection.Parchment => LerpColor(new Color(0.43f, 0.36f, 0.24f, 0.82f), new Color(0.61f, 0.5f, 0.31f, 0.88f), depth),
+			MapVisualStyleSelection.NavalChart => LerpColor(new Color(0.12f, 0.28f, 0.49f, 0.88f), new Color(0.25f, 0.52f, 0.75f, 0.95f), depth),
+			MapVisualStyleSelection.Monochrome => LerpColor(new Color(0.25f, 0.25f, 0.25f, 0.82f), new Color(0.55f, 0.55f, 0.55f, 0.88f), depth),
+			_ => new Color(OceanLayerColor.R, OceanLayerColor.G, OceanLayerColor.B, 0.8f)
+		};
 	}
 
 	private int GetCountryId(int cellId)
@@ -2486,6 +3399,30 @@ public partial class MapView : Control
 
 	private Color GenerateCountryColor(int index, int count)
 	{
+		if (_visualStyleMode == MapVisualStyleSelection.Monochrome)
+		{
+			var grayBase = 0.3f + 0.6f * (count > 1 ? (float)index / (count - 1) : 0.5f);
+			var jitter = _mapGenerator.PRNG.NextRange(-0.06f, 0.06f);
+			var gray = Mathf.Clamp(grayBase + jitter, 0.15f, 0.92f);
+			return new Color(gray, gray, gray, 0.95f);
+		}
+
+		if (_visualStyleMode == MapVisualStyleSelection.Parchment)
+		{
+			var parchmentHue = 0.08f + 0.1f * (count > 0 ? (float)index / count : 0f);
+			var parchmentSaturation = 0.26f + _mapGenerator.PRNG.NextRange(-0.04f, 0.06f);
+			var parchmentValue = 0.74f + _mapGenerator.PRNG.NextRange(-0.04f, 0.05f);
+			return Color.FromHsv(parchmentHue, Mathf.Clamp(parchmentSaturation, 0.18f, 0.4f), Mathf.Clamp(parchmentValue, 0.58f, 0.88f), 0.9f);
+		}
+
+		if (_visualStyleMode == MapVisualStyleSelection.NavalChart)
+		{
+			var navalHue = 0.48f + 0.18f * (count > 0 ? (float)index / count : 0f);
+			var navalSaturation = 0.34f + _mapGenerator.PRNG.NextRange(-0.05f, 0.08f);
+			var navalValue = 0.82f + _mapGenerator.PRNG.NextRange(-0.05f, 0.08f);
+			return Color.FromHsv(Mathf.PosMod(navalHue, 1f), Mathf.Clamp(navalSaturation, 0.2f, 0.62f), Mathf.Clamp(navalValue, 0.62f, 0.95f), 0.9f);
+		}
+
 		var hue = count > 0 ? (float)index / count : 0f;
 		var hueOffset = _mapGenerator.PRNG.NextRange(-0.03f, 0.03f);
 		hue = Mathf.PosMod(hue + hueOffset, 1f);
@@ -2699,14 +3636,19 @@ public partial class MapView : Control
 
 	private void SelectCell(int cellId, bool emitSignal = true)
 	{
+		bool selectionChanged = _selectedCellId != cellId;
 		_selectedCellId = cellId;
-		QueueRedraw();
+		if (selectionChanged)
+		{
+			QueueRedraw();
+		}
+
 		if (emitSignal)
 		{
 			EmitSignal(SignalName.CellSelected, cellId);
 		}
 
-		if (cellId != -1 && _mapGenerator?.Data != null)
+		if (cellId != -1 && _mapGenerator?.Data != null && cellId >= 0 && cellId < _mapGenerator.Data.Cells.Length)
 		{
 			var cell = _mapGenerator.Data.Cells[cellId];
 			GD.Print($"Selected Cell {cellId}: Pos={cell.Position}, Height={cell.Height:F3}, Biome={cell.BiomeId}, IsLand={cell.IsLand}");
@@ -2740,6 +3682,217 @@ public partial class MapView : Control
 	public MapData GetMapData()
 	{
 		return _mapGenerator?.Data;
+	}
+
+	private void GenerateChildMapFromParent(MapContext context)
+	{
+		var parentData = context.ParentMapData;
+		if (parentData?.Cells == null || parentData.Cells.Length == 0 || !context.ParentCellId.HasValue)
+		{
+			CellCount = context.CellCount;
+			GenerateMapWithSeed(context.Seed);
+			return;
+		}
+
+		int parentCellId = context.ParentCellId.Value;
+		if (parentCellId < 0 || parentCellId >= parentData.Cells.Length)
+		{
+			CellCount = context.CellCount;
+			GenerateMapWithSeed(context.Seed);
+			return;
+		}
+
+		CellCount = context.CellCount;
+		GenerateMapWithSeed(context.Seed);
+
+		if (_mapGenerator?.Data?.Cells == null)
+		{
+			return;
+		}
+
+		var parentCell = parentData.Cells[parentCellId];
+		var parentCellVertices = parentCell.Vertices;
+		if (parentCellVertices == null || parentCellVertices.Count < 3)
+		{
+			return;
+		}
+
+		var childCells = _mapGenerator.Data.Cells;
+		var childMapSize = _mapGenerator.Data.MapSize;
+		var linkedParentIds = BuildLinkedParentCellIds(parentData, parentCellId);
+		int maxParentNeighborId = parentData.Cells.Length - 1;
+
+		for (int i = 0; i < childCells.Length; i++)
+		{
+			var child = childCells[i];
+			var parentSpacePos = MapChildToParentSpace(child.Position, childMapSize, parentCellVertices);
+			bool insideParentCell = IsPointInPolygon(parentSpacePos, parentCellVertices);
+			int closestParentCellId = FindClosestParentCell(parentData, parentSpacePos, linkedParentIds);
+			if (closestParentCellId < 0)
+			{
+				closestParentCellId = parentCellId;
+			}
+
+			if (insideParentCell)
+			{
+				closestParentCellId = parentCellId;
+			}
+
+			int linkedParentCellId = Mathf.Clamp(closestParentCellId, 0, maxParentNeighborId);
+			child.GridCellId = linkedParentCellId;
+
+			var linkedParentCell = parentData.Cells[linkedParentCellId];
+			if (!linkedParentCell.IsLand)
+			{
+				child.IsLand = false;
+				child.Height = Mathf.Min(child.Height, _generationWaterLevel - 0.03f);
+				child.BiomeId = linkedParentCell.BiomeId;
+				child.RenderColor = linkedParentCell.RenderColor;
+			}
+			else
+			{
+				float parentHeight = Mathf.Clamp(linkedParentCell.Height, 0.05f, 0.98f);
+				float mixedHeight = Mathf.Clamp(parentHeight * 0.78f + child.Height * 0.22f, 0.05f, 0.99f);
+				child.Height = mixedHeight;
+				child.IsLand = mixedHeight > _generationWaterLevel;
+				child.BiomeId = linkedParentCell.BiomeId;
+				if (child.IsLand)
+				{
+					child.RenderColor = linkedParentCell.RenderColor;
+				}
+			}
+		}
+
+		GenerateCountries();
+		QueueRedraw();
+	}
+
+	private static Vector2 MapChildToParentSpace(Vector2 childPos, Vector2 childMapSize, List<Vector2> parentPolygon)
+	{
+		var parentRect = GetPolygonBounds(parentPolygon);
+		float normalizedWidth = Mathf.Max(1f, childMapSize.X);
+		float normalizedHeight = Mathf.Max(1f, childMapSize.Y);
+		float nx = Mathf.Clamp(childPos.X / normalizedWidth, 0f, 1f);
+		float ny = Mathf.Clamp(childPos.Y / normalizedHeight, 0f, 1f);
+		return new Vector2(
+			Mathf.Lerp(parentRect.Position.X, parentRect.End.X, nx),
+			Mathf.Lerp(parentRect.Position.Y, parentRect.End.Y, ny));
+	}
+
+	private static Rect2 GetPolygonBounds(List<Vector2> polygon)
+	{
+		if (polygon == null || polygon.Count == 0)
+		{
+			return new Rect2(Vector2.Zero, Vector2.One);
+		}
+
+		var min = polygon[0];
+		var max = polygon[0];
+		for (int i = 1; i < polygon.Count; i++)
+		{
+			var p = polygon[i];
+			min = new Vector2(Mathf.Min(min.X, p.X), Mathf.Min(min.Y, p.Y));
+			max = new Vector2(Mathf.Max(max.X, p.X), Mathf.Max(max.Y, p.Y));
+		}
+
+		var size = max - min;
+		if (size.X < 0.001f)
+		{
+			size.X = 0.001f;
+		}
+		if (size.Y < 0.001f)
+		{
+			size.Y = 0.001f;
+		}
+
+		return new Rect2(min, size);
+	}
+
+	private static int FindClosestParentCell(MapData parentData, Vector2 parentSpacePos, List<int> allowedCellIds)
+	{
+		if (parentData?.Cells == null || parentData.Cells.Length == 0)
+		{
+			return -1;
+		}
+
+		if (allowedCellIds == null || allowedCellIds.Count == 0)
+		{
+			return -1;
+		}
+
+		float minDistanceSq = float.MaxValue;
+		int bestId = -1;
+		for (int i = 0; i < allowedCellIds.Count; i++)
+		{
+			int cellId = allowedCellIds[i];
+			if (cellId < 0 || cellId >= parentData.Cells.Length)
+			{
+				continue;
+			}
+
+			var parentCell = parentData.Cells[cellId];
+			float distSq = parentCell.Position.DistanceSquaredTo(parentSpacePos);
+			if (distSq < minDistanceSq)
+			{
+				minDistanceSq = distSq;
+				bestId = parentCell.Id;
+			}
+		}
+
+		return bestId;
+	}
+
+	private static List<int> BuildLinkedParentCellIds(MapData parentData, int parentCellId)
+	{
+		var result = new List<int>();
+		if (parentData?.Cells == null || parentCellId < 0 || parentCellId >= parentData.Cells.Length)
+		{
+			return result;
+		}
+
+		result.Add(parentCellId);
+		var parentCell = parentData.Cells[parentCellId];
+		if (parentCell.NeighborIds != null)
+		{
+			for (int i = 0; i < parentCell.NeighborIds.Count; i++)
+			{
+				int neighborId = parentCell.NeighborIds[i];
+				if (neighborId < 0 || neighborId >= parentData.Cells.Length)
+				{
+					continue;
+				}
+
+				if (!result.Contains(neighborId))
+				{
+					result.Add(neighborId);
+				}
+			}
+		}
+
+		return result;
+	}
+
+	private static bool IsPointInPolygon(Vector2 point, List<Vector2> polygon)
+	{
+		if (polygon == null || polygon.Count < 3)
+		{
+			return false;
+		}
+
+		bool inside = false;
+		for (int i = 0, j = polygon.Count - 1; i < polygon.Count; j = i++)
+		{
+			var a = polygon[i];
+			var b = polygon[j];
+			bool intersects = ((a.Y > point.Y) != (b.Y > point.Y))
+				&& (point.X < (b.X - a.X) * (point.Y - a.Y) / Mathf.Max(0.000001f, b.Y - a.Y) + a.X);
+			if (intersects)
+			{
+				inside = !inside;
+			}
+		}
+
+		return inside;
 	}
 
 	private void DrawCountryNames()

@@ -82,7 +82,7 @@ anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 20.0
 offset_top = -64.0
-offset_right = 348.0
+offset_right = 516.0
 offset_bottom = -16.0
 grow_horizontal = 0
 grow_vertical = 0
@@ -98,48 +98,16 @@ theme_override_styles/pressed = SubResource("BottomMenuButtonPressedStyle")
 theme_override_styles/hover = SubResource("BottomMenuButtonHoverStyle")
 text = "地图显示"
 
-[node name="MapDisplayDropdown" type="PanelContainer" parent="BottomMenu/MapDisplayButton" unique_id=208411769]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = -186.0
-offset_bottom = -4.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_styles/panel = SubResource("DropdownPanelStyle")
-
-[node name="DropdownVBox" type="VBoxContainer" parent="BottomMenu/MapDisplayButton/MapDisplayDropdown" unique_id=1315232094]
+[node name="BackToParentButton" type="Button" parent="BottomMenu" unique_id=274820413]
+custom_minimum_size = Vector2(160, 48)
 layout_mode = 2
-theme_override_constants/separation = 4
-alignment = 2
-
-[node name="LayersTabButton" type="Button" parent="BottomMenu/MapDisplayButton/MapDisplayDropdown/DropdownVBox" unique_id=621178773]
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
-theme_override_font_sizes/font_size = 14
-text = "图层"
-
-[node name="EditTabButton" type="Button" parent="BottomMenu/MapDisplayButton/MapDisplayDropdown/DropdownVBox" unique_id=1613828577]
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
-theme_override_font_sizes/font_size = 14
-text = "编辑"
-
-[node name="BorderTabButton" type="Button" parent="BottomMenu/MapDisplayButton/MapDisplayDropdown/DropdownVBox" unique_id=668847837]
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
-theme_override_font_sizes/font_size = 14
-text = "边界"
-
-[node name="ThemeTabButton" type="Button" parent="BottomMenu/MapDisplayButton/MapDisplayDropdown/DropdownVBox" unique_id=2015734444]
-custom_minimum_size = Vector2(0, 40)
-layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
-theme_override_font_sizes/font_size = 14
-text = "主题"
+disabled = true
+theme_override_colors/font_color = Color(0.98, 0.96, 0.9, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("BottomMenuButtonStyle")
+theme_override_styles/pressed = SubResource("BottomMenuButtonPressedStyle")
+theme_override_styles/hover = SubResource("BottomMenuButtonHoverStyle")
+text = "返回上级地图"
 
 [node name="SettingsMenuButton" type="Button" parent="BottomMenu" unique_id=1621974801]
 custom_minimum_size = Vector2(160, 48)
@@ -179,4 +147,3 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
 theme_override_font_sizes/font_size = 14
 text = "地图设置"
-

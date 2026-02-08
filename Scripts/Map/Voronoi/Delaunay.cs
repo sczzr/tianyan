@@ -61,11 +61,13 @@ public class Delaunay
         }
     }
 
-    public static Triangle[] Triangulate(Vector2[] points)
+    public static Triangle[] Triangulate(Vector2[] points, Action<float> progressCallback = null)
     {
         int n = points.Length;
         if (n < 3)
             return Array.Empty<Triangle>();
+
+        progressCallback?.Invoke(0f);
 
         var triangles = new List<Triangle>();
 
@@ -96,6 +98,7 @@ public class Delaunay
 
         triangles.Add(new Triangle(0, 1, 2));
 
+        int progressStep = Math.Max(1, n / 200);
         for (int i = 0; i < n; i++)
         {
             if (i % 50 == 0) GD.Print($"[Delaunay] Processing point {i}/{n}...");
@@ -135,6 +138,11 @@ public class Delaunay
                     triangles.Add(newTri);
                 }
             }
+
+            if (i == n - 1 || i % progressStep == 0)
+            {
+                progressCallback?.Invoke((i + 1f) / n);
+            }
         }
 
         for (int t = triangles.Count - 1; t >= 0; t--)
@@ -167,6 +175,7 @@ public class Delaunay
             }
         }
 
+        progressCallback?.Invoke(1f);
         return triangles.ToArray();
     }
 

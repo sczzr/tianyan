@@ -31,9 +31,12 @@ public partial class MapGeneratorUI : Control
 	private Label _welcomeTitleLabel;
 	private Label _welcomeSubtitleLabel;
 	private Button _welcomeGenerateButton;
+	private ProgressBar _welcomeGenerateProgressBar;
+	private Label _welcomeGenerateProgressLabel;
 
 	private bool _isMenuVisible;
 	private bool _isWelcomeMode;
+	private bool _isWelcomeGenerating;
 	private TranslationManager _translationManager;
 	private MapHierarchyConfig _mapHierarchyConfig;
 	private bool _enableMapDrilldown = DefaultEnableMapDrilldown;
@@ -279,6 +282,8 @@ public partial class MapGeneratorUI : Control
 		{
 			_welcomeGenerateButton.Pressed += OnWelcomeGeneratePressed;
 		}
+
+		SetWelcomeGeneratingState(false, 0f);
 		UpdateWelcomeUIText();
 	}
 
@@ -298,6 +303,11 @@ public partial class MapGeneratorUI : Control
 		if (_welcomeGenerateButton != null)
 		{
 			_welcomeGenerateButton.Text = tm.Tr("generate_new_map");
+		}
+
+		if (_welcomeGenerateProgressLabel != null)
+		{
+			_welcomeGenerateProgressLabel.Text = tm.Tr("welcome_generating_map");
 		}
 	}
 
@@ -327,31 +337,78 @@ public partial class MapGeneratorUI : Control
 		}
 	}
 
-	private void OnWelcomeGeneratePressed()
+	private async void OnWelcomeGeneratePressed()
 	{
-		if (_mapHierarchyController == null)
+		if (_mapHierarchyController == null || _isWelcomeGenerating || _mapView == null)
 		{
 			return;
 		}
 
-		SyncMapGenerationSizeToWindow();
-		if (_mapHierarchyController.Current != null)
+		_isWelcomeGenerating = true;
+		SetWelcomeGeneratingState(true, 0f);
+
+		try
 		{
-			_mapHierarchyController.RestoreContext(_mapHierarchyController.Current, regenerate: true);
+			SyncMapGenerationSizeToWindow();
+
+			if (_mapHierarchyController.Current == null)
+			{
+				RefreshRootMapLevelFromSelector();
+				int rootCellCount = _mapView.CellCount > 0 ? _mapView.CellCount : DefaultCellCount;
+				_mapHierarchyController.SetRoot(_rootMapLevel, rootCellCount, regenerate: false);
+			}
+
+			var targetContext = _mapHierarchyController.Current;
+			if (targetContext == null)
+			{
+				return;
+			}
+
+			await _mapView.GenerateMapForContextAsync(targetContext, progress =>
+			{
+				SetWelcomeGeneratingState(true, progress);
+			});
+
+			SetWelcomeMode(false);
+			UpdateBackToParentButton();
 		}
-		else
+		catch (Exception ex)
 		{
-			ApplyRootContextAndGenerate();
+			GD.PrintErr($"MapGeneratorUI: failed to generate welcome map: {ex.Message}");
+		}
+		finally
+		{
+			SetWelcomeGeneratingState(false, 0f);
+			_isWelcomeGenerating = false;
+		}
+	}
+
+	private void SetWelcomeGeneratingState(bool generating, float progress01)
+	{
+		float clamped = Mathf.Clamp(progress01, 0f, 1f);
+
+		if (_welcomeGenerateButton != null)
+		{
+			_welcomeGenerateButton.Disabled = generating;
 		}
 
-		SetWelcomeMode(false);
-		UpdateBackToParentButton();
+		if (_welcomeGenerateProgressBar != null)
+		{
+			_welcomeGenerateProgressBar.Visible = generating;
+			_welcomeGenerateProgressBar.Value = clamped * 100f;
+		}
+
+		if (_welcomeGenerateProgressLabel != null)
+		{
+			_welcomeGenerateProgressLabel.Visible = generating;
+		}
 	}
 
 	private void SetupBottomMenu()
 	{
 		_bottomMenuController?.Initialize(
-			OnDisplayTabSelected,
+			OnMapDisplayPressed,
+			OnBackToParentPressed,
 			OnMapDropdownRegeneratePressed,
 			OnMapDropdownSettingsPressed);
 		HideDropdowns();
@@ -484,6 +541,12 @@ public partial class MapGeneratorUI : Control
 	private void HideDropdowns()
 	{
 		_bottomMenuController?.HideDropdowns();
+	}
+
+	private void OnMapDisplayPressed()
+	{
+		HideDropdowns();
+		_mapDisplayPanelController?.ShowPanel();
 	}
 
 	private void OnDisplayTabSelected(int tabIndex)
@@ -629,12 +692,14 @@ public partial class MapGeneratorUI : Control
 
 	private void UpdateBackToParentButton()
 	{
-		if (_menuController == null || _mapHierarchyController == null)
+		if (_mapHierarchyController == null)
 		{
 			return;
 		}
 
-		_menuController.UpdateBackToParentButton(_mapHierarchyController.CanReturnToParent);
+		bool canReturn = _mapHierarchyController.CanReturnToParent;
+		_menuController?.UpdateBackToParentButton(canReturn);
+		_bottomMenuController?.UpdateBackToParentButton(canReturn);
 	}
 
 
@@ -686,6 +751,8 @@ public partial class MapGeneratorUI : Control
 		_welcomeTitleLabel = _welcomeOverlay?.GetNodeOrNull<Label>("WelcomeCenter/WelcomePanel/WelcomeVBox/WelcomeTitle");
 		_welcomeSubtitleLabel = _welcomeOverlay?.GetNodeOrNull<Label>("WelcomeCenter/WelcomePanel/WelcomeVBox/WelcomeSubtitle");
 		_welcomeGenerateButton = _welcomeOverlay?.GetNodeOrNull<Button>("WelcomeCenter/WelcomePanel/WelcomeVBox/GenerateMapButton");
+		_welcomeGenerateProgressBar = _welcomeOverlay?.GetNodeOrNull<ProgressBar>("WelcomeCenter/WelcomePanel/WelcomeVBox/GenerateProgressBar");
+		_welcomeGenerateProgressLabel = _welcomeOverlay?.GetNodeOrNull<Label>("WelcomeCenter/WelcomePanel/WelcomeVBox/GenerateProgressLabel");
 
 		if (_mapView == null)
 		{
@@ -697,7 +764,7 @@ public partial class MapGeneratorUI : Control
 			GD.PrintErr("MapGeneratorUI: UI controllers were not fully resolved.");
 		}
 
-		if (_welcomeOverlay == null || _welcomeGenerateButton == null)
+		if (_welcomeOverlay == null || _welcomeGenerateButton == null || _welcomeGenerateProgressBar == null || _welcomeGenerateProgressLabel == null)
 		{
 			GD.PrintErr("MapGeneratorUI: Welcome overlay nodes were not fully resolved.");
 		}

@@ -36,10 +36,23 @@ public partial class MapCamera : Camera2D
 	private bool _hasZoomFocus = false;
 	private Vector2 _zoomFocusScreenPos = Vector2.Zero;
 	private Vector2 _zoomFocusMapPos = Vector2.Zero;
+	private bool _isMiddleDragging = false;
+	private Vector2 _lastDragScreenPos = Vector2.Zero;
 
 	public override void _Ready()
 	{
-		_mapView = GetNodeOrNull<MapView>("../MapView");
+		SetProcessInput(true);
+		SetProcess(true);
+
+		_mapView = GetNodeOrNull<MapView>("../MapView")
+			?? GetParent()?.GetNodeOrNull<MapView>("MapView")
+			?? GetTree()?.CurrentScene?.FindChild("MapView", true, false) as MapView;
+
+		if (_mapView == null)
+		{
+			GD.PrintErr("MapCamera: MapView node not found.");
+		}
+
 		LoadControlSettings();
 		if (_mapView != null)
 		{
@@ -55,18 +68,41 @@ public partial class MapCamera : Camera2D
 
 	public override void _Input(InputEvent @event)
 	{
+		HandlePointerInput(@event);
+	}
+
+	private void HandlePointerInput(InputEvent @event)
+	{
 		if (_mapView == null)
 		{
 			return;
 		}
 
-		if (!IsPointerOverMapView())
+		if (@event is InputEventMouseButton mouseButton)
 		{
-			return;
-		}
+			if (mouseButton.ButtonIndex == MouseButton.Middle)
+			{
+				if (mouseButton.Pressed && IsPointerOverMapView())
+				{
+					_isMiddleDragging = true;
+					_lastDragScreenPos = mouseButton.Position;
+				}
+				else if (!mouseButton.Pressed)
+				{
+					_isMiddleDragging = false;
+				}
+			}
 
-		if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed)
-		{
+			if (!mouseButton.Pressed)
+			{
+				return;
+			}
+
+			if (!IsPointerOverMapView())
+			{
+				return;
+			}
+
 			if (mouseButton.ButtonIndex == MouseButton.WheelUp)
 			{
 				CaptureZoomFocus();
@@ -77,9 +113,26 @@ public partial class MapCamera : Camera2D
 				CaptureZoomFocus();
 				AdjustZoom(-1, GetZoomStep(mouseButton));
 			}
+
+			return;
 		}
-		else if (@event is InputEventMagnifyGesture magnifyGesture)
+
+		if (@event is InputEventMouseMotion mouseMotion && _isMiddleDragging)
 		{
+			var previousMapPos = _mapView.ScreenToMap(_lastDragScreenPos);
+			var currentMapPos = _mapView.ScreenToMap(mouseMotion.Position);
+			_mapView.CameraMapOffset += previousMapPos - currentMapPos;
+			_lastDragScreenPos = mouseMotion.Position;
+			return;
+		}
+
+		if (@event is InputEventMagnifyGesture magnifyGesture)
+		{
+			if (!IsPointerOverMapView())
+			{
+				return;
+			}
+
 			var direction = magnifyGesture.Factor >= 1f ? 1 : -1;
 			CaptureZoomFocus();
 			AdjustZoom(direction, ZoomStep, Mathf.Abs(magnifyGesture.Factor - 1f));
@@ -318,10 +371,21 @@ public partial class MapCamera : Camera2D
 
 	private bool IsPointerOverMapView()
 	{
+		if (_mapView == null)
+		{
+			return true;
+		}
+
 		var viewport = GetViewport();
 		if (viewport == null)
 		{
 			return true;
+		}
+
+		var pointerPos = viewport.GetMousePosition();
+		if (!_mapView.GetGlobalRect().HasPoint(pointerPos))
+		{
+			return false;
 		}
 
 		var hovered = viewport.GuiGetHoveredControl();
@@ -330,9 +394,13 @@ public partial class MapCamera : Camera2D
 			return true;
 		}
 
-		return hovered == _mapView || _mapView.IsAncestorOf(hovered);
-	}
+		if (hovered == _mapView || _mapView.IsAncestorOf(hovered) || hovered.IsAncestorOf(_mapView))
+		{
+			return true;
+		}
 
+		return hovered.MouseFilter != Control.MouseFilterEnum.Stop;
+	}
 	private float GetEffectiveMinViewScale()
 	{
 		if (_mapView == null)

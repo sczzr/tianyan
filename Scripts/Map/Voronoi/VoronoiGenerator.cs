@@ -16,9 +16,10 @@ public class VoronoiGenerator
         Vector2[] points,
         float width,
         float height,
-        Triangle[] triangles)
+        Triangle[] triangles,
+        Action<float> progressCallback = null)
     {
-        return GenerateVoronoi(points, width, height, triangles, points.Length);
+        return GenerateVoronoi(points, width, height, triangles, points.Length, progressCallback);
     }
 
     public static Cell[] GenerateVoronoi(
@@ -26,7 +27,8 @@ public class VoronoiGenerator
         float width,
         float height,
         Triangle[] triangles,
-        int realPointCount)
+        int realPointCount,
+        Action<float> progressCallback = null)
     {
         int totalPoints = points.Length;
         if (realPointCount <= 0 || realPointCount > totalPoints)
@@ -35,8 +37,10 @@ public class VoronoiGenerator
         }
 
         var cells = new Cell[realPointCount];
+        progressCallback?.Invoke(0f);
 
         // 为每个点创建一个 cell
+        int initStep = Math.Max(1, realPointCount / 200);
         for (int i = 0; i < realPointCount; i++)
         {
             cells[i] = new Cell
@@ -46,13 +50,21 @@ public class VoronoiGenerator
                 Vertices = new List<Vector2>(),
                 NeighborIds = new List<int>()
             };
+
+            if (i == realPointCount - 1 || i % initStep == 0)
+            {
+                progressCallback?.Invoke((i + 1f) / Mathf.Max(1, realPointCount) * 0.35f);
+            }
         }
 
         // 收集每个点关联的三角形
         var pointTriangles = new Dictionary<int, List<Triangle>>();
 
-        foreach (var tri in triangles)
+        int triangleCount = Math.Max(1, triangles.Length);
+        int triangleStep = Math.Max(1, triangleCount / 200);
+        for (int triIndex = 0; triIndex < triangles.Length; triIndex++)
         {
+            var tri = triangles[triIndex];
             if (tri.V0 < realPointCount) AddTriangleToPoint(tri.V0, tri, pointTriangles);
             if (tri.V1 < realPointCount) AddTriangleToPoint(tri.V1, tri, pointTriangles);
             if (tri.V2 < realPointCount) AddTriangleToPoint(tri.V2, tri, pointTriangles);
@@ -64,13 +76,25 @@ public class VoronoiGenerator
             if (tri.V1 < realPointCount && tri.V2 < realPointCount) AddNeighbor(cells, tri.V1, tri.V2);
             if (tri.V2 < realPointCount && tri.V0 < realPointCount) AddNeighbor(cells, tri.V2, tri.V0);
             if (tri.V2 < realPointCount && tri.V1 < realPointCount) AddNeighbor(cells, tri.V2, tri.V1);
+
+            if (triIndex == triangles.Length - 1 || triIndex % triangleStep == 0)
+            {
+                progressCallback?.Invoke(0.35f + (triIndex + 1f) / triangleCount * 0.25f);
+            }
         }
 
         // 为每个 cell 构建多边形 (使用三角形外心)
+        int polygonStep = Math.Max(1, realPointCount / 200);
         for (int i = 0; i < realPointCount; i++)
         {
             if (!pointTriangles.TryGetValue(i, out var tris) || tris.Count == 0)
+            {
+                if (i == realPointCount - 1 || i % polygonStep == 0)
+                {
+                    progressCallback?.Invoke(0.6f + (i + 1f) / Mathf.Max(1, realPointCount) * 0.4f);
+                }
                 continue;
+            }
 
             var center = points[i];
 
@@ -97,8 +121,14 @@ public class VoronoiGenerator
 
             cells[i].Vertices = vertices;
             cells[i].Centroid = GetCentroid(vertices);
+
+            if (i == realPointCount - 1 || i % polygonStep == 0)
+            {
+                progressCallback?.Invoke(0.6f + (i + 1f) / Mathf.Max(1, realPointCount) * 0.4f);
+            }
         }
 
+        progressCallback?.Invoke(1f);
         return cells;
     }
 

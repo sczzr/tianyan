@@ -39,6 +39,14 @@ public class MapGenerator
 
     private const int LloydRelaxIterations = 2;
 
+    public event Action<float> ProgressChanged;
+
+    private void ReportProgress(float progress)
+    {
+        ProgressChanged?.Invoke(Mathf.Clamp(progress, 0f, 1f));
+    }
+
+
     /// <summary>
     /// 完整地图生成（包含河流、湖泊、生物群落等）
     /// </summary>
@@ -53,13 +61,35 @@ public class MapGenerator
 
         GD.Print($"[MapGenerator] 开始生成地图 Seed={seed}, Cells={cellCount}");
 
+        float MapProgress(float stageStart, float stageEnd, float stageProgress)
+        {
+            return Mathf.Lerp(stageStart, stageEnd, Mathf.Clamp(stageProgress, 0f, 1f));
+        }
+
+        ReportProgress(0f);
+
         // 阶段1: 基础几何生成
         GD.Print("[MapGenerator] 阶段1: 生成基础几何...");
         var points = GenerateRandomPoints(cellCount, width, height);
+        ReportProgress(0.06f);
+
         var triangulationPoints = BuildTriangulationPoints(points, width, height, BoundaryPaddingScale, BoundaryStepScale);
-        var triangles = Delaunay.Triangulate(triangulationPoints);
-        var cells = VoronoiGenerator.GenerateVoronoi(triangulationPoints, width, height, triangles, points.Length);
-        var displayTriangles = Delaunay.Triangulate(points);
+        ReportProgress(0.1f);
+
+        var triangles = Delaunay.Triangulate(triangulationPoints, value =>
+        {
+            ReportProgress(MapProgress(0.1f, 0.24f, value));
+        });
+
+        var cells = VoronoiGenerator.GenerateVoronoi(triangulationPoints, width, height, triangles, points.Length, value =>
+        {
+            ReportProgress(MapProgress(0.24f, 0.34f, value));
+        });
+
+        var displayTriangles = Delaunay.Triangulate(points, value =>
+        {
+            ReportProgress(MapProgress(0.34f, 0.38f, value));
+        });
 
         // 阶段2: 高度图生成
         GD.Print("[MapGenerator] 阶段2: 生成高度图...");
@@ -84,9 +114,11 @@ public class MapGenerator
             heightmap = _heightmapProcessor.GenerateHeightmap(width, height);
             _heightmapProcessor.ApplyToCells(cells, heightmap, width, height, UseMultithreading);
         }
+        ReportProgress(0.5f);
 
         // 确保边界为陆地，避免出现海洋露出边缘
         ForceBorderLand(cells, width, height);
+        ReportProgress(0.52f);
 
         Task precipitationTask = null;
         if (UseMultithreading)
@@ -95,7 +127,10 @@ public class MapGenerator
         }
         else
         {
-            CalculatePrecipitation(cells, width, height);
+            CalculatePrecipitation(cells, width, height, value =>
+            {
+                ReportProgress(MapProgress(0.52f, 0.6f, value));
+            });
         }
 
         // 阶段3: 特征识别
@@ -103,27 +138,32 @@ public class MapGenerator
         var featureDetector = new FeatureDetector(cells, WaterLevel);
         var features = featureDetector.Detect();
         GD.Print($"[MapGenerator] 识别到 {features.Count} 个地貌特征");
+        ReportProgress(0.64f);
 
         // 阶段4: 距离场计算
         GD.Print("[MapGenerator] 阶段4: 计算距离场...");
         var distanceCalculator = new DistanceFieldCalculator(cells, WaterLevel);
         distanceCalculator.Calculate();
+        ReportProgress(0.7f);
 
         // 阶段5: 湖泊处理
         GD.Print("[MapGenerator] 阶段5: 处理湖泊...");
         var lakeProcessor = new LakeProcessor(cells, features, WaterLevel);
         lakeProcessor.Process();
+        ReportProgress(0.76f);
 
         // 阶段6: 洼地填充
         GD.Print("[MapGenerator] 阶段6: 解决洼地问题...");
         var depressionResolver = new DepressionResolver(cells, features, WaterLevel);
         var resolvedHeights = depressionResolver.Resolve();
+        ReportProgress(0.82f);
 
         // 等待降水量计算完成
         if (precipitationTask != null)
         {
             GD.Print("[MapGenerator] 阶段Pre: 等待降水量计算...");
             precipitationTask.Wait();
+            ReportProgress(0.86f);
         }
         else
         {
@@ -135,6 +175,7 @@ public class MapGenerator
         var riverGenerator = new RiverGenerator(cells, features, PRNG, resolvedHeights, RiverDensity, WaterLevel);
         var rivers = riverGenerator.Generate();
         GD.Print($"[MapGenerator] 生成了 {rivers.Count} 条河流");
+        ReportProgress(0.91f);
 
         // 阶段8: 生物群落分配 / 河流路径构建（并行）
         GD.Print("[MapGenerator] 阶段8: 分配生物群落 / 构建河流渲染路径...");
@@ -163,10 +204,12 @@ public class MapGenerator
                 riverPathBuilder.AddMeandering(river);
             }
         }
+        ReportProgress(0.96f);
 
         // 阶段10: 分配渲染颜色
         GD.Print("[MapGenerator] 阶段10: 分配渲染颜色...");
         AssignRenderColors(cells);
+        ReportProgress(0.985f);
 
         // 构建最终数据
         Data = new MapData
@@ -181,6 +224,7 @@ public class MapGenerator
             Rivers = rivers.ToArray()
         };
 
+        ReportProgress(1f);
         GD.Print($"[MapGenerator] 地图生成完成！Features={features.Count}, Rivers={rivers.Count}");
     }
 
@@ -278,15 +322,20 @@ public class MapGenerator
         }
     }
 
-    private void CalculatePrecipitation(Cell[] cells, int width, int height)
+    private void CalculatePrecipitation(Cell[] cells, int width, int height, Action<float> progressCallback = null)
     {
+        progressCallback?.Invoke(0f);
         var noise = new FastNoiseLite();
         noise.Seed = PRNG.NextInt();
         noise.Frequency = 0.02f;
         noise.FractalType = FastNoiseLite.FractalTypeEnum.Fbm;
 
-        foreach (var cell in cells)
+        int total = Math.Max(1, cells.Length);
+        int progressStep = Math.Max(1, total / 200);
+        for (int i = 0; i < cells.Length; i++)
         {
+            var cell = cells[i];
+
             // 基础降水噪音
             float noiseVal = noise.GetNoise2D(cell.Position.X, cell.Position.Y);
             // 归一化到 0-1
@@ -297,7 +346,14 @@ public class MapGenerator
             precipitation *= 255;
             
             cell.Precipitation = (byte)Mathf.Clamp(precipitation, 0, 255);
+
+            if (i == cells.Length - 1 || i % progressStep == 0)
+            {
+                progressCallback?.Invoke((i + 1f) / total);
+            }
         }
+
+        progressCallback?.Invoke(1f);
     }
 
     private Vector2[] GenerateRandomPoints(int count, int width, int height)

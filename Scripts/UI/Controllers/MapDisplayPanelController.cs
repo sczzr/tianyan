@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Godot;
+using FantasyMapGenerator.Scripts.Map;
 using FantasyMapGenerator.Scripts.Rendering;
 using FantasyMapGenerator.Scripts.Utils;
 
@@ -12,6 +13,11 @@ namespace FantasyMapGenerator.Scripts.UI.Controllers;
 public partial class MapDisplayPanelController : Control
 {
 	private MapView _mapView;
+	private PanelContainer _mapDisplayDropdown;
+	private Button _layersTabButton;
+	private Button _editTabButton;
+	private Button _borderTabButton;
+	private Button _themeTabButton;
 	private PanelContainer _mapDisplayPanel;
 	private Label _mapDisplayTitleLabel;
 	private Label _presetSectionLabel;
@@ -60,6 +66,10 @@ public partial class MapDisplayPanelController : Control
 	private HSlider _routeBridgePenaltySlider;
 	private OptionButton _layerPresetSelector;
 	private OptionButton _mapThemeSelector;
+	private Label _themeStyleDescriptionLabel;
+	private ColorRect _themePreviewColorA;
+	private ColorRect _themePreviewColorB;
+	private ColorRect _themePreviewColorC;
 	private VBoxContainer _layerListVBox;
 
 	private readonly Dictionary<MapView.MapLayer, Button> _layerToggles = new();
@@ -67,9 +77,15 @@ public partial class MapDisplayPanelController : Control
 	private bool _updatingLayerToggles;
 	private bool _layerPresetSelectorWired;
 	private bool _mapThemeSelectorWired;
+	private bool _displayTabButtonsWired;
 
 	public override void _Ready()
 	{
+		_mapDisplayDropdown = GetNodeOrNull<PanelContainer>("MapDisplayDropdown");
+		_layersTabButton = GetNodeOrNull<Button>("MapDisplayDropdown/DropdownVBox/LayersTabButton");
+		_editTabButton = GetNodeOrNull<Button>("MapDisplayDropdown/DropdownVBox/EditTabButton");
+		_borderTabButton = GetNodeOrNull<Button>("MapDisplayDropdown/DropdownVBox/BorderTabButton");
+		_themeTabButton = GetNodeOrNull<Button>("MapDisplayDropdown/DropdownVBox/ThemeTabButton");
 		_mapDisplayPanel = GetNodeOrNull<PanelContainer>("MapDisplayPanel");
 		_mapDisplayTitleLabel = GetNodeOrNull<Label>("MapDisplayPanel/MapDisplayVBox/MapDisplayTitle");
 		_presetSectionLabel = GetNodeOrNull<Label>("MapDisplayPanel/MapDisplayVBox/PresetSectionLabel");
@@ -119,6 +135,10 @@ public partial class MapDisplayPanelController : Control
 		_routeBridgePenaltyLabel = GetNodeOrNull<Label>("MapDisplayPanel/MapDisplayVBox/DisplayTabs/BorderPage/RouteSection/RouteContent/RouteBridgePenaltyHBox/RouteBridgePenaltyLabel");
 		_routeBridgePenaltySlider = GetNodeOrNull<HSlider>("MapDisplayPanel/MapDisplayVBox/DisplayTabs/BorderPage/RouteSection/RouteContent/RouteBridgePenaltyHBox/RouteBridgePenaltySlider");
 		_mapThemeSelector = GetNodeOrNull<OptionButton>("MapDisplayPanel/MapDisplayVBox/DisplayTabs/ThemePage/ThemeSection/ThemeContent/ThemeSelectorHBox/MapThemeSelector");
+		_themeStyleDescriptionLabel = GetNodeOrNull<Label>("MapDisplayPanel/MapDisplayVBox/DisplayTabs/ThemePage/ThemeSection/ThemeContent/ThemeStylePreviewVBox/ThemeStyleDescriptionLabel");
+		_themePreviewColorA = GetNodeOrNull<ColorRect>("MapDisplayPanel/MapDisplayVBox/DisplayTabs/ThemePage/ThemeSection/ThemeContent/ThemeStylePreviewVBox/ThemePreviewPaletteHBox/ThemePreviewColorA");
+		_themePreviewColorB = GetNodeOrNull<ColorRect>("MapDisplayPanel/MapDisplayVBox/DisplayTabs/ThemePage/ThemeSection/ThemeContent/ThemeStylePreviewVBox/ThemePreviewPaletteHBox/ThemePreviewColorB");
+		_themePreviewColorC = GetNodeOrNull<ColorRect>("MapDisplayPanel/MapDisplayVBox/DisplayTabs/ThemePage/ThemeSection/ThemeContent/ThemeStylePreviewVBox/ThemePreviewPaletteHBox/ThemePreviewColorC");
 	}
 
 	public void Initialize(MapView mapView)
@@ -196,6 +216,26 @@ public partial class MapDisplayPanelController : Control
 			_layerOverlaySectionLabel.Text = tm.Tr("layer_section_overlay");
 		}
 
+		if (_layersTabButton != null)
+		{
+			_layersTabButton.Text = tm.Tr("map_tab_layers");
+		}
+
+		if (_editTabButton != null)
+		{
+			_editTabButton.Text = tm.Tr("map_tab_edit");
+		}
+
+		if (_borderTabButton != null)
+		{
+			_borderTabButton.Text = tm.Tr("map_tab_border");
+		}
+
+		if (_themeTabButton != null)
+		{
+			_themeTabButton.Text = tm.Tr("map_tab_theme");
+		}
+
 		if (_displayTabs != null)
 		{
 			_displayTabs.SetTabTitle(0, tm.Tr("map_tab_layers"));
@@ -247,6 +287,22 @@ public partial class MapDisplayPanelController : Control
 		UpdateRouteBridgePenaltyLabel();
 	}
 
+	public void ShowPanel()
+	{
+		Visible = true;
+
+		if (_mapDisplayDropdown != null)
+		{
+			_mapDisplayDropdown.Visible = true;
+		}
+
+		if (_mapDisplayPanel != null)
+		{
+			_mapDisplayPanel.Visible = true;
+			CallDeferred(nameof(UpdateMapDisplayPanelSize));
+		}
+	}
+
 	public void OnDisplayTabSelected(int tabIndex)
 	{
 		if (_displayTabs == null || _mapDisplayPanel == null)
@@ -254,10 +310,12 @@ public partial class MapDisplayPanelController : Control
 			return;
 		}
 
-		Visible = true;
-		_displayTabs.CurrentTab = tabIndex;
-		_mapDisplayPanel.Visible = true;
-		CallDeferred(nameof(UpdateMapDisplayPanelSize));
+		ShowPanel();
+		int tabCount = _displayTabs.GetTabCount();
+		if (tabCount > 0)
+		{
+			_displayTabs.CurrentTab = Mathf.Clamp(tabIndex, 0, tabCount - 1);
+		}
 	}
 
 	private void UpdateMapDisplayPanelSize()
@@ -276,6 +334,7 @@ public partial class MapDisplayPanelController : Control
 		SetupLayerPresetSelector();
 		SetupLayerToggles();
 		SetupEditableElements();
+		SetupDisplayTabButtons();
 		SetupMapDisplaySections();
 
 		if (_countryBorderWidthSlider != null)
@@ -386,6 +445,36 @@ public partial class MapDisplayPanelController : Control
 		UpdateRouteBridgeFluxLabel();
 		UpdateRouteBridgePenaltyLabel();
 		CallDeferred(nameof(SyncLayerUI));
+	}
+
+	private void SetupDisplayTabButtons()
+	{
+		if (_displayTabButtonsWired)
+		{
+			return;
+		}
+
+		_displayTabButtonsWired = true;
+
+		if (_layersTabButton != null)
+		{
+			_layersTabButton.Pressed += () => OnDisplayTabSelected(0);
+		}
+
+		if (_editTabButton != null)
+		{
+			_editTabButton.Pressed += () => OnDisplayTabSelected(1);
+		}
+
+		if (_borderTabButton != null)
+		{
+			_borderTabButton.Pressed += () => OnDisplayTabSelected(2);
+		}
+
+		if (_themeTabButton != null)
+		{
+			_themeTabButton.Pressed += () => OnDisplayTabSelected(3);
+		}
 	}
 
 	private void SetupMapDisplaySections()
@@ -693,34 +782,122 @@ public partial class MapDisplayPanelController : Control
 	{
 		if (_mapThemeSelector == null)
 		{
+			UpdateThemeStylePreview(MapVisualStyleSelection.InkFantasy);
 			return;
 		}
 
 		var tm = TranslationManager.Instance;
-		var selected = _mapThemeSelector.Selected;
+		var selectedStyle = _mapView?.VisualStyleMode ?? MapVisualStyleSelection.InkFantasy;
+		if (_mapThemeSelector.ItemCount > 0 && _mapThemeSelector.Selected >= 0)
+		{
+			selectedStyle = (MapVisualStyleSelection)_mapThemeSelector.GetItemId(_mapThemeSelector.Selected);
+		}
+
 		_mapThemeSelector.Clear();
-		_mapThemeSelector.AddItem(tm.Tr("map_theme_heightmap"), (int)MapView.TerrainStyle.Heightmap);
-		_mapThemeSelector.AddItem(tm.Tr("map_theme_contour"), (int)MapView.TerrainStyle.Contour);
-		_mapThemeSelector.AddItem(tm.Tr("map_theme_heatmap"), (int)MapView.TerrainStyle.Heatmap);
+		_mapThemeSelector.AddItem(tm.Tr("map_style_ink_fantasy"), (int)MapVisualStyleSelection.InkFantasy);
+		_mapThemeSelector.AddItem(tm.Tr("map_style_parchment"), (int)MapVisualStyleSelection.Parchment);
+		_mapThemeSelector.AddItem(tm.Tr("map_style_naval_chart"), (int)MapVisualStyleSelection.NavalChart);
+		_mapThemeSelector.AddItem(tm.Tr("map_style_relief"), (int)MapVisualStyleSelection.Relief);
+		_mapThemeSelector.AddItem(tm.Tr("map_style_heatmap"), (int)MapVisualStyleSelection.Heatmap);
+		_mapThemeSelector.AddItem(tm.Tr("map_style_monochrome"), (int)MapVisualStyleSelection.Monochrome);
 
 		if (_mapView != null)
 		{
-			_mapThemeSelector.Selected = (int)_mapView.TerrainStyleMode;
+			selectedStyle = _mapView.VisualStyleMode;
 		}
-		else if (selected >= 0 && selected < _mapThemeSelector.ItemCount)
+
+		var selectedIndex = _mapThemeSelector.GetItemIndex((int)selectedStyle);
+		if (selectedIndex >= 0)
 		{
-			_mapThemeSelector.Selected = selected;
+			_mapThemeSelector.Selected = selectedIndex;
 		}
+
+		UpdateThemeStylePreview(selectedStyle);
 	}
 
 	private void OnMapThemeSelected(long index)
 	{
-		if (_mapView == null || _mapThemeSelector == null)
+		if (_mapThemeSelector == null || index < 0 || index >= _mapThemeSelector.ItemCount)
 		{
 			return;
 		}
 
-		_mapView.TerrainStyleMode = (MapView.TerrainStyle)_mapThemeSelector.GetItemId((int)index);
+		var style = (MapVisualStyleSelection)_mapThemeSelector.GetItemId((int)index);
+		if (_mapView != null)
+		{
+			_mapView.ApplyVisualStyle(style);
+		}
+
+		UpdateThemeStylePreview(style);
+	}
+
+	private void UpdateThemeStylePreview(MapVisualStyleSelection selection)
+	{
+		if (_themeStyleDescriptionLabel != null)
+		{
+			var key = selection switch
+			{
+				MapVisualStyleSelection.InkFantasy => "map_style_desc_ink_fantasy",
+				MapVisualStyleSelection.Parchment => "map_style_desc_parchment",
+				MapVisualStyleSelection.NavalChart => "map_style_desc_naval_chart",
+				MapVisualStyleSelection.Relief => "map_style_desc_relief",
+				MapVisualStyleSelection.Heatmap => "map_style_desc_heatmap",
+				MapVisualStyleSelection.Monochrome => "map_style_desc_monochrome",
+				_ => "map_style_desc_ink_fantasy"
+			};
+			_themeStyleDescriptionLabel.Text = TranslationManager.Instance.Tr(key);
+		}
+
+		var (colorA, colorB, colorC) = selection switch
+		{
+			MapVisualStyleSelection.InkFantasy => (
+				new Color(0.24f, 0.37f, 0.27f),
+				new Color(0.43f, 0.26f, 0.15f),
+				new Color(0.16f, 0.37f, 0.59f)
+			),
+			MapVisualStyleSelection.Parchment => (
+				new Color(0.83f, 0.74f, 0.56f),
+				new Color(0.58f, 0.47f, 0.32f),
+				new Color(0.38f, 0.31f, 0.21f)
+			),
+			MapVisualStyleSelection.NavalChart => (
+				new Color(0.19f, 0.43f, 0.66f),
+				new Color(0.55f, 0.76f, 0.86f),
+				new Color(0.50f, 0.66f, 0.54f)
+			),
+			MapVisualStyleSelection.Relief => (
+				new Color(0.61f, 0.54f, 0.38f),
+				new Color(0.41f, 0.60f, 0.36f),
+				new Color(0.28f, 0.39f, 0.56f)
+			),
+			MapVisualStyleSelection.Heatmap => (
+				new Color(0.20f, 0.35f, 0.75f),
+				new Color(0.55f, 0.30f, 0.50f),
+				new Color(0.90f, 0.35f, 0.20f)
+			),
+			MapVisualStyleSelection.Monochrome => (
+				new Color(0.20f, 0.20f, 0.20f),
+				new Color(0.50f, 0.50f, 0.50f),
+				new Color(0.82f, 0.82f, 0.82f)
+			),
+			_ => (
+				new Color(0.24f, 0.37f, 0.27f),
+				new Color(0.43f, 0.26f, 0.15f),
+				new Color(0.16f, 0.37f, 0.59f)
+			)
+		};
+
+		ApplyThemePreviewColor(_themePreviewColorA, colorA);
+		ApplyThemePreviewColor(_themePreviewColorB, colorB);
+		ApplyThemePreviewColor(_themePreviewColorC, colorC);
+	}
+
+	private static void ApplyThemePreviewColor(ColorRect node, Color color)
+	{
+		if (node != null)
+		{
+			node.Color = color;
+		}
 	}
 
 	private void OnCountryBorderWidthChanged(double value)

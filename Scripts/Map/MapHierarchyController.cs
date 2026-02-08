@@ -36,7 +36,7 @@ public class MapHierarchyController
 		}
 
 		_current = root;
-		_mapView.CellCount = root.CellCount;
+		_mapView.SetCellCountWithoutGeneration(root.CellCount);
 	}
 
 	public void RestoreContext(MapContext context, bool regenerate = false)
@@ -53,7 +53,7 @@ public class MapHierarchyController
 		}
 
 		_current = context;
-		_mapView.CellCount = context.CellCount;
+		_mapView.SetCellCountWithoutGeneration(context.CellCount);
 	}
 
 	public void UpdateCurrentCellCount(int cellCount)
@@ -73,6 +73,12 @@ public class MapHierarchyController
 			return false;
 		}
 
+		var parentMapData = _mapView.GetMapData();
+		if (parentMapData?.Cells == null || cellId < 0 || cellId >= parentMapData.Cells.Length)
+		{
+			return false;
+		}
+
 		var childLevel = GetChildLevel(_current.Level);
 		if (childLevel == null)
 		{
@@ -81,7 +87,7 @@ public class MapHierarchyController
 
 		int childCellCount = _config.GetCellCount(childLevel.Value, _current.CellCount);
 		string childSeed = DeriveChildSeed(_current.Seed, childLevel.Value, cellId);
-		var child = new MapContext(childLevel.Value, childCellCount, childSeed, _current, cellId, null);
+		var child = new MapContext(childLevel.Value, childCellCount, childSeed, _current, cellId, null, parentMapData);
 		ApplyContext(child);
 		return true;
 	}
@@ -115,8 +121,7 @@ public class MapHierarchyController
 		}
 
 		_current = context;
-		_mapView.CellCount = context.CellCount;
-		_mapView.GenerateMapWithSeed(context.Seed);
+		_mapView.GenerateMapForContext(context);
 	}
 
 	private static MapLevel? GetChildLevel(MapLevel level)

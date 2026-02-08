@@ -119,9 +119,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -220.0
-offset_top = -420.0
+offset_top = -490.0
 offset_right = 220.0
-offset_bottom = 420.0
+offset_bottom = 490.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -146,6 +146,189 @@ text = "地图类型"
 [node name="MapTypeSelector" type="OptionButton" parent="MapSettingsPopup/PopupVBox/MapTypeHBox" unique_id=1987654335]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
+
+[node name="MapStyleHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=1987654390]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MapStyleLabel" type="Label" parent="MapSettingsPopup/PopupVBox/MapStyleHBox" unique_id=1987654391]
+layout_mode = 2
+text = "地图风格"
+
+[node name="MapStyleSelector" type="OptionButton" parent="MapSettingsPopup/PopupVBox/MapStyleHBox" unique_id=1987654392]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+
+[node name="MapStylePreviewPanel" type="PanelContainer" parent="MapSettingsPopup/PopupVBox" unique_id=1987654393]
+visible = false
+layout_mode = 2
+
+[node name="MapStylePreviewVBox" type="VBoxContainer" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel" unique_id=1987654394]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="MapStyleDescriptionLabel" type="Label" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox" unique_id=1987654395]
+layout_mode = 2
+text = "风格说明"
+autowrap_mode = 2
+
+[node name="MapStyleMiniCard" type="PanelContainer" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox" unique_id=1987654400]
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 2
+
+[node name="MiniMapRoot" type="Control" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard" unique_id=1987654401]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MiniOcean" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654402]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.161, 0.369, 0.588, 1)
+
+[node name="MiniLandMain" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654403]
+layout_mode = 1
+offset_left = 34.0
+offset_top = 34.0
+offset_right = 124.0
+offset_bottom = 86.0
+color = Color(0.282, 0.431, 0.251, 1)
+
+[node name="MiniLandNorth" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654404]
+layout_mode = 1
+offset_left = 58.0
+offset_top = 18.0
+offset_right = 104.0
+offset_bottom = 38.0
+color = Color(0.282, 0.431, 0.251, 1)
+
+[node name="MiniLandEast" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654405]
+layout_mode = 1
+offset_left = 124.0
+offset_top = 44.0
+offset_right = 146.0
+offset_bottom = 70.0
+color = Color(0.282, 0.431, 0.251, 1)
+
+[node name="MiniLandSouth" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654406]
+layout_mode = 1
+offset_left = 70.0
+offset_top = 86.0
+offset_right = 102.0
+offset_bottom = 98.0
+color = Color(0.282, 0.431, 0.251, 1)
+
+[node name="MiniRidgeA" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654407]
+layout_mode = 1
+offset_left = 54.0
+offset_top = 52.0
+offset_right = 106.0
+offset_bottom = 56.0
+color = Color(0.424, 0.263, 0.141, 1)
+
+[node name="MiniRidgeB" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654408]
+layout_mode = 1
+offset_left = 66.0
+offset_top = 62.0
+offset_right = 118.0
+offset_bottom = 66.0
+color = Color(0.424, 0.263, 0.141, 1)
+
+[node name="MiniRiverA" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654409]
+layout_mode = 1
+offset_left = 82.0
+offset_top = 34.0
+offset_right = 86.0
+offset_bottom = 88.0
+color = Color(0.26, 0.59, 0.86, 1)
+
+[node name="MiniRiverB" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654410]
+layout_mode = 1
+offset_left = 84.0
+offset_top = 60.0
+offset_right = 116.0
+offset_bottom = 64.0
+color = Color(0.26, 0.59, 0.86, 1)
+
+[node name="MiniBorderA" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654411]
+layout_mode = 1
+offset_left = 34.0
+offset_top = 34.0
+offset_right = 124.0
+offset_bottom = 36.0
+color = Color(0.11, 0.1, 0.08, 1)
+
+[node name="MiniBorderB" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654412]
+layout_mode = 1
+offset_left = 34.0
+offset_top = 84.0
+offset_right = 124.0
+offset_bottom = 86.0
+color = Color(0.11, 0.1, 0.08, 1)
+
+[node name="MiniCityA" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654413]
+layout_mode = 1
+offset_left = 62.0
+offset_top = 58.0
+offset_right = 68.0
+offset_bottom = 64.0
+color = Color(0.95, 0.9, 0.72, 1)
+
+[node name="MiniCityB" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654414]
+layout_mode = 1
+offset_left = 96.0
+offset_top = 46.0
+offset_right = 102.0
+offset_bottom = 52.0
+color = Color(0.95, 0.9, 0.72, 1)
+
+[node name="MiniCityC" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654415]
+layout_mode = 1
+offset_left = 86.0
+offset_top = 76.0
+offset_right = 92.0
+offset_bottom = 82.0
+color = Color(0.95, 0.9, 0.72, 1)
+
+[node name="MiniTint" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654416]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.08)
+
+[node name="PreviewPaletteHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox" unique_id=1987654396]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PreviewColorA" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/PreviewPaletteHBox" unique_id=1987654397]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.282, 0.431, 0.251, 1)
+
+[node name="PreviewColorB" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/PreviewPaletteHBox" unique_id=1987654398]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.424, 0.263, 0.141, 1)
+
+[node name="PreviewColorC" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/PreviewPaletteHBox" unique_id=1987654399]
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+size_flags_horizontal = 3
+color = Color(0.161, 0.369, 0.588, 1)
 
 [node name="CellCountHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=1889577010]
 layout_mode = 2
