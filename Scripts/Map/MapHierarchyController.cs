@@ -19,7 +19,7 @@ public class MapHierarchyController
 		_config = config ?? new MapHierarchyConfig();
 	}
 
-	public void SetRoot(MapLevel level, int? cellCountOverride = null, string seed = null)
+	public void SetRoot(MapLevel level, int? cellCountOverride = null, string seed = null, bool regenerate = true)
 	{
 		if (_mapView == null)
 		{
@@ -29,7 +29,31 @@ public class MapHierarchyController
 		int fallback = _mapView.CellCount > 0 ? _mapView.CellCount : _config.GetCellCount(level, 2000);
 		int cellCount = cellCountOverride ?? _config.GetCellCount(level, fallback);
 		var root = new MapContext(level, cellCount, seed ?? GenerateSeed(level), null, null, null);
-		ApplyContext(root);
+		if (regenerate)
+		{
+			ApplyContext(root);
+			return;
+		}
+
+		_current = root;
+		_mapView.CellCount = root.CellCount;
+	}
+
+	public void RestoreContext(MapContext context, bool regenerate = false)
+	{
+		if (_mapView == null || context == null)
+		{
+			return;
+		}
+
+		if (regenerate)
+		{
+			ApplyContext(context);
+			return;
+		}
+
+		_current = context;
+		_mapView.CellCount = context.CellCount;
 	}
 
 	public void UpdateCurrentCellCount(int cellCount)

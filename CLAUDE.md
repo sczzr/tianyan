@@ -30,7 +30,7 @@ dotnet rebuild
 # - Or run: godot --path "D:\Files\tianyan"
 
 # Run specific scene
-godot --path "D:\Files\tianyan" "res://Scenes/UI/MainMenu.tscn"
+godot --path "D:\Files\tianyan" "res://Scenes/Screens/MainMenu.tscn"
 
 # Run tests
 godot --path "D:\Files\tianyan" --test
@@ -39,7 +39,7 @@ godot --path "D:\Files\tianyan" --test
 **Important Build Notes:**
 - When multiple `.csproj`/`.sln` files exist, specify the explicit project: `dotnet build "FantasyMapGenerator.csproj"`
 - Build artifacts and DLLs are git-ignored
-- Main entry point: `res://Scenes/UI/MainMenu.tscn`
+- Main entry point: `res://Scenes/Screens/MainMenu.tscn`
 
 ## Project Structure
 
@@ -53,11 +53,11 @@ Scripts/
 ├── Rendering/         # MapView (Node2D polygon renderer)
 ├── UI/                # Main menu, settings, load game controllers
 ├── Utils/             # Alea PRNG, localization system
-└── World/Entity/NPC/  # Placeholder directories for future systems
+└── Tests/             # Unit, integration, and debug test scripts
 
 Scenes/
-├── UI/                # MainMenu.tscn, Settings.tscn, LoadGame.tscn
-└── Game/              # Game.tscn, ModManager.tscn
+├── Game/              # Game.tscn, map display and in-game UI
+└── UI/                # MainMenu.tscn, Settings.tscn, LoadGame.tscn, ModManager.tscn
 ```
 
 ## C# Code Conventions

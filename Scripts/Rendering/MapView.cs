@@ -370,9 +370,178 @@ public partial class MapView : Control
 		}
 	}
 
+	[Export]
+	public int BurgsPerCountryMin
+	{
+		get => _burgsPerCountryMin;
+		set
+		{
+			_burgsPerCountryMin = Mathf.Clamp(value, 1, 6);
+			if (_burgsPerCountryMax < _burgsPerCountryMin)
+			{
+				_burgsPerCountryMax = _burgsPerCountryMin;
+			}
+			if (_mapGenerator?.Data?.Cells != null)
+			{
+				GenerateBurgs();
+				GenerateRoutes();
+				QueueRedraw();
+			}
+		}
+	}
+
+	[Export]
+	public int BurgsPerCountryMax
+	{
+		get => _burgsPerCountryMax;
+		set
+		{
+			_burgsPerCountryMax = Mathf.Clamp(value, 1, 8);
+			if (_burgsPerCountryMax < _burgsPerCountryMin)
+			{
+				_burgsPerCountryMin = _burgsPerCountryMax;
+			}
+			if (_mapGenerator?.Data?.Cells != null)
+			{
+				GenerateBurgs();
+				GenerateRoutes();
+				QueueRedraw();
+			}
+		}
+	}
+
+	[Export]
+	public float RouteExtraConnectionChance
+	{
+		get => _routeExtraConnectionChance;
+		set
+		{
+			_routeExtraConnectionChance = Mathf.Clamp(value, 0f, 1f);
+			if (_mapGenerator?.Data?.Cells != null)
+			{
+				GenerateRoutes();
+				QueueRedraw();
+			}
+		}
+	}
+
+	[Export]
+	public float RouteExtraConnectionScale
+	{
+		get => _routeExtraConnectionScale;
+		set
+		{
+			_routeExtraConnectionScale = Mathf.Clamp(value, 1.1f, 3f);
+			if (_mapGenerator?.Data?.Cells != null)
+			{
+				GenerateRoutes();
+				QueueRedraw();
+			}
+		}
+	}
+
+	[Export]
+	public float RoutePrimaryWidth
+	{
+		get => _routePrimaryWidth;
+		set
+		{
+			_routePrimaryWidth = Mathf.Clamp(value, 0.6f, 5f);
+			QueueRedraw();
+		}
+	}
+
+	[Export]
+	public float RouteSecondaryWidth
+	{
+		get => _routeSecondaryWidth;
+		set
+		{
+			_routeSecondaryWidth = Mathf.Clamp(value, 0.4f, 4f);
+			QueueRedraw();
+		}
+	}
+
+	[Export]
+	public float RouteSlopeWeight
+	{
+		get => _routeSlopeWeight;
+		set
+		{
+			_routeSlopeWeight = Mathf.Clamp(value, 1f, 12f);
+			if (_mapGenerator?.Data?.Cells != null)
+			{
+				GenerateRoutes();
+				QueueRedraw();
+			}
+		}
+	}
+
+	[Export]
+	public float RouteElevationWeight
+	{
+		get => _routeElevationWeight;
+		set
+		{
+			_routeElevationWeight = Mathf.Clamp(value, 1f, 12f);
+			if (_mapGenerator?.Data?.Cells != null)
+			{
+				GenerateRoutes();
+				QueueRedraw();
+			}
+		}
+	}
+
+	[Export]
+	public float RouteWaterPenalty
+	{
+		get => _routeWaterPenalty;
+		set
+		{
+			_routeWaterPenalty = Mathf.Clamp(value, 50f, 1500f);
+			if (_mapGenerator?.Data?.Cells != null)
+			{
+				GenerateRoutes();
+				QueueRedraw();
+			}
+		}
+	}
+
+	[Export]
+	public int RouteBridgeFluxThreshold
+	{
+		get => _routeBridgeFluxThreshold;
+		set
+		{
+			_routeBridgeFluxThreshold = Mathf.Clamp(value, 1, 500);
+			if (_mapGenerator?.Data?.Cells != null)
+			{
+				GenerateRoutes();
+				QueueRedraw();
+			}
+		}
+	}
+
+	[Export]
+	public float RouteBridgePenaltyMultiplier
+	{
+		get => _routeBridgePenaltyMultiplier;
+		set
+		{
+			_routeBridgePenaltyMultiplier = Mathf.Clamp(value, 0.6f, 1.2f);
+			if (_mapGenerator?.Data?.Cells != null)
+			{
+				GenerateRoutes();
+				QueueRedraw();
+			}
+		}
+	}
+
 	// 颜色常量
 	private static readonly Color OceanLayerColor = new Color(0.2f, 0.5f, 0.8f);
 	private static readonly Color RiverColor = new Color(0.3f, 0.6f, 0.9f);
+	private static readonly Color RoutePrimaryColor = new Color(0.45f, 0.28f, 0.16f, 0.7f);
+	private static readonly Color RouteSecondaryColor = new Color(0.6f, 0.42f, 0.26f, 0.55f);
 	private static readonly Color HeatmapLowColor = new Color(0.12f, 0.25f, 0.85f);
 	private static readonly Color HeatmapHighColor = new Color(0.92f, 0.25f, 0.15f);
 	private static readonly Color NameColor = new Color(0.12f, 0.1f, 0.08f, 0.85f);
@@ -382,6 +551,9 @@ public partial class MapView : Control
 	private static readonly Color CompassColor = new Color(0.12f, 0.1f, 0.08f, 0.85f);
 	private static readonly Color ScaleBarColor = new Color(0.12f, 0.1f, 0.08f, 0.9f);
 	private static readonly Color VignetteColor = new Color(0, 0, 0, 0.08f);
+	private const float RouteRiverCrossPenalty = 1.18f;
+	private const float RouteRiverValleyBonus = 0.92f;
+	private const float RouteTurnDotThreshold = 0.995f;
 	private const float SharedVertexEpsilon = 0.01f;
 	private static readonly MapLayer[] DefaultLayerOrder =
 	{
@@ -419,6 +591,8 @@ public partial class MapView : Control
 	private int _mapWidth = 512;
 	private int _mapHeight = 512;
 	private float _riverDensity = 1f;
+	private static MapGenerator _cachedMapGenerator;
+	private static bool _suppressGenerateOnReadyOnce;
 	private MapGenerator _mapGenerator;
 	private bool _isGenerating = false;
 	private bool _useMultithreading = true;
@@ -433,9 +607,22 @@ public partial class MapView : Control
 	private float _countryFillAlpha = 1f;
 	private float _boundaryPaddingScale = 1.5f;
 	private float _boundaryStepScale = 1f;
+	private int _burgsPerCountryMin = 1;
+	private int _burgsPerCountryMax = 3;
+	private float _routeExtraConnectionChance = 0.4f;
+	private float _routeExtraConnectionScale = 1.6f;
+	private float _routePrimaryWidth = 2.1f;
+	private float _routeSecondaryWidth = 1.4f;
+	private float _routeSlopeWeight = 7f;
+	private float _routeElevationWeight = 7.5f;
+	private float _routeWaterPenalty = 800f;
+	private int _routeBridgeFluxThreshold = 45;
+	private float _routeBridgePenaltyMultiplier = 0.78f;
 	private int[] _cellCountryIds;
 	private List<Country> _countries = new();
 	private readonly List<MapLayer> _layerOrder = new(DefaultLayerOrder);
+	private readonly List<RoutePath> _routePaths = new();
+	private readonly List<List<int>> _countryBurgCellIds = new();
 
 	private EditableElement _currentEditableElement = EditableElement.None;
 	private LayerPreset _layerPresetMode = LayerPreset.Political;
@@ -564,8 +751,43 @@ public partial class MapView : Control
 		}
 	}
 
+	public bool HasMapData => _mapGenerator?.Data != null;
+
+	public static void ClearCachedMap()
+	{
+		_cachedMapGenerator = null;
+	}
+
+	public static void SuppressGenerateOnNextReady()
+	{
+		_suppressGenerateOnReadyOnce = true;
+	}
+
 	public override void _Ready()
 	{
+		bool suppressGenerateOnReady = _suppressGenerateOnReadyOnce;
+		_suppressGenerateOnReadyOnce = false;
+
+		if (_cachedMapGenerator?.Data != null)
+		{
+			_mapGenerator = _cachedMapGenerator;
+			_mapWidth = _mapGenerator.MapWidth;
+			_mapHeight = _mapGenerator.MapHeight;
+			_riverDensity = _mapGenerator.RiverDensity;
+			_useMultithreading = _mapGenerator.UseMultithreading;
+			_boundaryPaddingScale = _mapGenerator.BoundaryPaddingScale;
+			_boundaryStepScale = _mapGenerator.BoundaryStepScale;
+			if (_mapGenerator.CellCount > 0)
+			{
+				_cellCount = _mapGenerator.CellCount;
+			}
+
+			_canvasSize = new Vector2(_mapWidth, _mapHeight);
+			ApplyLayerPreset(_layerPresetMode);
+			QueueRedraw();
+			return;
+		}
+
 		_mapGenerator = new MapGenerator();
 		_mapGenerator.MapWidth = _mapWidth;
 		_mapGenerator.MapHeight = _mapHeight;
@@ -575,7 +797,18 @@ public partial class MapView : Control
 		_mapGenerator.BoundaryStepScale = _boundaryStepScale;
 		_canvasSize = new Vector2(_mapWidth, _mapHeight);
 		ApplyLayerPreset(_layerPresetMode);
-		GenerateMap();
+		if (!suppressGenerateOnReady)
+		{
+			GenerateMap();
+		}
+	}
+
+	public override void _ExitTree()
+	{
+		if (_mapGenerator?.Data != null)
+		{
+			_cachedMapGenerator = _mapGenerator;
+		}
 	}
 
 	public void GenerateMap()
@@ -819,26 +1052,21 @@ public partial class MapView : Control
 		{
 			if (mouseButton.ButtonIndex == MouseButton.Left)
 			{
-				// 计算点击的Cell
 				var localPos = GetLocalMousePosition();
 				var mapPos = TransformToMapCoordinates(localPos);
 				var cellId = GetCellAtPosition(mapPos);
-				
+
 				if (cellId != -1)
 				{
-					SelectCell(cellId);
+					SelectCell(cellId, emitSignal: mouseButton.DoubleClick);
 				}
 				else
 				{
-					// 点击空白处，重新生成（保留之前的功能，或者可以改成取消选择）
-					// GenerateMap(); 
-					// 此处改为左键点击只是选择，不再重新生成。如果需要重新生成可以加个按钮或右键。
-					SelectCell(-1);
+					SelectCell(-1, emitSignal: false);
 				}
 			}
 			else if (mouseButton.ButtonIndex == MouseButton.Right)
 			{
-				// 右键重新生成
 				GenerateMap();
 			}
 		}
@@ -1040,16 +1268,38 @@ public partial class MapView : Control
 
 	private void DrawRoutes()
 	{
-		if (_countries == null || _countries.Count < 2)
+		if (_routePaths.Count == 0)
 		{
 			return;
 		}
 
-		for (int i = 0; i < _countries.Count - 1; i++)
+		foreach (var route in _routePaths)
 		{
-			var a = TransformToScreenCoordinates(_countries[i].Center);
-			var b = TransformToScreenCoordinates(_countries[i + 1].Center);
-			DrawLine(a, b, new Color(0.5f, 0.32f, 0.18f, 0.6f), 1.5f);
+			if (route == null || route.Points == null || route.Points.Count < 2)
+			{
+				continue;
+			}
+
+			var screenPoints = new Vector2[route.Points.Count];
+			bool valid = true;
+			for (int i = 0; i < route.Points.Count; i++)
+			{
+				screenPoints[i] = TransformToScreenCoordinates(route.Points[i]);
+				if (float.IsNaN(screenPoints[i].X) || float.IsNaN(screenPoints[i].Y))
+				{
+					valid = false;
+					break;
+				}
+			}
+
+			if (!valid)
+			{
+				continue;
+			}
+
+			var color = route.IsPrimary ? RoutePrimaryColor : RouteSecondaryColor;
+			float width = route.IsPrimary ? _routePrimaryWidth : _routeSecondaryWidth;
+			DrawPolyline(screenPoints, color, width);
 		}
 	}
 
@@ -1649,6 +1899,589 @@ public partial class MapView : Control
 
 		_mapGenerator.Data.Countries = _countries.ToArray();
 		_mapGenerator.Data.CellCountryIds = _cellCountryIds;
+
+		GenerateBurgs();
+		GenerateRoutes();
+	}
+
+	private void GenerateBurgs()
+	{
+		_countryBurgCellIds.Clear();
+		if (_countries == null || _countries.Count == 0 || _mapGenerator?.Data?.Cells == null)
+		{
+			return;
+		}
+
+		var cells = _mapGenerator.Data.Cells;
+		for (int i = 0; i < _countries.Count; i++)
+		{
+			var country = _countries[i];
+			var burgs = new List<int>();
+
+			if (country.CapitalCellId >= 0 && country.CapitalCellId < cells.Length)
+			{
+				burgs.Add(country.CapitalCellId);
+			}
+
+			if (country.CellIds == null || country.CellIds.Count == 0)
+			{
+				_countryBurgCellIds.Add(burgs);
+				continue;
+			}
+
+			int desiredCount = _mapGenerator.PRNG.NextInt(_burgsPerCountryMin, _burgsPerCountryMax);
+			if (country.CellIds.Count < 12)
+			{
+				desiredCount = Math.Min(desiredCount, 1);
+			}
+
+			int safety = 0;
+			while (burgs.Count < desiredCount && safety < 200)
+			{
+				safety++;
+				int cellId = PickWeightedBurgCell(country, cells);
+				if (cellId < 0 || cellId >= cells.Length || !cells[cellId].IsLand)
+				{
+					continue;
+				}
+
+				if (burgs.Contains(cellId))
+				{
+					continue;
+				}
+
+				var cell = cells[cellId];
+				if (cell.Height > 0.88f)
+				{
+					continue;
+				}
+
+				burgs.Add(cellId);
+			}
+
+			_countryBurgCellIds.Add(burgs);
+		}
+	}
+
+	private int PickWeightedBurgCell(Country country, Cell[] cells)
+	{
+		if (country.CellIds == null || country.CellIds.Count == 0)
+		{
+			return -1;
+		}
+
+		float totalWeight = 0f;
+		var weights = new float[country.CellIds.Count];
+		for (int i = 0; i < country.CellIds.Count; i++)
+		{
+			int cellId = country.CellIds[i];
+			if (cellId < 0 || cellId >= cells.Length || !cells[cellId].IsLand)
+			{
+				weights[i] = 0f;
+				continue;
+			}
+
+			var cell = cells[cellId];
+			float weight = 1f;
+			if (cell.Height < 0.45f)
+			{
+				weight += 0.6f;
+			}
+			else if (cell.Height > 0.75f)
+			{
+				weight *= 0.4f;
+			}
+
+			if (cell.RiverId > 0)
+			{
+				weight += 0.8f;
+			}
+
+			if (cell.DistanceField > 0 && cell.DistanceField <= 3)
+			{
+				weight += 0.5f;
+			}
+
+			weights[i] = Mathf.Max(0.05f, weight);
+			totalWeight += weights[i];
+		}
+
+		if (totalWeight <= 0f)
+		{
+			return country.CellIds[_mapGenerator.PRNG.NextInt(0, country.CellIds.Count - 1)];
+		}
+
+		float pick = _mapGenerator.PRNG.NextFloat() * totalWeight;
+		for (int i = 0; i < country.CellIds.Count; i++)
+		{
+			pick -= weights[i];
+			if (pick <= 0f)
+			{
+				return country.CellIds[i];
+			}
+		}
+
+		return country.CellIds[^1];
+	}
+
+	private void GenerateRoutes()
+	{
+		_routePaths.Clear();
+
+		if (_countries == null || _countries.Count < 2 || _mapGenerator?.Data?.Cells == null)
+		{
+			return;
+		}
+
+		var cells = _mapGenerator.Data.Cells;
+		var routeNodeCountries = new List<int>();
+		var routeNodeCells = new List<int>();
+
+		for (int i = 0; i < _countries.Count; i++)
+		{
+			if (i >= _countryBurgCellIds.Count || _countryBurgCellIds[i].Count == 0)
+			{
+				int fallbackCellId = GetRouteEndpointCellId(_countries[i], cells);
+				if (fallbackCellId != -1)
+				{
+					routeNodeCountries.Add(i);
+					routeNodeCells.Add(fallbackCellId);
+				}
+				continue;
+			}
+
+			foreach (var cellId in _countryBurgCellIds[i])
+			{
+				if (cellId == -1)
+				{
+					continue;
+				}
+
+				routeNodeCountries.Add(i);
+				routeNodeCells.Add(cellId);
+			}
+		}
+
+		if (routeNodeCells.Count < 2)
+		{
+			return;
+		}
+
+		var edges = BuildRouteCandidateEdges(routeNodeCells, cells);
+		var selectedEdges = BuildRouteNetwork(routeNodeCells.Count, edges);
+
+		foreach (var edge in selectedEdges)
+		{
+			int startCellId = routeNodeCells[edge.Edge.A];
+			int endCellId = routeNodeCells[edge.Edge.B];
+			if (TryBuildRoutePath(startCellId, endCellId, cells, out var path))
+			{
+				_routePaths.Add(new RoutePath(SimplifyRoute(path), edge.IsPrimary));
+			}
+		}
+	}
+
+	private sealed class RoutePath
+	{
+		public List<Vector2> Points { get; }
+		public bool IsPrimary { get; }
+
+		public RoutePath(List<Vector2> points, bool isPrimary)
+		{
+			Points = points;
+			IsPrimary = isPrimary;
+		}
+	}
+
+	private int GetRouteEndpointCellId(Country country, Cell[] cells)
+	{
+		if (country == null || cells == null || cells.Length == 0)
+		{
+			return -1;
+		}
+
+		if (country.CapitalCellId >= 0 && country.CapitalCellId < cells.Length && cells[country.CapitalCellId].IsLand)
+		{
+			return country.CapitalCellId;
+		}
+
+		if (country.CellIds == null || country.CellIds.Count == 0)
+		{
+			return -1;
+		}
+
+		int bestCellId = -1;
+		float bestDist = float.MaxValue;
+		foreach (var cellId in country.CellIds)
+		{
+			if (cellId < 0 || cellId >= cells.Length || !cells[cellId].IsLand)
+			{
+				continue;
+			}
+
+			float dist = cells[cellId].Position.DistanceSquaredTo(country.Center);
+			if (dist < bestDist)
+			{
+				bestDist = dist;
+				bestCellId = cellId;
+			}
+		}
+
+		return bestCellId;
+	}
+
+	private readonly struct RouteEdge
+	{
+		public readonly int A;
+		public readonly int B;
+		public readonly float Distance;
+
+		public RouteEdge(int a, int b, float distance)
+		{
+			A = a;
+			B = b;
+			Distance = distance;
+		}
+	}
+
+	private readonly struct RouteLink
+	{
+		public readonly RouteEdge Edge;
+		public readonly bool IsPrimary;
+
+		public RouteLink(RouteEdge edge, bool isPrimary)
+		{
+			Edge = edge;
+			IsPrimary = isPrimary;
+		}
+	}
+
+	private List<RouteEdge> BuildRouteCandidateEdges(List<int> routeNodeCells, Cell[] cells)
+	{
+		var edges = new List<RouteEdge>();
+		for (int i = 0; i < routeNodeCells.Count; i++)
+		{
+			var posA = cells[routeNodeCells[i]].Position;
+			for (int j = i + 1; j < routeNodeCells.Count; j++)
+			{
+				var posB = cells[routeNodeCells[j]].Position;
+				float distance = posA.DistanceTo(posB);
+				edges.Add(new RouteEdge(i, j, distance));
+			}
+		}
+
+		edges.Sort((a, b) => a.Distance.CompareTo(b.Distance));
+		return edges;
+	}
+
+	private List<RouteLink> BuildRouteNetwork(int nodeCount, List<RouteEdge> edges)
+	{
+		var selected = new List<RouteLink>();
+		if (nodeCount <= 1)
+		{
+			return selected;
+		}
+
+		var unionFind = new UnionFind(nodeCount);
+		for (int i = 0; i < edges.Count; i++)
+		{
+			var edge = edges[i];
+			if (unionFind.Union(edge.A, edge.B))
+			{
+				selected.Add(new RouteLink(edge, true));
+				if (selected.Count == nodeCount - 1)
+				{
+					break;
+				}
+			}
+		}
+
+		var nearestDistance = new float[nodeCount];
+		Array.Fill(nearestDistance, float.MaxValue);
+		foreach (var edge in edges)
+		{
+			if (edge.Distance < nearestDistance[edge.A])
+			{
+				nearestDistance[edge.A] = edge.Distance;
+			}
+			if (edge.Distance < nearestDistance[edge.B])
+			{
+				nearestDistance[edge.B] = edge.Distance;
+			}
+		}
+
+		float avgNearest = 0f;
+		int count = 0;
+		for (int i = 0; i < nearestDistance.Length; i++)
+		{
+			if (!float.IsInfinity(nearestDistance[i]) && !float.IsNaN(nearestDistance[i]))
+			{
+				avgNearest += nearestDistance[i];
+				count++;
+			}
+		}
+		if (count > 0)
+		{
+			avgNearest /= count;
+		}
+
+		float extraThreshold = avgNearest * _routeExtraConnectionScale;
+		var selectedLookup = new HashSet<(int, int)>();
+		foreach (var edge in selected)
+		{
+			selectedLookup.Add(NormalizeEdge(edge.Edge.A, edge.Edge.B));
+		}
+
+		foreach (var edge in edges)
+		{
+			if (edge.Distance > extraThreshold)
+			{
+				break;
+			}
+
+			var key = NormalizeEdge(edge.A, edge.B);
+			if (selectedLookup.Contains(key))
+			{
+				continue;
+			}
+
+			if (_mapGenerator?.PRNG != null && _mapGenerator.PRNG.NextFloat() > _routeExtraConnectionChance)
+			{
+				continue;
+			}
+
+			selected.Add(new RouteLink(edge, false));
+			selectedLookup.Add(key);
+		}
+
+		return selected;
+	}
+
+	private static (int, int) NormalizeEdge(int a, int b)
+	{
+		return a < b ? (a, b) : (b, a);
+	}
+
+	private bool TryBuildRoutePath(int startCellId, int goalCellId, Cell[] cells, out List<Vector2> path)
+	{
+		path = null;
+		if (startCellId == goalCellId || startCellId < 0 || goalCellId < 0)
+		{
+			return false;
+		}
+
+		int cellCount = cells.Length;
+		var cameFrom = new int[cellCount];
+		var gScore = new float[cellCount];
+		var closed = new bool[cellCount];
+		for (int i = 0; i < cellCount; i++)
+		{
+			cameFrom[i] = -1;
+			gScore[i] = float.PositiveInfinity;
+		}
+
+		var openSet = new PriorityQueue<int, float>();
+		gScore[startCellId] = 0f;
+		openSet.Enqueue(startCellId, Heuristic(cells[startCellId], cells[goalCellId]));
+
+		while (openSet.Count > 0)
+		{
+			openSet.TryDequeue(out int current, out _);
+			if (closed[current])
+			{
+				continue;
+			}
+
+			if (current == goalCellId)
+			{
+				path = ReconstructPath(cameFrom, current, cells);
+				return path.Count >= 2;
+			}
+
+			closed[current] = true;
+			var currentCell = cells[current];
+			for (int i = 0; i < currentCell.NeighborIds.Count; i++)
+			{
+				int neighborId = currentCell.NeighborIds[i];
+				if (neighborId < 0 || neighborId >= cellCount)
+				{
+					continue;
+				}
+
+				if (closed[neighborId])
+				{
+					continue;
+				}
+
+				var neighborCell = cells[neighborId];
+				float stepCost = ComputeRouteStepCost(currentCell, neighborCell);
+				float tentativeScore = gScore[current] + stepCost;
+				if (tentativeScore < gScore[neighborId])
+				{
+					cameFrom[neighborId] = current;
+					gScore[neighborId] = tentativeScore;
+					float estimate = tentativeScore + Heuristic(neighborCell, cells[goalCellId]);
+					openSet.Enqueue(neighborId, estimate);
+				}
+			}
+		}
+
+		return false;
+	}
+
+	private float ComputeRouteStepCost(Cell from, Cell to)
+	{
+		float distance = from.Position.DistanceTo(to.Position);
+		float slope = Mathf.Abs(to.Height - from.Height);
+		float elevation = (from.Height + to.Height) * 0.5f;
+		float penalty = 1f + slope * _routeSlopeWeight + Mathf.Pow(Mathf.Max(0f, elevation - 0.52f), 2f) * _routeElevationWeight;
+		if (elevation < 0.55f)
+		{
+			penalty *= 0.92f;
+		}
+
+		if (!from.IsLand || !to.IsLand)
+		{
+			penalty += _routeWaterPenalty;
+		}
+
+		if (from.RiverId > 0 || to.RiverId > 0)
+		{
+			if (from.RiverId > 0 && from.RiverId == to.RiverId)
+			{
+				penalty *= RouteRiverValleyBonus;
+			}
+			else
+			{
+				penalty *= RouteRiverCrossPenalty;
+				if (IsBridgeCandidate(from, to))
+				{
+					penalty *= _routeBridgePenaltyMultiplier;
+				}
+			}
+		}
+
+		return distance * penalty;
+	}
+
+	private bool IsBridgeCandidate(Cell from, Cell to)
+	{
+		if (!from.IsLand || !to.IsLand)
+		{
+			return false;
+		}
+
+		if (from.RiverId == 0 || to.RiverId == 0)
+		{
+			return false;
+		}
+
+		int flux = Math.Max(from.Flux, to.Flux);
+		return flux <= _routeBridgeFluxThreshold;
+	}
+
+	private float Heuristic(Cell from, Cell to)
+	{
+		return from.Position.DistanceTo(to.Position);
+	}
+
+	private static List<Vector2> ReconstructPath(int[] cameFrom, int current, Cell[] cells)
+	{
+		var path = new List<Vector2>();
+		while (current != -1)
+		{
+			path.Add(cells[current].Position);
+			current = cameFrom[current];
+		}
+
+		path.Reverse();
+		return path;
+	}
+
+	private static List<Vector2> SimplifyRoute(List<Vector2> points)
+	{
+		if (points == null || points.Count <= 2)
+		{
+			return points ?? new List<Vector2>();
+		}
+
+		var simplified = new List<Vector2> { points[0] };
+		var prevDir = (points[1] - points[0]);
+		if (prevDir.LengthSquared() > 0.0001f)
+		{
+			prevDir = prevDir.Normalized();
+		}
+
+		for (int i = 1; i < points.Count - 1; i++)
+		{
+			var dir = (points[i + 1] - points[i]);
+			if (dir.LengthSquared() <= 0.0001f)
+			{
+				continue;
+			}
+
+			dir = dir.Normalized();
+			if (prevDir.LengthSquared() == 0 || dir.Dot(prevDir) < RouteTurnDotThreshold)
+			{
+				simplified.Add(points[i]);
+				prevDir = dir;
+			}
+		}
+
+		simplified.Add(points[^1]);
+		return simplified;
+	}
+
+	private sealed class UnionFind
+	{
+		private readonly int[] _parent;
+		private readonly int[] _rank;
+
+		public UnionFind(int size)
+		{
+			_parent = new int[size];
+			_rank = new int[size];
+			for (int i = 0; i < size; i++)
+			{
+				_parent[i] = i;
+				_rank[i] = 0;
+			}
+		}
+
+		public int Find(int x)
+		{
+			if (_parent[x] != x)
+			{
+				_parent[x] = Find(_parent[x]);
+			}
+			return _parent[x];
+		}
+
+		public bool Union(int a, int b)
+		{
+			int rootA = Find(a);
+			int rootB = Find(b);
+			if (rootA == rootB)
+			{
+				return false;
+			}
+
+			if (_rank[rootA] < _rank[rootB])
+			{
+				_parent[rootA] = rootB;
+			}
+			else if (_rank[rootA] > _rank[rootB])
+			{
+				_parent[rootB] = rootA;
+			}
+			else
+			{
+				_parent[rootB] = rootA;
+				_rank[rootA]++;
+			}
+
+			return true;
+		}
 	}
 
 	private Color GenerateCountryColor(int index, int count)
@@ -1864,12 +2697,15 @@ public partial class MapView : Control
 		return false;
 	}
 
-	private void SelectCell(int cellId)
+	private void SelectCell(int cellId, bool emitSignal = true)
 	{
 		_selectedCellId = cellId;
 		QueueRedraw();
-		EmitSignal(SignalName.CellSelected, cellId);
-		
+		if (emitSignal)
+		{
+			EmitSignal(SignalName.CellSelected, cellId);
+		}
+
 		if (cellId != -1 && _mapGenerator?.Data != null)
 		{
 			var cell = _mapGenerator.Data.Cells[cellId];

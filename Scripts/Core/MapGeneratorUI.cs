@@ -1,0 +1,719 @@
+using System;
+using Godot;
+using FantasyMapGenerator.Scripts.Map;
+using FantasyMapGenerator.Scripts.Rendering;
+using FantasyMapGenerator.Scripts.UI.Controllers;
+using FantasyMapGenerator.Scripts.Utils;
+
+namespace FantasyMapGenerator.Scripts.Core;
+
+/// <summary>
+/// 地图生成器主界面
+/// </summary>
+public partial class MapGeneratorUI : Control
+{
+	private const int DefaultCellCount = 2000;
+	private const bool DefaultEnableMapDrilldown = true;
+	private const int GlobalCityCellCount = 15000;
+	private const int NationalCountyCellCount = 3000;
+
+	private ColorRect _background;
+	private Window _rootWindow;
+	private Control _mapDisplayRoot;
+	private Control _mapOverlayRoot;
+	private MapView _mapView;
+	private MapHierarchyController _mapHierarchyController;
+	private MapLevel _rootMapLevel = MapLevel.World;
+	private BottomMenuController _bottomMenuController;
+	private MapDisplayPanelController _mapDisplayPanelController;
+	private MenuController _menuController;
+	private Control _welcomeOverlay;
+	private Label _welcomeTitleLabel;
+	private Label _welcomeSubtitleLabel;
+	private Button _welcomeGenerateButton;
+
+	private bool _isMenuVisible;
+	private bool _isWelcomeMode;
+	private TranslationManager _translationManager;
+	private MapHierarchyConfig _mapHierarchyConfig;
+	private bool _enableMapDrilldown = DefaultEnableMapDrilldown;
+
+	private static MapContext _cachedMapContext;
+
+	public static void PrepareNewGameEntry()
+	{
+		_cachedMapContext = null;
+		MapView.ClearCachedMap();
+		MapView.SuppressGenerateOnNextReady();
+	}
+
+	private enum MapType
+	{
+		GlobalCity = 0,
+		NationalCounty = 1,
+		Custom = 2
+	}
+
+	public override void _Ready()
+	{
+		_translationManager = TranslationManager.Instance;
+		_translationManager.LanguageChanged += OnLanguageChanged;
+
+		CacheNodeReferences();
+		InitializeMapHierarchy();
+		SetupWelcomeOverlay();
+
+		SetupUI();
+		UpdateUIText();
+
+		_rootWindow = GetTree().Root;
+		if (_rootWindow != null)
+		{
+			_rootWindow.SizeChanged += OnWindowSizeChanged;
+		}
+		OnWindowSizeChanged();
+	}
+
+	public override void _ExitTree()
+	{
+		if (_rootWindow != null)
+		{
+			_rootWindow.SizeChanged -= OnWindowSizeChanged;
+		}
+
+		if (_mapView != null)
+		{
+			var cellSelectedCallable = new Callable(this, nameof(OnMapCellSelected));
+			if (_mapView.IsConnected(MapView.SignalName.CellSelected, cellSelectedCallable))
+			{
+				_mapView.Disconnect(MapView.SignalName.CellSelected, cellSelectedCallable);
+			}
+		}
+
+		if (_mapHierarchyController?.Current != null)
+		{
+			_cachedMapContext = _mapHierarchyController.Current;
+		}
+	}
+
+	private void OnWindowSizeChanged()
+	{
+		SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		if (_mapDisplayRoot != null)
+		{
+			_mapDisplayRoot.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		}
+
+		if (_mapOverlayRoot != null)
+		{
+			_mapOverlayRoot.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		}
+
+		if (_background != null)
+		{
+			_background.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		}
+
+		if (_mapView != null)
+		{
+			_mapView.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		}
+
+		if (_welcomeOverlay != null)
+		{
+			_welcomeOverlay.SetAnchorsAndOffsetsPreset(LayoutPreset.FullRect);
+		}
+	}
+
+	private void SyncMapGenerationSizeToWindow()
+	{
+		if (_mapView == null)
+		{
+			return;
+		}
+
+		var targetSize = _rootWindow?.Size ?? GetViewportRect().Size;
+		int width = Mathf.Clamp(Mathf.RoundToInt(targetSize.X), 128, 4096);
+		int height = Mathf.Clamp(Mathf.RoundToInt(targetSize.Y), 128, 4096);
+
+		if (_mapView.MapWidth != width)
+		{
+			_mapView.MapWidth = width;
+		}
+
+		if (_mapView.MapHeight != height)
+		{
+			_mapView.MapHeight = height;
+		}
+	}
+
+	private void RegenerateMapForWindow()
+	{
+		SyncMapGenerationSizeToWindow();
+		if (_mapHierarchyController != null)
+		{
+			if (_mapHierarchyController.HasContext)
+			{
+				_mapHierarchyController.RegenerateCurrentMap();
+			}
+			else
+			{
+				ApplyRootContextAndGenerate();
+			}
+			UpdateBackToParentButton();
+			return;
+		}
+
+		_mapView?.GenerateMap();
+	}
+
+	private void OnLanguageChanged(string language)
+	{
+		UpdateUIText();
+	}
+
+	private void UpdateUIText()
+	{
+		_bottomMenuController?.UpdateUIText();
+		_mapDisplayPanelController?.UpdateUIText();
+		_menuController?.UpdateUIText();
+		UpdateWelcomeUIText();
+	}
+
+	private void SetupUI()
+	{
+		SetupBottomMenu();
+
+		if (_menuController != null)
+		{
+			_menuController.Initialize(_mapView, _mapHierarchyConfig, _enableMapDrilldown);
+			_menuController.OnResumeRequested += OnResumePressed;
+			_menuController.OnRegenerateRequested += OnRegeneratePressed;
+			_menuController.OnSettingsRequested += OnSettingsPressed;
+			_menuController.OnMainMenuRequested += OnMainMenuPressed;
+			_menuController.OnQuitRequested += OnQuitPressed;
+			_menuController.OnBackToParentRequested += OnBackToParentPressed;
+			_menuController.OnApplySettingsRequested += OnMapSettingsApplyPressed;
+			_menuController.OnResetSettingsRequested += OnMapSettingsResetPressed;
+			_menuController.OnCloseSettingsRequested += OnMapSettingsClosePressed;
+			_menuController.OnMapViewScaleChanged += OnMapViewScaleChanged;
+			_menuController.OnMapTypeSelectionChanged += OnMapTypeSelectionChanged;
+		}
+
+		InitializeMenuSettings();
+		_mapDisplayPanelController?.Initialize(_mapView);
+
+		_isMenuVisible = false;
+		_menuController?.SetMenuVisible(false);
+		HideDropdowns();
+		UpdateBackToParentButton();
+	}
+
+	private void InitializeMenuSettings()
+	{
+		if (_menuController == null)
+		{
+			return;
+		}
+
+		bool settingsLoaded = _menuController.LoadMapSettings();
+		_enableMapDrilldown = _menuController.IsEnableDrilldownChecked;
+
+		bool hasMapData = _mapView?.HasMapData == true;
+		if (hasMapData)
+		{
+			RestoreOrInitializeMapContextWithoutRegeneration();
+		}
+		else
+		{
+			PrepareRootContextWithoutGeneration();
+		}
+
+		SetWelcomeMode(!hasMapData);
+
+		if (!settingsLoaded)
+		{
+			_menuController.SaveMapSettings(_enableMapDrilldown);
+		}
+	}
+
+	private void PrepareRootContextWithoutGeneration()
+	{
+		if (_mapHierarchyController == null)
+		{
+			return;
+		}
+
+		RefreshRootMapLevelFromSelector();
+		int cellCount = _mapView?.CellCount ?? DefaultCellCount;
+		_mapHierarchyController.SetRoot(_rootMapLevel, cellCount, regenerate: false);
+		_menuController?.UpdateCellCountValue(cellCount);
+		UpdateBackToParentButton();
+	}
+
+	private void RestoreOrInitializeMapContextWithoutRegeneration()
+	{
+		if (_mapHierarchyController == null)
+		{
+			return;
+		}
+
+		if (_cachedMapContext != null)
+		{
+			_mapHierarchyController.RestoreContext(_cachedMapContext);
+			_menuController?.UpdateCellCountValue(_cachedMapContext.CellCount);
+			UpdateBackToParentButton();
+			return;
+		}
+
+		RefreshRootMapLevelFromSelector();
+		int cellCount = _mapView?.CellCount ?? DefaultCellCount;
+		_mapHierarchyController.SetRoot(_rootMapLevel, cellCount, regenerate: false);
+		_menuController?.UpdateCellCountValue(cellCount);
+		UpdateBackToParentButton();
+	}
+
+	private void SetupWelcomeOverlay()
+	{
+		if (_welcomeGenerateButton != null)
+		{
+			_welcomeGenerateButton.Pressed += OnWelcomeGeneratePressed;
+		}
+		UpdateWelcomeUIText();
+	}
+
+	private void UpdateWelcomeUIText()
+	{
+		var tm = TranslationManager.Instance;
+		if (_welcomeTitleLabel != null)
+		{
+			_welcomeTitleLabel.Text = tm.Tr("app_title");
+		}
+
+		if (_welcomeSubtitleLabel != null)
+		{
+			_welcomeSubtitleLabel.Text = tm.Tr("welcome_subtitle");
+		}
+
+		if (_welcomeGenerateButton != null)
+		{
+			_welcomeGenerateButton.Text = tm.Tr("generate_new_map");
+		}
+	}
+
+	private void SetWelcomeMode(bool enabled)
+	{
+		_isWelcomeMode = enabled;
+		if (_welcomeOverlay != null)
+		{
+			_welcomeOverlay.Visible = enabled;
+		}
+
+		if (_mapDisplayRoot != null)
+		{
+			_mapDisplayRoot.Visible = !enabled;
+		}
+
+		if (_mapOverlayRoot != null)
+		{
+			_mapOverlayRoot.Visible = !enabled;
+		}
+
+		if (enabled)
+		{
+			_isMenuVisible = false;
+			_menuController?.SetMenuVisible(false);
+			HideDropdowns();
+		}
+	}
+
+	private void OnWelcomeGeneratePressed()
+	{
+		if (_mapHierarchyController == null)
+		{
+			return;
+		}
+
+		SyncMapGenerationSizeToWindow();
+		if (_mapHierarchyController.Current != null)
+		{
+			_mapHierarchyController.RestoreContext(_mapHierarchyController.Current, regenerate: true);
+		}
+		else
+		{
+			ApplyRootContextAndGenerate();
+		}
+
+		SetWelcomeMode(false);
+		UpdateBackToParentButton();
+	}
+
+	private void SetupBottomMenu()
+	{
+		_bottomMenuController?.Initialize(
+			OnDisplayTabSelected,
+			OnMapDropdownRegeneratePressed,
+			OnMapDropdownSettingsPressed);
+		HideDropdowns();
+	}
+
+	private void ToggleMenu()
+	{
+		HideDropdowns();
+		_isMenuVisible = !_isMenuVisible;
+		_menuController?.SetMenuVisible(_isMenuVisible);
+	}
+
+	private void OnResumePressed()
+	{
+		HideDropdowns();
+		_isMenuVisible = false;
+		_menuController?.SetMenuVisible(false);
+	}
+
+	private void OnRegeneratePressed()
+	{
+		// 隐藏菜单并重新生成地图
+		HideDropdowns();
+		_isMenuVisible = false;
+		_menuController?.SetMenuVisible(false);
+		
+		// 触发地图重新生成
+		RegenerateMapForWindow();
+	}
+
+	private void OnSettingsPressed()
+	{
+		HideDropdowns();
+		SwitchToScene("res://Scenes/Screens/Settings.tscn");
+	}
+
+	private void OnMainMenuPressed()
+	{
+		HideDropdowns();
+		SwitchToScene("res://Scenes/Screens/MainMenu.tscn");
+	}
+
+	private void OnQuitPressed()
+	{
+		HideDropdowns();
+		GetTree().Quit();
+	}
+
+	private void OnMapViewScaleChanged(double value)
+	{
+		if (_mapView != null)
+		{
+			_mapView.ViewScale = (float)value;
+		}
+		_menuController?.UpdateMapViewScaleLabel(value);
+	}
+
+	private void OnMapTypeSelectionChanged(MapTypeSelection selection)
+	{
+		var type = selection switch
+		{
+			MapTypeSelection.GlobalCity => MapType.GlobalCity,
+			MapTypeSelection.NationalCounty => MapType.NationalCounty,
+			_ => MapType.Custom
+		};
+
+		ApplyMapTypePreset(type);
+	}
+
+	private void ApplyMapTypePreset(MapType type)
+	{
+		if (_mapView == null)
+		{
+			return;
+		}
+
+		_rootMapLevel = ResolveRootLevelFromMapType(type);
+
+		int preset;
+		switch (type)
+		{
+			case MapType.GlobalCity:
+				preset = _mapHierarchyConfig?.WorldCellCount ?? GlobalCityCellCount;
+				break;
+			case MapType.NationalCounty:
+				preset = _mapHierarchyConfig?.CountryCellCount ?? NationalCountyCellCount;
+				break;
+			case MapType.Custom:
+			default:
+				return;
+		}
+
+		_menuController?.UpdateCellCountValue(preset);
+		_mapView.CellCount = preset;
+	}
+	public override void _Input(InputEvent @event)
+	{
+		if (_isWelcomeMode)
+		{
+			return;
+		}
+
+		if (@event is InputEventKey keyEvent && keyEvent.Pressed && !keyEvent.Echo && keyEvent.Keycode == Key.Escape)
+		{
+			if (_menuController != null && _menuController.IsMapSettingsVisible)
+			{
+				HideMapSettingsPopup();
+				return;
+			}
+
+			HideDropdowns();
+			ToggleMenu();
+		}
+
+		if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed && mouseButton.ButtonIndex == MouseButton.Left)
+		{
+			if (_menuController != null && _menuController.IsMapSettingsVisible && !_menuController.IsPointInsideSettings(mouseButton.Position))
+			{
+				HideMapSettingsPopup();
+				return;
+			}
+
+			if (!IsPointerInsideMenu(mouseButton.Position))
+			{
+				HideDropdowns();
+			}
+		}
+	}
+
+	private void HideDropdowns()
+	{
+		_bottomMenuController?.HideDropdowns();
+	}
+
+	private void OnDisplayTabSelected(int tabIndex)
+	{
+		HideDropdowns();
+		_mapDisplayPanelController?.OnDisplayTabSelected(tabIndex);
+	}
+
+	private void OnMapDropdownRegeneratePressed()
+	{
+		HideDropdowns();
+		OnRegeneratePressed();
+	}
+
+	private void OnMapDropdownSettingsPressed()
+	{
+		HideDropdowns();
+		ShowMapSettingsPopup();
+	}
+
+	private void OnMapSettingsApplyPressed()
+	{
+		HideMapSettingsPopup();
+		_menuController?.ApplyCurrentValuesToMap();
+		_enableMapDrilldown = _menuController?.IsEnableDrilldownChecked ?? _enableMapDrilldown;
+		_menuController?.SaveMapSettings(_enableMapDrilldown);
+		RefreshRootMapLevelFromSelector();
+		RegenerateMapForWindow();
+		_menuController?.ShowMapSettingsNotice("map_settings_saved");
+	}
+
+	private void OnMapSettingsResetPressed()
+	{
+		_menuController?.ApplyDefaultMapSettings();
+		_menuController?.ApplyCurrentValuesToMap();
+		_enableMapDrilldown = _menuController?.IsEnableDrilldownChecked ?? _enableMapDrilldown;
+		_menuController?.SaveMapSettings(_enableMapDrilldown);
+		RefreshRootMapLevelFromSelector();
+		RegenerateMapForWindow();
+		_menuController?.ShowMapSettingsNotice("map_settings_saved");
+	}
+
+	private void OnMapSettingsClosePressed()
+	{
+		HideMapSettingsPopup();
+	}
+
+	private void InitializeMapHierarchy()
+	{
+		if (_mapView == null)
+		{
+			return;
+		}
+
+		_mapHierarchyConfig = new MapHierarchyConfig
+		{
+			WorldCellCount = GlobalCityCellCount,
+			CountryCellCount = NationalCountyCellCount,
+			ProvinceCellCount = DefaultCellCount,
+			CityCellCount = DefaultCellCount
+		};
+
+		_mapHierarchyController = new MapHierarchyController(_mapView, _mapHierarchyConfig);
+
+		var cellSelectedCallable = new Callable(this, nameof(OnMapCellSelected));
+		if (!_mapView.IsConnected(MapView.SignalName.CellSelected, cellSelectedCallable))
+		{
+			_mapView.Connect(MapView.SignalName.CellSelected, cellSelectedCallable);
+		}
+	}
+
+	private void OnMapCellSelected(int cellId)
+	{
+		if (cellId < 0 || _mapHierarchyController == null || !_enableMapDrilldown)
+		{
+			return;
+		}
+
+		_mapHierarchyController.TryEnterChild(cellId);
+		UpdateBackToParentButton();
+	}
+
+	private void ApplyRootContextAndGenerate()
+	{
+		if (_mapHierarchyController == null)
+		{
+			return;
+		}
+
+		SyncMapGenerationSizeToWindow();
+		int cellCount = _mapView?.CellCount ?? DefaultCellCount;
+		_mapHierarchyController.SetRoot(_rootMapLevel, cellCount);
+		UpdateBackToParentButton();
+	}
+
+	private void RefreshRootMapLevelFromSelector()
+	{
+		_rootMapLevel = ResolveRootLevelFromMapType(GetSelectedMapType());
+	}
+
+	private MapType GetSelectedMapType()
+	{
+		if (_menuController == null)
+		{
+			return MapType.Custom;
+		}
+
+		return _menuController.GetMapTypeSelection() switch
+		{
+			MapTypeSelection.GlobalCity => MapType.GlobalCity,
+			MapTypeSelection.NationalCounty => MapType.NationalCounty,
+			_ => MapType.Custom
+		};
+	}
+
+	private MapLevel ResolveRootLevelFromMapType(MapType type)
+	{
+		return type switch
+		{
+			MapType.GlobalCity => MapLevel.World,
+			MapType.NationalCounty => MapLevel.Country,
+			MapType.Custom => _rootMapLevel,
+			_ => MapLevel.World
+		};
+	}
+
+	private void OnBackToParentPressed()
+	{
+		HideDropdowns();
+		_isMenuVisible = false;
+		_menuController?.SetMenuVisible(false);
+
+		if (_mapHierarchyController == null)
+		{
+			return;
+		}
+
+		if (_mapHierarchyController.TryReturnToParent())
+		{
+			UpdateBackToParentButton();
+		}
+	}
+
+	private void UpdateBackToParentButton()
+	{
+		if (_menuController == null || _mapHierarchyController == null)
+		{
+			return;
+		}
+
+		_menuController.UpdateBackToParentButton(_mapHierarchyController.CanReturnToParent);
+	}
+
+
+	private void ShowMapSettingsPopup()
+	{
+		_menuController?.ShowMapSettingsPopup();
+	}
+
+	private void HideMapSettingsPopup()
+	{
+		_menuController?.HideMapSettingsPopup();
+	}
+
+	private bool IsPointerInsideMenu(Vector2 globalPosition)
+	{
+		bool inBottom = _bottomMenuController != null && _bottomMenuController.IsPointerInsideMenu(globalPosition);
+		bool inMenu = _menuController != null && _menuController.IsPointInsideMenu(globalPosition);
+		bool inSettings = _menuController != null && _menuController.IsPointInsideSettings(globalPosition);
+		return inBottom || inMenu || inSettings;
+	}
+
+	private void CacheNodeReferences()
+	{
+		_mapDisplayRoot = GetNodeOrNull<Control>("MapDisplay")
+			?? FindChild("MapDisplay", true, false) as Control;
+
+		_mapOverlayRoot = GetNodeOrNull<Control>("MapGeneratorUI")
+			?? GetNodeOrNull<Control>("GameUI")
+			?? FindChild("MapGeneratorUI", true, false) as Control
+			?? FindChild("GameUI", true, false) as Control;
+
+		_background = _mapDisplayRoot?.GetNodeOrNull<ColorRect>("Background")
+			?? GetNodeOrNull<ColorRect>("MapDisplay/Background");
+
+		_mapView = _mapDisplayRoot?.GetNodeOrNull<MapView>("MapView")
+			?? GetNodeOrNull<MapView>("MapDisplay/MapView");
+
+		_mapDisplayPanelController = _mapOverlayRoot?.GetNodeOrNull<MapDisplayPanelController>("MapDisplayPanelUI")
+			?? FindChild("MapDisplayPanelUI", true, false) as MapDisplayPanelController;
+
+		_bottomMenuController = _mapOverlayRoot?.GetNodeOrNull<BottomMenuController>("BottomMenuUI")
+			?? FindChild("BottomMenuUI", true, false) as BottomMenuController;
+
+		_menuController = _mapOverlayRoot?.GetNodeOrNull<MenuController>("MenuUI")
+			?? FindChild("MenuUI", true, false) as MenuController;
+
+		_welcomeOverlay = GetNodeOrNull<Control>("WelcomeOverlay")
+			?? FindChild("WelcomeOverlay", true, false) as Control;
+		_welcomeTitleLabel = _welcomeOverlay?.GetNodeOrNull<Label>("WelcomeCenter/WelcomePanel/WelcomeVBox/WelcomeTitle");
+		_welcomeSubtitleLabel = _welcomeOverlay?.GetNodeOrNull<Label>("WelcomeCenter/WelcomePanel/WelcomeVBox/WelcomeSubtitle");
+		_welcomeGenerateButton = _welcomeOverlay?.GetNodeOrNull<Button>("WelcomeCenter/WelcomePanel/WelcomeVBox/GenerateMapButton");
+
+		if (_mapView == null)
+		{
+			GD.PrintErr("MapGeneratorUI: MapView node not found.");
+		}
+
+		if (_bottomMenuController == null || _menuController == null)
+		{
+			GD.PrintErr("MapGeneratorUI: UI controllers were not fully resolved.");
+		}
+
+		if (_welcomeOverlay == null || _welcomeGenerateButton == null)
+		{
+			GD.PrintErr("MapGeneratorUI: Welcome overlay nodes were not fully resolved.");
+		}
+	}
+
+	private void SwitchToScene(string scenePath)
+	{
+		if (SceneNavigator.Instance.NavigateTo(scenePath))
+		{
+			return;
+		}
+
+		var error = GetTree().ChangeSceneToFile(scenePath);
+		if (error != Error.Ok)
+		{
+			GD.PrintErr($"Failed to load scene: {scenePath}");
+		}
+	}
+}

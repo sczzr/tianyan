@@ -136,7 +136,7 @@ public override void _Ready()
 ```
 
 ### Scene Paths
-- UI scenes: `res://Scenes/UI/[Name].tscn`
+- UI scenes: `res://Scenes/Screens/[Name].tscn`
 - Game scenes: `res://Scenes/Game/[Name].tscn`
 - Main entry: `res://Scenes/MainMenu.tscn`
 
@@ -221,7 +221,7 @@ MainMenu (Control)
 ### Scene File Naming
 
 - **PascalCase**: `MainMenu.tscn`, `Settings.tscn`, `LoadGame.tscn`
-- UI scenes: `res://Scenes/UI/[Name].tscn`
+- UI scenes: `res://Scenes/Screens/[Name].tscn`
 - Game scenes: `res://Scenes/Game/[Name].tscn`
 
 ### Resource File Naming

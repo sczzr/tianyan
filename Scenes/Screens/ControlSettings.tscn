@@ -1,0 +1,254 @@
+[gd_scene format=3 uid="uid://controlsettings"]
+
+[ext_resource type="Script" uid="uid://dvfssf8dvl2j" path="res://Scripts/UI/Screens/ControlSettings.cs" id="1_controlsettings"]
+[ext_resource type="Theme" uid="uid://inkwashtheme" path="res://Themes/InkWashTheme.tres" id="2_theme"]
+
+[node name="ControlSettings" type="Control" unique_id=1665487301]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("2_theme")
+script = ExtResource("1_controlsettings")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1901363675]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.961, 0.925, 0.843, 1)
+
+[node name="SettingsPanel" type="PanelContainer" parent="." unique_id=1915765381]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -260.0
+offset_right = 320.0
+offset_bottom = 260.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SettingsVBox" type="VBoxContainer" parent="SettingsPanel" unique_id=1099283264]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="SettingsPanel/SettingsVBox" unique_id=2013306929]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 26
+text = "操作设置"
+horizontal_alignment = 1
+
+[node name="Separator1" type="HSeparator" parent="SettingsPanel/SettingsVBox" unique_id=1290620289]
+layout_mode = 2
+
+[node name="Tabs" type="TabContainer" parent="SettingsPanel/SettingsVBox" unique_id=1259957071]
+custom_minimum_size = Vector2(0, 320)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ZoomPage" type="VBoxContainer" parent="SettingsPanel/SettingsVBox/Tabs" unique_id=1643516034]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ZoomGrid" type="GridContainer" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage" unique_id=1092388940]
+layout_mode = 2
+columns = 3
+
+[node name="ZoomSpeedLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1757473165]
+layout_mode = 2
+text = "缩放速度"
+
+[node name="ZoomSpeedSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1406753933]
+custom_minimum_size = Vector2(220, 28)
+layout_mode = 2
+
+[node name="ZoomSpeedValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1121698947]
+layout_mode = 2
+text = "10.0"
+horizontal_alignment = 2
+
+[node name="ZoomImpulseLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1498474272]
+layout_mode = 2
+text = "缩放惯性力度"
+
+[node name="ZoomImpulseSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1711834771]
+custom_minimum_size = Vector2(220, 28)
+layout_mode = 2
+
+[node name="ZoomImpulseValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1216708231]
+layout_mode = 2
+text = "6.0"
+horizontal_alignment = 2
+
+[node name="ZoomDampingLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=2044851822]
+layout_mode = 2
+text = "缩放惯性阻尼"
+
+[node name="ZoomDampingSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=2023821147]
+custom_minimum_size = Vector2(220, 28)
+layout_mode = 2
+
+[node name="ZoomDampingValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1765686216]
+layout_mode = 2
+text = "12.0"
+horizontal_alignment = 2
+
+[node name="MaxZoomVelocityLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1793847281]
+layout_mode = 2
+text = "缩放最大速度"
+
+[node name="MaxZoomVelocitySlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1959808976]
+custom_minimum_size = Vector2(220, 28)
+layout_mode = 2
+
+[node name="MaxZoomVelocityValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1992690660]
+layout_mode = 2
+text = "3.00"
+horizontal_alignment = 2
+
+[node name="ZoomStepLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1672023031]
+layout_mode = 2
+text = "缩放步进"
+
+[node name="ZoomStepSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1784348188]
+custom_minimum_size = Vector2(220, 28)
+layout_mode = 2
+
+[node name="ZoomStepValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1466991726]
+layout_mode = 2
+text = "0.050"
+horizontal_alignment = 2
+
+[node name="FineZoomStepLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1088960567]
+layout_mode = 2
+text = "细调步进 (Ctrl)"
+
+[node name="FineZoomStepSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1908340897]
+custom_minimum_size = Vector2(220, 28)
+layout_mode = 2
+
+[node name="FineZoomStepValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=2076157784]
+layout_mode = 2
+text = "0.010"
+horizontal_alignment = 2
+
+[node name="CoarseZoomStepLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1662391043]
+layout_mode = 2
+text = "粗调步进 (Shift)"
+
+[node name="CoarseZoomStepSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=2059250720]
+custom_minimum_size = Vector2(220, 28)
+layout_mode = 2
+
+[node name="CoarseZoomStepValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1674285822]
+layout_mode = 2
+text = "0.100"
+horizontal_alignment = 2
+
+[node name="MovePage" type="VBoxContainer" parent="SettingsPanel/SettingsVBox/Tabs" unique_id=2090481637]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="MoveGrid" type="GridContainer" parent="SettingsPanel/SettingsVBox/Tabs/MovePage" unique_id=1260409398]
+layout_mode = 2
+columns = 3
+
+[node name="MoveSpeedLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=2000019440]
+layout_mode = 2
+text = "移动速度"
+
+[node name="MoveSpeedSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1964180148]
+custom_minimum_size = Vector2(220, 28)
+layout_mode = 2
+
+[node name="MoveSpeedValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1331386371]
+layout_mode = 2
+text = "240"
+horizontal_alignment = 2
+
+[node name="MoveAccelerationLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1872964114]
+layout_mode = 2
+text = "移动加速度"
+
+[node name="MoveAccelerationSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1541042212]
+custom_minimum_size = Vector2(220, 28)
+layout_mode = 2
+
+[node name="MoveAccelerationValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1421125742]
+layout_mode = 2
+text = "1200"
+horizontal_alignment = 2
+
+[node name="MoveDampingLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1260409397]
+layout_mode = 2
+text = "移动阻尼"
+
+[node name="MoveDampingSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1974575890]
+custom_minimum_size = Vector2(220, 28)
+layout_mode = 2
+
+[node name="MoveDampingValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1092388939]
+layout_mode = 2
+text = "1600"
+horizontal_alignment = 2
+
+[node name="AdvancedPage" type="VBoxContainer" parent="SettingsPanel/SettingsVBox/Tabs" unique_id=1841230073]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="AdvancedGrid" type="GridContainer" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage" unique_id=2140934512]
+layout_mode = 2
+columns = 2
+
+[node name="ZoomSmoothingLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=100492104]
+layout_mode = 2
+text = "平滑缩放"
+
+[node name="ZoomSmoothingCheck" type="CheckButton" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1990104265]
+layout_mode = 2
+text = ""
+
+[node name="EnableKeyboardPanLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1662391044]
+layout_mode = 2
+text = "启用键盘移动"
+
+[node name="EnableKeyboardPanCheck" type="CheckButton" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1641230953]
+layout_mode = 2
+text = ""
+
+[node name="ScaleMoveSpeedLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1662391045]
+layout_mode = 2
+text = "移动速度随缩放调整"
+
+[node name="ScaleMoveSpeedCheck" type="CheckButton" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1688324234]
+layout_mode = 2
+text = ""
+
+[node name="ButtonsHBox" type="HBoxContainer" parent="SettingsPanel/SettingsVBox" unique_id=1884378584]
+layout_mode = 2
+alignment = 2
+theme_override_constants/separation = 10
+
+[node name="SaveButton" type="Button" parent="SettingsPanel/SettingsVBox/ButtonsHBox" unique_id=1747002744]
+custom_minimum_size = Vector2(120, 44)
+layout_mode = 2
+text = "保存"
+
+[node name="ResetButton" type="Button" parent="SettingsPanel/SettingsVBox/ButtonsHBox" unique_id=2016210020]
+custom_minimum_size = Vector2(120, 44)
+layout_mode = 2
+text = "恢复默认"
+
+[node name="BackButton" type="Button" parent="SettingsPanel/SettingsVBox/ButtonsHBox" unique_id=1433253290]
+custom_minimum_size = Vector2(120, 44)
+layout_mode = 2
+text = "返回"

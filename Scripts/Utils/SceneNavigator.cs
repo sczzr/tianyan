@@ -56,19 +56,19 @@ public partial class SceneNavigator : Node
 		sceneTree.Root.AddChild(_instance);
 	}
 
-	public void NavigateTo(string scenePath)
+	public bool NavigateTo(string scenePath)
 	{
 		if (string.IsNullOrEmpty(scenePath))
 		{
 			GD.PushWarning("SceneNavigator.NavigateTo called with empty scene path.");
-			return;
+			return false;
 		}
 
-		var tree = GetTree();
+		var tree = GetTree() ?? Engine.GetMainLoop() as SceneTree;
 		if (tree == null)
 		{
 			GD.PushError("SceneNavigator.NavigateTo called before the node entered the SceneTree.");
-			return;
+			return false;
 		}
 
 		var currentScene = tree.CurrentScene;
@@ -82,13 +82,15 @@ public partial class SceneNavigator : Node
 		if (error != Error.Ok)
 		{
 			GD.PrintErr($"Failed to load scene: {scenePath}");
-			return;
+			return false;
 		}
 
 		if (previousScenePath != null)
 		{
 			_sceneHistory.Push(previousScenePath);
 		}
+
+		return true;
 	}
 
 	public bool CanGoBack()

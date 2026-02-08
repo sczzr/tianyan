@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://b7ask1wl4w4c6"]
+
+[ext_resource type="PackedScene" uid="uid://sf83c2qk2c0d" path="res://Scenes/MapGenerator/UI/MenuUI.tscn" id="1_menuui"]
+[ext_resource type="PackedScene" uid="uid://3h2ih8wew8e0" path="res://Scenes/MapGenerator/UI/MapDisplayPanelUI.tscn" id="2_mapdisplaypanelui"]
+[ext_resource type="PackedScene" uid="uid://bdwdbef3lbio8" path="res://Scenes/MapGenerator/UI/BottomMenuUI.tscn" id="3_bottommenuui"]
+
+[node name="MapGeneratorUI" type="Control" unique_id=1070002001]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MenuUI" parent="." unique_id=1601698898 instance=ExtResource("1_menuui")]
+layout_mode = 1
+
+[node name="MapDisplayPanelUI" parent="." unique_id=456940579 instance=ExtResource("2_mapdisplaypanelui")]
+visible = false
+layout_mode = 1
+
+[node name="BottomMenuUI" parent="." unique_id=1524872627 instance=ExtResource("3_bottommenuui")]
+layout_mode = 1
