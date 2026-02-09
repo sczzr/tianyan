@@ -243,7 +243,23 @@ public class PlanetPreviewController
 	{
 		if (string.IsNullOrWhiteSpace(texturePath))
 		{
-			return false;
+			_selectedSkyTexturePath = string.Empty;
+			_activeSkyTexture = null;
+
+			if (_worldEnvironment?.Environment != null)
+			{
+				_worldEnvironment.Environment.BackgroundMode = Environment.BGMode.Color;
+				_worldEnvironment.Environment.Sky = null;
+				_worldEnvironment.Environment.BackgroundColor = new Color(0.008f, 0.012f, 0.026f);
+			}
+
+			if (_starShell != null)
+			{
+				_starShell.Visible = true;
+			}
+
+			UpdateStarfieldByElement(_cachedPlanetData?.Element ?? PlanetElement.Terra);
+			return true;
 		}
 
 		Texture2D skyTexture = GD.Load<Texture2D>(texturePath);
@@ -1055,18 +1071,6 @@ public class PlanetPreviewController
 			{
 				_activeSkyTexture = selected;
 				return selected;
-			}
-		}
-
-		for (int i = 0; i < NasaSkyTextureCandidates.Length; i++)
-		{
-			string candidate = NasaSkyTextureCandidates[i];
-			Texture2D skyTexture = GD.Load<Texture2D>(candidate);
-			if (skyTexture != null)
-			{
-				_selectedSkyTexturePath = candidate;
-				_activeSkyTexture = skyTexture;
-				return skyTexture;
 			}
 		}
 

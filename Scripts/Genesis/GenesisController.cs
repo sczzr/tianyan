@@ -15,6 +15,9 @@ public partial class GenesisController : Control
 	private Label _planetSectionTitle;
 	private Label _hierarchySectionTitle;
 	private Label _orbitSectionTitle;
+	private Label _modeSectionTitle;
+	private Label _visualStyleLabel;
+	private Label _inspectorTargetLabel;
 	private Label _lawValueLabel;
 	private Label _civilizationValueLabel;
 	private Label _timeFlowValueLabel;
@@ -40,7 +43,16 @@ public partial class GenesisController : Control
 	private HSlider _oceanSlider;
 	private HSlider _temperatureSlider;
 	private HSlider _atmosphereSlider;
+	private OptionButton _experienceModeSelector;
+	private OptionButton _visualStyleSelector;
+	private OptionButton _inspectorTargetSelector;
 	private OptionButton _hierarchySelector;
+	private Button _starNodeButton;
+	private Button _planetNodeButton;
+	private Button _explorerModeButton;
+	private Button _godModeButton;
+	private Button _simulationStyleButton;
+	private Button _animationStyleButton;
 	private Button _quickStartButton;
 	private Button _generateButton;
 	private CheckButton _showMoonOrbitToggle;
@@ -56,6 +68,9 @@ public partial class GenesisController : Control
 	private bool _isPreviewRootGuiInputBound;
 	private bool _isPlanetTextureSignalsBound;
 	private float _lastSolarBrightness = -1f;
+	private bool _isHardcoreMode;
+	private bool _isAnimationStyle;
+	private bool _isInspectingStar = true;
 
 	[Export]
 	private CelestialSystemPhysicsConfig _defaultCelestialPhysics = CelestialSystemPhysicsConfig.CreateDefault();
@@ -169,6 +184,51 @@ public partial class GenesisController : Control
 			_lawSectionTitle.Text = isZh ? "[壹] 天道法则" : "[I] Cosmic Laws";
 		}
 
+		if (_modeSectionTitle != null)
+		{
+			_modeSectionTitle.Text = isZh ? "检查器配置" : "Inspector Config";
+		}
+
+		if (_visualStyleLabel != null)
+		{
+			_visualStyleLabel.Text = isZh ? "视觉风格" : "Visual Style";
+		}
+
+		if (_inspectorTargetLabel != null)
+		{
+			_inspectorTargetLabel.Text = isZh ? "检查器目标" : "Inspector Target";
+		}
+
+		if (_starNodeButton != null)
+		{
+			_starNodeButton.Text = isZh ? "☀️ 太一 (Sun)" : "☀️ Taiyi (Sun)";
+		}
+
+		if (_planetNodeButton != null)
+		{
+			_planetNodeButton.Text = isZh ? "🪐 后土 (Terra)" : "🪐 Houtu (Terra)";
+		}
+
+		if (_explorerModeButton != null)
+		{
+			_explorerModeButton.Text = isZh ? "探索 (Explorer)" : "Explorer";
+		}
+
+		if (_godModeButton != null)
+		{
+			_godModeButton.Text = isZh ? "上帝 (God Mode)" : "God Mode";
+		}
+
+		if (_simulationStyleButton != null)
+		{
+			_simulationStyleButton.Text = isZh ? "仿真风格" : "Simulation";
+		}
+
+		if (_animationStyleButton != null)
+		{
+			_animationStyleButton.Text = isZh ? "动画风格" : "Animation";
+		}
+
 		if (_planetSectionTitle != null)
 		{
 			_planetSectionTitle.Text = isZh ? "[贰] 星辰法相" : "[II] Planet Shaping";
@@ -228,6 +288,12 @@ public partial class GenesisController : Control
 
 		PopulatePlanetElementSelector(_tempUniverse?.CurrentPlanet?.Element ?? PlanetElement.Terra);
 		PopulateHierarchySelector(_tempUniverse?.HierarchyConfig?.Archetype ?? HierarchyArchetype.Standard);
+		PopulateExperienceModeSelector();
+		PopulateVisualStyleSelector();
+		PopulateInspectorTargetSelector();
+		ApplyInspectorMode();
+		ApplyInspectorTarget();
+		ApplyVisualStylePreset();
 		RefreshAllViews();
 	}
 
@@ -235,6 +301,9 @@ public partial class GenesisController : Control
 	{
 		_hubTitle = GetNodeOrNull<Label>("RootMargin/MainRow/LeftPanel/LeftVBox/HubTitle");
 		_hubSubtitle = GetNodeOrNull<Label>("RootMargin/MainRow/LeftPanel/LeftVBox/HubSubtitle");
+		_modeSectionTitle = GetNodeOrNull<Label>("RootMargin/MainRow/LeftPanel/LeftVBox/ModeSection/ModeSectionTitle");
+		_visualStyleLabel = GetNodeOrNull<Label>("RootMargin/MainRow/LeftPanel/LeftVBox/ModeSection/VisualStyleLabel");
+		_inspectorTargetLabel = GetNodeOrNull<Label>("RootMargin/MainRow/LeftPanel/LeftVBox/ModeSection/InspectorTargetLabel");
 		_lawSectionTitle = GetNodeOrNull<Label>("RootMargin/MainRow/LeftPanel/LeftVBox/LawSection/LawHeader/LawSectionTitle");
 		_planetSectionTitle = GetNodeOrNull<Label>("RootMargin/MainRow/LeftPanel/LeftVBox/PlanetSection/PlanetHeader/PlanetSectionTitle");
 		_hierarchySectionTitle = GetNodeOrNull<Label>("RootMargin/MainRow/LeftPanel/LeftVBox/HierarchySection/HierarchyHeader/HierarchySectionTitle");
@@ -264,7 +333,16 @@ public partial class GenesisController : Control
 		_oceanSlider = GetNodeOrNull<HSlider>("RootMargin/MainRow/LeftPanel/LeftVBox/PlanetSection/OceanSlider");
 		_temperatureSlider = GetNodeOrNull<HSlider>("RootMargin/MainRow/LeftPanel/LeftVBox/PlanetSection/TemperatureSlider");
 		_atmosphereSlider = GetNodeOrNull<HSlider>("RootMargin/MainRow/LeftPanel/LeftVBox/PlanetSection/AtmosphereSlider");
+		_experienceModeSelector = GetNodeOrNull<OptionButton>("RootMargin/MainRow/LeftPanel/LeftVBox/ModeSection/ExperienceModeSelector");
+		_visualStyleSelector = GetNodeOrNull<OptionButton>("RootMargin/MainRow/LeftPanel/LeftVBox/ModeSection/VisualStyleSelector");
+		_inspectorTargetSelector = GetNodeOrNull<OptionButton>("RootMargin/MainRow/LeftPanel/LeftVBox/ModeSection/InspectorTargetSelector");
 		_hierarchySelector = GetNodeOrNull<OptionButton>("RootMargin/MainRow/LeftPanel/LeftVBox/HierarchySection/HierarchySelector");
+		_starNodeButton = GetNodeOrNull<Button>("RootMargin/MainRow/LeftPanel/LeftVBox/HierarchySection/HierarchyTree/StarNodeButton");
+		_planetNodeButton = GetNodeOrNull<Button>("RootMargin/MainRow/LeftPanel/LeftVBox/HierarchySection/HierarchyTree/PlanetNodeButton");
+		_explorerModeButton = GetNodeOrNull<Button>("TopLeftModePanel/TopLeftModeVBox/ExperienceSwitch/ExplorerModeButton");
+		_godModeButton = GetNodeOrNull<Button>("TopLeftModePanel/TopLeftModeVBox/ExperienceSwitch/GodModeButton");
+		_simulationStyleButton = GetNodeOrNull<Button>("TopLeftModePanel/TopLeftModeVBox/StyleSwitch/SimulationStyleButton");
+		_animationStyleButton = GetNodeOrNull<Button>("TopLeftModePanel/TopLeftModeVBox/StyleSwitch/AnimationStyleButton");
 		_quickStartButton = GetNodeOrNull<Button>("RootMargin/MainRow/LeftPanel/LeftVBox/ActionSection/ActionButtons/QuickStartButton");
 		_generateButton = GetNodeOrNull<Button>("RootMargin/MainRow/LeftPanel/LeftVBox/ActionSection/ActionButtons/GenerateButton");
 		_showMoonOrbitToggle = GetNodeOrNull<CheckButton>("RootMargin/MainRow/RightPanel/PreviewPanel/PreviewRoot/PlanetTexture/OrbitSection/OrbitSectionVBox/ShowMoonOrbitToggle");
@@ -303,6 +381,51 @@ public partial class GenesisController : Control
 
 	private void BindEvents()
 	{
+		if (_experienceModeSelector != null)
+		{
+			_experienceModeSelector.ItemSelected += OnExperienceModeSelected;
+		}
+
+		if (_visualStyleSelector != null)
+		{
+			_visualStyleSelector.ItemSelected += OnVisualStyleSelected;
+		}
+
+		if (_inspectorTargetSelector != null)
+		{
+			_inspectorTargetSelector.ItemSelected += OnInspectorTargetSelected;
+		}
+
+		if (_starNodeButton != null)
+		{
+			_starNodeButton.Pressed += OnStarNodePressed;
+		}
+
+		if (_planetNodeButton != null)
+		{
+			_planetNodeButton.Pressed += OnPlanetNodePressed;
+		}
+
+		if (_explorerModeButton != null)
+		{
+			_explorerModeButton.Pressed += OnExplorerModePressed;
+		}
+
+		if (_godModeButton != null)
+		{
+			_godModeButton.Pressed += OnGodModePressed;
+		}
+
+		if (_simulationStyleButton != null)
+		{
+			_simulationStyleButton.Pressed += OnSimulationStylePressed;
+		}
+
+		if (_animationStyleButton != null)
+		{
+			_animationStyleButton.Pressed += OnAnimationStylePressed;
+		}
+
 		if (_lawAlignmentSlider != null)
 		{
 			_lawAlignmentSlider.ValueChanged += OnLawAlignmentChanged;
@@ -388,6 +511,10 @@ public partial class GenesisController : Control
 
 		ApplyOrbitToggleState();
 		ApplyPlanetTextureOptions();
+		ApplyInspectorMode();
+		ApplyInspectorTarget();
+		ApplyVisualStylePreset();
+		ApplyTopSwitchState();
 	}
 
 	private void OnLanguageChanged(string language)
@@ -449,11 +576,6 @@ public partial class GenesisController : Control
 
 	private void OnSkyTextureChanged(string texturePath)
 	{
-		if (string.IsNullOrWhiteSpace(texturePath))
-		{
-			return;
-		}
-
 		_planetPreviewController?.SetSkyTexturePath(texturePath);
 	}
 
@@ -496,11 +618,7 @@ public partial class GenesisController : Control
 		_planetPreviewController.SetLightFollowEnabled(_planetTextureView.IsLightFollowEnabled);
 		_planetPreviewController.SetLightResponse(_planetTextureView.LightResponseStrength);
 		_planetPreviewController.SetSolarBrightness(_planetTextureView.SolarBrightness);
-
-		if (!string.IsNullOrWhiteSpace(_planetTextureView.SelectedSkyTexturePath))
-		{
-			_planetPreviewController.SetSkyTexturePath(_planetTextureView.SelectedSkyTexturePath);
-		}
+		_planetPreviewController.SetSkyTexturePath(_planetTextureView.SelectedSkyTexturePath);
 
 		_planetPreviewController.SetPlanetSurfaceTexturePath(_planetTextureView.SelectedPlanetSurfaceTexturePath);
 		_planetPreviewController.SetMoonTexturePath(_planetTextureView.SelectedMoonTexturePath);
@@ -896,6 +1014,236 @@ public partial class GenesisController : Control
 		}
 	}
 
+	private void PopulateExperienceModeSelector()
+	{
+		if (_experienceModeSelector == null)
+		{
+			return;
+		}
+
+		bool isZh = IsChineseMode();
+		_experienceModeSelector.Clear();
+		_experienceModeSelector.AddItem(isZh ? "探索 (Explorer)" : "Explorer", 0);
+		_experienceModeSelector.AddItem(isZh ? "上帝 (God Mode)" : "God Mode", 1);
+		SelectOptionById(_experienceModeSelector, _isHardcoreMode ? 1 : 0);
+	}
+
+	private void PopulateVisualStyleSelector()
+	{
+		if (_visualStyleSelector == null)
+		{
+			return;
+		}
+
+		bool isZh = IsChineseMode();
+		_visualStyleSelector.Clear();
+		_visualStyleSelector.AddItem(isZh ? "仿真风格 (Simulation)" : "Simulation", 0);
+		_visualStyleSelector.AddItem(isZh ? "动画风格 (Animation)" : "Animation", 1);
+		SelectOptionById(_visualStyleSelector, _isAnimationStyle ? 1 : 0);
+	}
+
+	private void PopulateInspectorTargetSelector()
+	{
+		if (_inspectorTargetSelector == null)
+		{
+			return;
+		}
+
+		bool isZh = IsChineseMode();
+		_inspectorTargetSelector.Clear();
+		_inspectorTargetSelector.AddItem(isZh ? "恒星参数" : "Star Parameters", 0);
+		_inspectorTargetSelector.AddItem(isZh ? "行星参数" : "Planet Parameters", 1);
+		SelectOptionById(_inspectorTargetSelector, _isInspectingStar ? 0 : 1);
+	}
+
+	private static void SelectOptionById(OptionButton selector, int itemId)
+	{
+		if (selector == null || selector.ItemCount <= 0)
+		{
+			return;
+		}
+
+		int index = selector.GetItemIndex(itemId);
+		if (index >= 0)
+		{
+			selector.Select(index);
+		}
+	}
+
+	private void OnExperienceModeSelected(long index)
+	{
+		if (_experienceModeSelector == null)
+		{
+			return;
+		}
+
+		int id = _experienceModeSelector.GetItemId((int)index);
+		bool hardcore = id == 1;
+		if (_isHardcoreMode == hardcore)
+		{
+			return;
+		}
+
+		_isHardcoreMode = hardcore;
+		ApplyInspectorMode();
+		ApplyTopSwitchState();
+	}
+
+	private void OnVisualStyleSelected(long index)
+	{
+		if (_visualStyleSelector == null)
+		{
+			return;
+		}
+
+		int id = _visualStyleSelector.GetItemId((int)index);
+		bool animationStyle = id == 1;
+		if (_isAnimationStyle == animationStyle)
+		{
+			return;
+		}
+
+		_isAnimationStyle = animationStyle;
+		ApplyVisualStylePreset();
+		ApplyTopSwitchState();
+	}
+
+	private void OnInspectorTargetSelected(long index)
+	{
+		if (_inspectorTargetSelector == null)
+		{
+			return;
+		}
+
+		int id = _inspectorTargetSelector.GetItemId((int)index);
+		bool inspectStar = id == 0;
+		if (_isInspectingStar == inspectStar)
+		{
+			return;
+		}
+
+		_isInspectingStar = inspectStar;
+		ApplyInspectorTarget();
+	}
+
+	private void OnStarNodePressed()
+	{
+		_isInspectingStar = true;
+		SelectOptionById(_inspectorTargetSelector, 0);
+		ApplyInspectorTarget();
+	}
+
+	private void OnPlanetNodePressed()
+	{
+		_isInspectingStar = false;
+		SelectOptionById(_inspectorTargetSelector, 1);
+		ApplyInspectorTarget();
+	}
+
+	private void OnExplorerModePressed()
+	{
+		if (!_explorerModeButton.ButtonPressed)
+		{
+			_explorerModeButton.ButtonPressed = true;
+			return;
+		}
+
+		_isHardcoreMode = false;
+		SelectOptionById(_experienceModeSelector, 0);
+		ApplyInspectorMode();
+		ApplyTopSwitchState();
+	}
+
+	private void OnGodModePressed()
+	{
+		if (!_godModeButton.ButtonPressed)
+		{
+			_godModeButton.ButtonPressed = true;
+			return;
+		}
+
+		_isHardcoreMode = true;
+		SelectOptionById(_experienceModeSelector, 1);
+		ApplyInspectorMode();
+		ApplyTopSwitchState();
+	}
+
+	private void OnSimulationStylePressed()
+	{
+		if (!_simulationStyleButton.ButtonPressed)
+		{
+			_simulationStyleButton.ButtonPressed = true;
+			return;
+		}
+
+		_isAnimationStyle = false;
+		SelectOptionById(_visualStyleSelector, 0);
+		ApplyVisualStylePreset();
+		ApplyTopSwitchState();
+	}
+
+	private void OnAnimationStylePressed()
+	{
+		if (!_animationStyleButton.ButtonPressed)
+		{
+			_animationStyleButton.ButtonPressed = true;
+			return;
+		}
+
+		_isAnimationStyle = true;
+		SelectOptionById(_visualStyleSelector, 1);
+		ApplyVisualStylePreset();
+		ApplyTopSwitchState();
+	}
+
+	private void ApplyInspectorMode()
+	{
+		_planetTextureView?.SetHardcoreMode(_isHardcoreMode);
+	}
+
+	private void ApplyInspectorTarget()
+	{
+		_planetTextureView?.SetInspectorTarget(_isInspectingStar);
+
+		if (_starNodeButton != null)
+		{
+			_starNodeButton.ButtonPressed = _isInspectingStar;
+		}
+
+		if (_planetNodeButton != null)
+		{
+			_planetNodeButton.ButtonPressed = !_isInspectingStar;
+		}
+	}
+
+	private void ApplyVisualStylePreset()
+	{
+		_planetTextureView?.ApplyVisualStylePreset(_isAnimationStyle);
+	}
+
+	private void ApplyTopSwitchState()
+	{
+		if (_explorerModeButton != null)
+		{
+			_explorerModeButton.ButtonPressed = !_isHardcoreMode;
+		}
+
+		if (_godModeButton != null)
+		{
+			_godModeButton.ButtonPressed = _isHardcoreMode;
+		}
+
+		if (_simulationStyleButton != null)
+		{
+			_simulationStyleButton.ButtonPressed = !_isAnimationStyle;
+		}
+
+		if (_animationStyleButton != null)
+		{
+			_animationStyleButton.ButtonPressed = _isAnimationStyle;
+		}
+	}
+
 	private void ApplyUniverseToControls(UniverseData universeData)
 	{
 		if (universeData == null)
@@ -1157,4 +1505,5 @@ public partial class GenesisController : Control
 			_ => "后土"
 		};
 	}
+
 }
