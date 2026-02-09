@@ -1,0 +1,575 @@
+[gd_scene format=3 uid="uid://df2x17gnyh6pq"]
+
+[ext_resource type="Script" path="res://Scripts/Genesis/GenesisController.cs" id="1_genesiscontroller"]
+[ext_resource type="PackedScene" path="res://Scenes/MapGenerator/UI/PlanetTexture.tscn" id="2_planettexture"]
+
+[sub_resource type="StyleBoxFlat" id="PanelLeft"]
+bg_color = Color(0.05, 0.07, 0.1, 0.78)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.78, 0.66, 0.42, 0.45)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 20.0
+content_margin_top = 20.0
+content_margin_right = 20.0
+content_margin_bottom = 20.0
+
+[sub_resource type="StyleBoxFlat" id="PanelPreview"]
+bg_color = Color(0.03, 0.05, 0.09, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.78, 0.66, 0.42, 0.24)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 0.0
+content_margin_top = 0.0
+content_margin_right = 0.0
+content_margin_bottom = 0.0
+
+[sub_resource type="StyleBoxFlat" id="PanelConsole"]
+bg_color = Color(0.01, 0.02, 0.04, 0.82)
+border_width_top = 2
+border_color = Color(0.78, 0.66, 0.42, 0.6)
+content_margin_left = 16.0
+content_margin_top = 14.0
+content_margin_right = 16.0
+content_margin_bottom = 14.0
+
+[sub_resource type="StyleBoxFlat" id="RingGold"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.78, 0.66, 0.42, 0.2)
+corner_radius_top_left = 1024
+corner_radius_top_right = 1024
+corner_radius_bottom_right = 1024
+corner_radius_bottom_left = 1024
+
+[sub_resource type="StyleBoxFlat" id="RingCyan"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.0, 0.94, 1.0, 0.16)
+corner_radius_top_left = 1024
+corner_radius_top_right = 1024
+corner_radius_bottom_right = 1024
+corner_radius_bottom_left = 1024
+
+[sub_resource type="StyleBoxFlat" id="ButtonGhostNormal"]
+bg_color = Color(0, 0, 0, 0.0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.65, 0.65, 0.65, 0.55)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="ButtonGhostHover"]
+bg_color = Color(0.0, 0.94, 1.0, 0.08)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.0, 0.94, 1.0, 0.65)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="ButtonCreateNormal"]
+bg_color = Color(0.28, 0.2, 0.08, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.78, 0.66, 0.42, 0.9)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="ButtonCreateHover"]
+bg_color = Color(0.78, 0.66, 0.42, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.86, 0.78, 0.62, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+content_margin_left = 10.0
+content_margin_top = 8.0
+content_margin_right = 10.0
+content_margin_bottom = 8.0
+
+[sub_resource type="StyleBoxFlat" id="PanelHud"]
+bg_color = Color(0.05, 0.08, 0.12, 0.62)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.78, 0.66, 0.42, 0.34)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+
+[sub_resource type="Shader" id="PlanetAuraShader"]
+code = "shader_type canvas_item;\n\nvoid fragment()\n{\n\tvec2 p = UV * 2.0 - vec2(1.0);\n\tfloat r = length(p);\n\tfloat outer = 1.0 - smoothstep(0.72, 1.0, r);\n\tfloat inner = smoothstep(0.12, 0.54, r);\n\tfloat aura = clamp(outer * inner, 0.0, 1.0);\n\tCOLOR = vec4(COLOR.rgb, COLOR.a * aura);\n}"
+
+[sub_resource type="ShaderMaterial" id="PlanetAuraMaterial"]
+shader = SubResource("PlanetAuraShader")
+
+[node name="GenesisHub" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_genesiscontroller")
+
+[node name="VoidBase" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.02, 0.03, 0.04, 1)
+
+[node name="VoidCoreGlow" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.08, 0.11, 0.18, 0.3)
+mouse_filter = 2
+
+[node name="MagicLayer" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.18, 0.12, 0.06, 0.45)
+mouse_filter = 2
+
+[node name="TechLayer" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+modulate = Color(1, 1, 1, 0)
+color = Color(0.02, 0.12, 0.2, 0.5)
+mouse_filter = 2
+
+[node name="RootMargin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="MainRow" type="HBoxContainer" parent="RootMargin"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="LeftPanel" type="PanelContainer" parent="RootMargin/MainRow"]
+custom_minimum_size = Vector2(380, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("PanelLeft")
+
+[node name="LeftVBox" type="VBoxContainer" parent="RootMargin/MainRow/LeftPanel"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="HubTitle" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.66, 0.42, 1)
+theme_override_font_sizes/font_size = 42
+text = "太虚幻境"
+
+[node name="HubSubtitle" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.62, 0.62, 0.66, 1)
+theme_override_font_sizes/font_size = 12
+text = "以天道塑界，以观测立世 · GENESIS SYSTEM V4.0"
+
+[node name="LawSection" type="VBoxContainer" parent="RootMargin/MainRow/LeftPanel/LeftVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LawHeader" type="HBoxContainer" parent="RootMargin/MainRow/LeftPanel/LeftVBox/LawSection"]
+layout_mode = 2
+
+[node name="LawSectionTitle" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/LawSection/LawHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.78, 0.66, 0.42, 1)
+theme_override_font_sizes/font_size = 18
+text = "[壹] 天道法则"
+
+[node name="LawSectionId" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/LawSection/LawHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.58, 0.58, 1)
+theme_override_font_sizes/font_size = 11
+text = "COSMIC_LAW"
+
+[node name="LawValueLabel" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/LawSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.88, 0.9, 1)
+text = "灵气 / 机枢：50%"
+
+[node name="LawSlider" type="HSlider" parent="RootMargin/MainRow/LeftPanel/LeftVBox/LawSection"]
+layout_mode = 2
+max_value = 100.0
+value = 50.0
+
+[node name="LawPoles" type="HBoxContainer" parent="RootMargin/MainRow/LeftPanel/LeftVBox/LawSection"]
+layout_mode = 2
+
+[node name="LawMagicHint" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/LawSection/LawPoles"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.56, 0.56, 0.62, 1)
+theme_override_font_sizes/font_size = 11
+text = "High Magic"
+
+[node name="LawTechHint" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/LawSection/LawPoles"]
+layout_mode = 2
+horizontal_alignment = 2
+theme_override_colors/font_color = Color(0.56, 0.56, 0.62, 1)
+theme_override_font_sizes/font_size = 11
+text = "High Tech"
+
+[node name="CivilizationValueLabel" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/LawSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.88, 0.9, 1)
+text = "星火密度：55"
+
+[node name="CivilizationSlider" type="HSlider" parent="RootMargin/MainRow/LeftPanel/LeftVBox/LawSection"]
+layout_mode = 2
+min_value = 1.0
+max_value = 100.0
+value = 55.0
+
+[node name="TimeFlowValueLabel" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/LawSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.88, 0.9, 1)
+text = "光阴流速：1.00x"
+
+[node name="TimeFlowSlider" type="HSlider" parent="RootMargin/MainRow/LeftPanel/LeftVBox/LawSection"]
+layout_mode = 2
+min_value = 0.25
+max_value = 3.0
+step = 0.01
+value = 1.0
+
+[node name="PlanetSection" type="VBoxContainer" parent="RootMargin/MainRow/LeftPanel/LeftVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PlanetHeader" type="HBoxContainer" parent="RootMargin/MainRow/LeftPanel/LeftVBox/PlanetSection"]
+layout_mode = 2
+
+[node name="PlanetSectionTitle" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/PlanetSection/PlanetHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.78, 0.66, 0.42, 1)
+theme_override_font_sizes/font_size = 18
+text = "[贰] 星辰法相"
+
+[node name="PlanetSectionId" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/PlanetSection/PlanetHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.58, 0.58, 1)
+theme_override_font_sizes/font_size = 11
+text = "PLANET_SHAPE"
+
+[node name="ElementLabel" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/PlanetSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.88, 0.9, 1)
+text = "法相类型"
+
+[node name="ElementSelector" type="OptionButton" parent="RootMargin/MainRow/LeftPanel/LeftVBox/PlanetSection"]
+layout_mode = 2
+
+[node name="OceanValueLabel" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/PlanetSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.88, 0.9, 1)
+text = "沧海桑田：35%"
+
+[node name="OceanSlider" type="HSlider" parent="RootMargin/MainRow/LeftPanel/LeftVBox/PlanetSection"]
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 0.35
+
+[node name="TemperatureValueLabel" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/PlanetSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.88, 0.9, 1)
+text = "阴阳调和：50%"
+
+[node name="TemperatureSlider" type="HSlider" parent="RootMargin/MainRow/LeftPanel/LeftVBox/PlanetSection"]
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 0.5
+
+[node name="AtmosphereValueLabel" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/PlanetSection"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.88, 0.9, 1)
+text = "混沌之气：55%"
+
+[node name="AtmosphereSlider" type="HSlider" parent="RootMargin/MainRow/LeftPanel/LeftVBox/PlanetSection"]
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 0.55
+
+[node name="HierarchySection" type="VBoxContainer" parent="RootMargin/MainRow/LeftPanel/LeftVBox"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HierarchyHeader" type="HBoxContainer" parent="RootMargin/MainRow/LeftPanel/LeftVBox/HierarchySection"]
+layout_mode = 2
+
+[node name="HierarchySectionTitle" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/HierarchySection/HierarchyHeader"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.78, 0.66, 0.42, 1)
+theme_override_font_sizes/font_size = 18
+text = "[叁] 观测垂范"
+
+[node name="HierarchySectionId" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/HierarchySection/HierarchyHeader"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.58, 0.58, 0.58, 1)
+theme_override_font_sizes/font_size = 11
+text = "HIERARCHY"
+
+[node name="HierarchySelector" type="OptionButton" parent="RootMargin/MainRow/LeftPanel/LeftVBox/HierarchySection"]
+layout_mode = 2
+
+[node name="RoleTitleLabel" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/HierarchySection"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.84, 0.84, 0.86, 1)
+text = "【 经略 · 一方霸主 】"
+
+[node name="ActionSection" type="VBoxContainer" parent="RootMargin/MainRow/LeftPanel/LeftVBox"]
+layout_mode = 2
+size_flags_vertical = 10
+theme_override_constants/separation = 10
+
+[node name="ActionSpacer" type="Control" parent="RootMargin/MainRow/LeftPanel/LeftVBox/ActionSection"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ActionButtons" type="HBoxContainer" parent="RootMargin/MainRow/LeftPanel/LeftVBox/ActionSection"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="QuickStartButton" type="Button" parent="RootMargin/MainRow/LeftPanel/LeftVBox/ActionSection/ActionButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("ButtonGhostNormal")
+theme_override_styles/hover = SubResource("ButtonGhostHover")
+theme_override_styles/pressed = SubResource("ButtonGhostHover")
+theme_override_colors/font_color = Color(0.86, 0.86, 0.86, 1)
+theme_override_colors/font_hover_color = Color(0.0, 0.94, 1.0, 1)
+text = "🎲 轮回"
+
+[node name="GenerateButton" type="Button" parent="RootMargin/MainRow/LeftPanel/LeftVBox/ActionSection/ActionButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("ButtonCreateNormal")
+theme_override_styles/hover = SubResource("ButtonCreateHover")
+theme_override_styles/pressed = SubResource("ButtonCreateHover")
+theme_override_colors/font_color = Color(0.92, 0.84, 0.64, 1)
+theme_override_colors/font_hover_color = Color(0.02, 0.02, 0.02, 1)
+text = "⚡ 开天辟地"
+
+[node name="ProgressLabel" type="Label" parent="RootMargin/MainRow/LeftPanel/LeftVBox/ActionSection"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.88, 0.9, 1)
+text = "正在生成地图，请稍候..."
+
+[node name="ProgressBar" type="ProgressBar" parent="RootMargin/MainRow/LeftPanel/LeftVBox/ActionSection"]
+visible = false
+layout_mode = 2
+show_percentage = true
+value = 0.0
+
+[node name="RightPanel" type="VBoxContainer" parent="RootMargin/MainRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 18
+
+[node name="PreviewPanel" type="PanelContainer" parent="RootMargin/MainRow/RightPanel"]
+custom_minimum_size = Vector2(0, 420)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_styles/panel = SubResource("PanelPreview")
+
+[node name="PreviewRoot" type="Control" parent="RootMargin/MainRow/RightPanel/PreviewPanel"]
+layout_mode = 2
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PreviewNebula" type="ColorRect" parent="RootMargin/MainRow/RightPanel/PreviewPanel/PreviewRoot"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.06, 0.1, 0.2, 0.24)
+mouse_filter = 2
+
+[node name="ArmillaryRing1" type="Panel" parent="RootMargin/MainRow/RightPanel/PreviewPanel/PreviewRoot"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -280.0
+offset_right = 280.0
+offset_bottom = 280.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("RingGold")
+modulate = Color(1, 1, 1, 0.7)
+mouse_filter = 2
+
+[node name="ArmillaryRing2" type="Panel" parent="RootMargin/MainRow/RightPanel/PreviewPanel/PreviewRoot"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -210.0
+offset_top = -210.0
+offset_right = 210.0
+offset_bottom = 210.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("RingCyan")
+mouse_filter = 2
+
+[node name="PlanetAura" type="ColorRect" parent="RootMargin/MainRow/RightPanel/PreviewPanel/PreviewRoot"]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -230.0
+offset_top = -230.0
+offset_right = 230.0
+offset_bottom = 230.0
+grow_horizontal = 2
+grow_vertical = 2
+material = SubResource("PlanetAuraMaterial")
+color = Color(0.4, 0.56, 0.84, 0.24)
+mouse_filter = 2
+
+[node name="PlanetTexture" parent="RootMargin/MainRow/RightPanel/PreviewPanel/PreviewRoot" instance=ExtResource("2_planettexture")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="NarrativePanel" type="PanelContainer" parent="RootMargin/MainRow/RightPanel"]
+custom_minimum_size = Vector2(0, 210)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_styles/panel = SubResource("PanelConsole")
+
+[node name="NarrativeVBox" type="VBoxContainer" parent="RootMargin/MainRow/RightPanel/NarrativePanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NarrativeTitle" type="Label" parent="RootMargin/MainRow/RightPanel/NarrativePanel/NarrativeVBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.66, 0.42, 1)
+theme_override_font_sizes/font_size = 18
+text = "天道卷轴"
+
+[node name="NarrativeConsole" type="RichTextLabel" parent="RootMargin/MainRow/RightPanel/NarrativePanel/NarrativeVBox"]
+custom_minimum_size = Vector2(0, 132)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_colors/default_color = Color(0.72, 0.72, 0.72, 1)
+bbcode_enabled = false
+fit_content = true
+scroll_following = true
+text = "> [天道] 法则偏向: 50% (混沌)\n> [地脉] 星辰法相: 后土\n> [演化] 星火密度 55% · 光阴流速 1.00x"
+
+[node name="SummaryLabel" type="Label" parent="RootMargin/MainRow/RightPanel/NarrativePanel/NarrativeVBox"]
+layout_mode = 2
+autowrap_mode = 3
+theme_override_colors/font_color = Color(0.82, 0.82, 0.84, 1)
+text = "当前界域摘要：混沌秩序初成，星海仍在演化。"

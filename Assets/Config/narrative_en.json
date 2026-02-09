@@ -1,0 +1,19 @@
+{
+  "theme_desc": {
+    "magic": "Arcane currents surge through this realm, where ancient laws are tangible and responsive.",
+    "tech": "Star routes cut through the void, and machine logic now governs belief and expansion.",
+    "balance": "Relics of old empires and rising engines coexist in a tense but productive equilibrium."
+  },
+  "planet_desc": {
+    "terra": "A fertile terrestrial world where oceans and continents nurture stable civilizations.",
+    "pyro": "A volatile lava world of ruptured crusts, extreme heat, and strategic energy reserves.",
+    "cryo": "A glacial frontier of frozen biomes, thin ecosystems, and resilient settlements.",
+    "aero": "A stormbound aerial world of drifting landmasses and skyborne trade routes."
+  },
+  "role_desc": {
+    "simple": "You chose the Wanderer lens: one layer, direct stories, intimate exploration.",
+    "standard": "You chose the Sovereign lens: strategic administration across a coherent realm.",
+    "complex": "You chose the Demiurge lens: multi-layer simulation and systemic evolution.",
+    "custom": "You chose the Observer lens: custom hierarchy and rewritten laws."
+  }
+}

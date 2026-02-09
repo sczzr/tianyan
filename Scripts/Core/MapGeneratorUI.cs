@@ -1,6 +1,9 @@
 using System;
 using Godot;
+using FantasyMapGenerator.Scripts.Data;
+using FantasyMapGenerator.Scripts.Genesis;
 using FantasyMapGenerator.Scripts.Map;
+using FantasyMapGenerator.Scripts.Map.Heightmap;
 using FantasyMapGenerator.Scripts.Rendering;
 using FantasyMapGenerator.Scripts.UI.Controllers;
 using FantasyMapGenerator.Scripts.Utils;
@@ -28,11 +31,7 @@ public partial class MapGeneratorUI : Control
 	private MapDisplayPanelController _mapDisplayPanelController;
 	private MenuController _menuController;
 	private Control _welcomeOverlay;
-	private Label _welcomeTitleLabel;
-	private Label _welcomeSubtitleLabel;
-	private Button _welcomeGenerateButton;
-	private ProgressBar _welcomeGenerateProgressBar;
-	private Label _welcomeGenerateProgressLabel;
+	private GenesisController _genesisController;
 
 	private bool _isMenuVisible;
 	private bool _isWelcomeMode;
@@ -82,6 +81,11 @@ public partial class MapGeneratorUI : Control
 		if (_rootWindow != null)
 		{
 			_rootWindow.SizeChanged -= OnWindowSizeChanged;
+		}
+
+		if (_genesisController != null)
+		{
+			_genesisController.GenerateRequested -= OnGenesisGenerateRequested;
 		}
 
 		if (_mapView != null)
@@ -278,9 +282,9 @@ public partial class MapGeneratorUI : Control
 
 	private void SetupWelcomeOverlay()
 	{
-		if (_welcomeGenerateButton != null)
+		if (_genesisController != null)
 		{
-			_welcomeGenerateButton.Pressed += OnWelcomeGeneratePressed;
+			_genesisController.GenerateRequested += OnGenesisGenerateRequested;
 		}
 
 		SetWelcomeGeneratingState(false, 0f);
@@ -289,26 +293,7 @@ public partial class MapGeneratorUI : Control
 
 	private void UpdateWelcomeUIText()
 	{
-		var tm = TranslationManager.Instance;
-		if (_welcomeTitleLabel != null)
-		{
-			_welcomeTitleLabel.Text = tm.Tr("app_title");
-		}
-
-		if (_welcomeSubtitleLabel != null)
-		{
-			_welcomeSubtitleLabel.Text = tm.Tr("welcome_subtitle");
-		}
-
-		if (_welcomeGenerateButton != null)
-		{
-			_welcomeGenerateButton.Text = tm.Tr("generate_new_map");
-		}
-
-		if (_welcomeGenerateProgressLabel != null)
-		{
-			_welcomeGenerateProgressLabel.Text = tm.Tr("welcome_generating_map");
-		}
+		_genesisController?.UpdateLocalizedText();
 	}
 
 	private void SetWelcomeMode(bool enabled)
@@ -337,7 +322,7 @@ public partial class MapGeneratorUI : Control
 		}
 	}
 
-	private async void OnWelcomeGeneratePressed()
+	private async void OnGenesisGenerateRequested(UniverseData universeData)
 	{
 		if (_mapHierarchyController == null || _isWelcomeGenerating || _mapView == null)
 		{
@@ -350,13 +335,11 @@ public partial class MapGeneratorUI : Control
 		try
 		{
 			SyncMapGenerationSizeToWindow();
+			ApplyUniverseSettings(universeData);
 
-			if (_mapHierarchyController.Current == null)
-			{
-				RefreshRootMapLevelFromSelector();
-				int rootCellCount = _mapView.CellCount > 0 ? _mapView.CellCount : DefaultCellCount;
-				_mapHierarchyController.SetRoot(_rootMapLevel, rootCellCount, regenerate: false);
-			}
+			int rootCellCount = _mapView.CellCount > 0 ? _mapView.CellCount : DefaultCellCount;
+			string genesisSeed = BuildGenesisSeed(universeData);
+			_mapHierarchyController.SetRoot(_rootMapLevel, rootCellCount, genesisSeed, regenerate: false);
 
 			var targetContext = _mapHierarchyController.Current;
 			if (targetContext == null)
@@ -368,6 +351,8 @@ public partial class MapGeneratorUI : Control
 			{
 				SetWelcomeGeneratingState(true, progress);
 			});
+
+			OnMapGeneratedFromGenesis();
 
 			SetWelcomeMode(false);
 			UpdateBackToParentButton();
@@ -386,22 +371,153 @@ public partial class MapGeneratorUI : Control
 	private void SetWelcomeGeneratingState(bool generating, float progress01)
 	{
 		float clamped = Mathf.Clamp(progress01, 0f, 1f);
+		_genesisController?.SetGeneratingState(generating, clamped);
+	}
 
-		if (_welcomeGenerateButton != null)
+	private void ApplyUniverseSettings(UniverseData universeData)
+	{
+		if (universeData == null || _mapView == null)
 		{
-			_welcomeGenerateButton.Disabled = generating;
+			return;
 		}
 
-		if (_welcomeGenerateProgressBar != null)
+		if (universeData.HierarchyConfig != null && _mapHierarchyConfig != null)
 		{
-			_welcomeGenerateProgressBar.Visible = generating;
-			_welcomeGenerateProgressBar.Value = clamped * 100f;
+			_mapHierarchyConfig.WorldCellCount = Mathf.Max(500, universeData.HierarchyConfig.WorldCellCount);
+			_mapHierarchyConfig.CountryCellCount = Mathf.Max(500, universeData.HierarchyConfig.CountryCellCount);
+			_mapHierarchyConfig.ProvinceCellCount = Mathf.Max(500, universeData.HierarchyConfig.ProvinceCellCount);
+			_mapHierarchyConfig.CityCellCount = Mathf.Max(500, universeData.HierarchyConfig.CityCellCount);
 		}
 
-		if (_welcomeGenerateProgressLabel != null)
+		var archetype = universeData.HierarchyConfig?.Archetype ?? HierarchyArchetype.Standard;
+		_rootMapLevel = ResolveRootLevelFromHierarchy(archetype);
+
+		int fallbackCellCount = _mapView.CellCount > 0 ? _mapView.CellCount : DefaultCellCount;
+		int baseCellCount = _mapHierarchyConfig?.GetCellCount(_rootMapLevel, fallbackCellCount) ?? fallbackCellCount;
+		float densityScale = Mathf.Lerp(0.75f, 1.25f, Mathf.Clamp(universeData.CivilizationDensity / 100f, 0f, 1f));
+		int targetCellCount = Mathf.Clamp(Mathf.RoundToInt(baseCellCount * densityScale), 300, 24000);
+
+		_mapView.CellCount = targetCellCount;
+		_menuController?.UpdateCellCountValue(targetCellCount);
+
+		_mapView.VisualStyleMode = ResolveVisualStyleFromLawAlignment(universeData.LawAlignment);
+		_mapView.UseTemplateGeneration = true;
+		_mapView.UseRandomTemplateGeneration = false;
+		_mapView.GenerationTemplateType = ResolveTemplateTypeFromPlanet(universeData.CurrentPlanet?.Element ?? PlanetElement.Terra);
+		_mapView.ApplyGenesisPlanetInfluence(universeData.CurrentPlanet, universeData.LawAlignment);
+		_mapView.SetGenesisTerrainHeightmap(
+			universeData.PlanetTerrainHeightmap,
+			universeData.PlanetTerrainWidth,
+			universeData.PlanetTerrainHeight);
+
+		float ocean = Mathf.Clamp(universeData.CurrentPlanet?.OceanCoverage ?? 0.35f, 0.05f, 0.95f);
+		float atmosphere = Mathf.Clamp(universeData.CurrentPlanet?.AtmosphereDensity ?? 0.5f, 0f, 1f);
+
+		_mapView.GenerationWaterLevel = ocean;
+		_mapView.RiverDensity = Mathf.Clamp(0.45f + atmosphere * 1.55f, 0.25f, 3f);
+		_mapView.CountryCount = Mathf.Clamp(Mathf.RoundToInt(4f + universeData.CivilizationDensity / 6f), 1, 128);
+
+		_enableMapDrilldown = (universeData.HierarchyConfig?.LevelCount ?? 2) > 1;
+	}
+
+	private static MapLevel ResolveRootLevelFromHierarchy(HierarchyArchetype archetype)
+	{
+		return archetype switch
 		{
-			_welcomeGenerateProgressLabel.Visible = generating;
+			HierarchyArchetype.Simple => MapLevel.Country,
+			HierarchyArchetype.Standard => MapLevel.World,
+			HierarchyArchetype.Complex => MapLevel.World,
+			HierarchyArchetype.Custom => MapLevel.World,
+			_ => MapLevel.World
+		};
+	}
+
+	private static HeightmapTemplateType ResolveTemplateTypeFromPlanet(PlanetElement element)
+	{
+		return element switch
+		{
+			PlanetElement.Terra => HeightmapTemplateType.Continents,
+			PlanetElement.Pyro => HeightmapTemplateType.Volcano,
+			PlanetElement.Cryo => HeightmapTemplateType.OldWorld,
+			PlanetElement.Aero => HeightmapTemplateType.Archipelago,
+			_ => HeightmapTemplateType.Continents
+		};
+	}
+
+	private static string BuildGenesisSeed(UniverseData universeData)
+	{
+		if (universeData == null)
+		{
+			return $"genesis_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
 		}
+
+		var planet = universeData.CurrentPlanet ?? new PlanetData();
+		int ocean = Mathf.RoundToInt(Mathf.Clamp(planet.OceanCoverage, 0f, 1f) * 1000f);
+		int temperature = Mathf.RoundToInt(Mathf.Clamp(planet.Temperature, 0f, 1f) * 1000f);
+		int atmosphere = Mathf.RoundToInt(Mathf.Clamp(planet.AtmosphereDensity, 0f, 1f) * 1000f);
+		int law = Mathf.Clamp(universeData.LawAlignment, 0, 100);
+		int civ = Mathf.Clamp(universeData.CivilizationDensity, 0, 100);
+		int role = (int)(universeData.HierarchyConfig?.Archetype ?? HierarchyArchetype.Standard);
+
+		return $"genesis_{law}_{civ}_{(int)planet.Element}_{ocean}_{temperature}_{atmosphere}_{role}";
+	}
+
+	private void OnMapGeneratedFromGenesis()
+	{
+		if (_mapHierarchyController == null || _mapView == null)
+		{
+			return;
+		}
+
+		int currentCellCount = _mapView.CellCount > 0 ? _mapView.CellCount : DefaultCellCount;
+		if (_mapHierarchyController.Current == null)
+		{
+			_mapHierarchyController.SetRoot(_rootMapLevel, currentCellCount, regenerate: false);
+		}
+
+		var currentContext = _mapHierarchyController.Current;
+		if (currentContext == null)
+		{
+			return;
+		}
+
+		var updatedContext = new MapContext(
+			currentContext.Level,
+			currentCellCount,
+			currentContext.Seed,
+			currentContext.Parent,
+			currentContext.ParentCellId,
+			currentContext.DisplayName,
+			currentContext.ParentMapData);
+
+		_mapHierarchyController.RestoreContext(updatedContext, regenerate: false);
+		_menuController?.UpdateCellCountValue(currentCellCount);
+		UpdateBackToParentButton();
+	}
+
+	private static MapVisualStyleSelection ResolveVisualStyleFromLawAlignment(int lawAlignment)
+	{
+		if (lawAlignment <= 25)
+		{
+			return MapVisualStyleSelection.InkFantasy;
+		}
+
+		if (lawAlignment <= 45)
+		{
+			return MapVisualStyleSelection.Parchment;
+		}
+
+		if (lawAlignment <= 65)
+		{
+			return MapVisualStyleSelection.NavalChart;
+		}
+
+		if (lawAlignment <= 85)
+		{
+			return MapVisualStyleSelection.Relief;
+		}
+
+		return MapVisualStyleSelection.Heatmap;
 	}
 
 	private void SetupBottomMenu()
@@ -746,13 +862,14 @@ public partial class MapGeneratorUI : Control
 		_menuController = _mapOverlayRoot?.GetNodeOrNull<MenuController>("MenuUI")
 			?? FindChild("MenuUI", true, false) as MenuController;
 
-		_welcomeOverlay = GetNodeOrNull<Control>("WelcomeOverlay")
+		_welcomeOverlay = GetNodeOrNull<Control>("GenesisHubUI")
+			?? FindChild("GenesisHubUI", true, false) as Control
+			?? GetNodeOrNull<Control>("WelcomeOverlay")
 			?? FindChild("WelcomeOverlay", true, false) as Control;
-		_welcomeTitleLabel = _welcomeOverlay?.GetNodeOrNull<Label>("WelcomeCenter/WelcomePanel/WelcomeVBox/WelcomeTitle");
-		_welcomeSubtitleLabel = _welcomeOverlay?.GetNodeOrNull<Label>("WelcomeCenter/WelcomePanel/WelcomeVBox/WelcomeSubtitle");
-		_welcomeGenerateButton = _welcomeOverlay?.GetNodeOrNull<Button>("WelcomeCenter/WelcomePanel/WelcomeVBox/GenerateMapButton");
-		_welcomeGenerateProgressBar = _welcomeOverlay?.GetNodeOrNull<ProgressBar>("WelcomeCenter/WelcomePanel/WelcomeVBox/GenerateProgressBar");
-		_welcomeGenerateProgressLabel = _welcomeOverlay?.GetNodeOrNull<Label>("WelcomeCenter/WelcomePanel/WelcomeVBox/GenerateProgressLabel");
+
+		_genesisController = _welcomeOverlay as GenesisController
+			?? GetNodeOrNull<GenesisController>("GenesisHubUI")
+			?? FindChild("GenesisHubUI", true, false) as GenesisController;
 
 		if (_mapView == null)
 		{
@@ -764,9 +881,9 @@ public partial class MapGeneratorUI : Control
 			GD.PrintErr("MapGeneratorUI: UI controllers were not fully resolved.");
 		}
 
-		if (_welcomeOverlay == null || _welcomeGenerateButton == null || _welcomeGenerateProgressBar == null || _welcomeGenerateProgressLabel == null)
+		if (_welcomeOverlay == null || _genesisController == null)
 		{
-			GD.PrintErr("MapGeneratorUI: Welcome overlay nodes were not fully resolved.");
+			GD.PrintErr("MapGeneratorUI: Genesis hub nodes were not fully resolved.");
 		}
 	}
 

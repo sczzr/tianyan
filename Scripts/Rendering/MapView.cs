@@ -689,6 +689,15 @@ public partial class MapView : Control
 	private bool _useTemplateGeneration = true;
 	private bool _useRandomTemplateGeneration = false;
 	private HeightmapTemplateType _generationTemplateType = HeightmapTemplateType.Continents;
+	private float[] _genesisTerrainHeightmap;
+	private int _genesisTerrainWidth;
+	private int _genesisTerrainHeight;
+	private bool _useGenesisPlanetTint = false;
+	private Color _dynamicOceanColor = OceanLayerColor;
+	private Color _dynamicRiverColor = RiverColor;
+	private Color _dynamicTerrainLowColor = new Color(0.24f, 0.5f, 0.3f, 0.92f);
+	private Color _dynamicTerrainHighColor = new Color(0.75f, 0.82f, 0.62f, 0.96f);
+	private float _dynamicTerrainBlend = 0.45f;
 	private int _countryCount = 12;
 	private int _minCountryCells = 3;
 	private float _countryBorderWidth = 2f;
@@ -903,6 +912,7 @@ public partial class MapView : Control
 		_mapGenerator.UseTemplate = _useTemplateGeneration;
 		_mapGenerator.RandomTemplate = _useRandomTemplateGeneration;
 		_mapGenerator.TemplateType = _generationTemplateType;
+		ApplyGenesisTerrainHeightmapToGenerator();
 		_canvasSize = new Vector2(_mapWidth, _mapHeight);
 		ApplyLayerPreset(_layerPresetMode);
 		ApplyVisualStyle(_visualStyleMode);
@@ -1092,7 +1102,7 @@ public partial class MapView : Control
 		}
 		else
 		{
-			DrawRect(baseRect, OceanLayerColor, true);
+			DrawRect(baseRect, _dynamicOceanColor, true);
 		}
 
 		foreach (var layer in _layerOrder)
@@ -1483,7 +1493,7 @@ public partial class MapView : Control
 		foreach (sbyte depth in depths)
 		{
 			float opacity = baseOpacity * (1 + Mathf.Abs(depth) * 0.1f);
-			var layerColor = new Color(OceanLayerColor.R, OceanLayerColor.G, OceanLayerColor.B, opacity);
+			var layerColor = new Color(_dynamicOceanColor.R, _dynamicOceanColor.G, _dynamicOceanColor.B, opacity);
 
 			foreach (var cell in cells)
 			{
@@ -1539,7 +1549,7 @@ public partial class MapView : Control
 
 				float width = Mathf.Max(0.5f, Mathf.Sqrt(flux) / 10f);
 
-				DrawLine(p1, p2, RiverColor, width);
+				DrawLine(p1, p2, _dynamicRiverColor, width);
 			}
 		}
 	}
@@ -2437,6 +2447,113 @@ public partial class MapView : Control
 		QueueRedraw();
 	}
 
+	public void ApplyGenesisPlanetInfluence(PlanetData planetData, int lawAlignment)
+	{
+		if (planetData == null)
+		{
+			ClearGenesisPlanetInfluence();
+			return;
+		}
+
+		float temperature = Mathf.Clamp(planetData.Temperature, 0f, 1f);
+		float atmosphere = Mathf.Clamp(planetData.AtmosphereDensity, 0f, 1f);
+		float oceanCoverage = Mathf.Clamp(planetData.OceanCoverage, 0f, 1f);
+		float lawFactor = Mathf.Clamp(lawAlignment / 100f, 0f, 1f);
+
+		Color landBase;
+		Color waterBase;
+		switch (planetData.Element)
+		{
+			case PlanetElement.Pyro:
+				landBase = new Color(0.62f, 0.24f, 0.14f, 1f);
+				waterBase = new Color(0.28f, 0.1f, 0.1f, 1f);
+				break;
+			case PlanetElement.Cryo:
+				landBase = new Color(0.74f, 0.84f, 0.92f, 1f);
+				waterBase = new Color(0.38f, 0.54f, 0.74f, 1f);
+				break;
+			case PlanetElement.Aero:
+				landBase = new Color(0.66f, 0.74f, 0.86f, 1f);
+				waterBase = new Color(0.33f, 0.48f, 0.68f, 1f);
+				break;
+			case PlanetElement.Terra:
+			default:
+				landBase = new Color(0.24f, 0.56f, 0.34f, 1f);
+				waterBase = new Color(0.12f, 0.3f, 0.53f, 1f);
+				break;
+		}
+
+		Color coldTint = new Color(0.82f, 0.9f, 1.1f, 1f);
+		Color hotTint = new Color(1.15f, 0.95f, 0.82f, 1f);
+		Color tempTint = coldTint.Lerp(hotTint, temperature);
+		landBase = new Color(landBase.R * tempTint.R, landBase.G * tempTint.G, landBase.B * tempTint.B, 1f);
+		waterBase = new Color(waterBase.R * tempTint.R, waterBase.G * tempTint.G, waterBase.B * tempTint.B, 1f);
+
+		_dynamicTerrainLowColor = landBase.Darkened(0.28f + oceanCoverage * 0.1f);
+		_dynamicTerrainHighColor = landBase.Lightened(0.16f + (1f - oceanCoverage) * 0.2f);
+		_dynamicOceanColor = waterBase.Lerp(new Color(0.0f, 0.92f, 1.0f, 1f), lawFactor * 0.12f);
+		_dynamicRiverColor = _dynamicOceanColor.Lightened(0.16f + atmosphere * 0.2f);
+		_dynamicTerrainBlend = Mathf.Lerp(0.2f, 0.64f, atmosphere * 0.55f + oceanCoverage * 0.45f);
+		_useGenesisPlanetTint = true;
+		QueueRedraw();
+	}
+
+	public void ClearGenesisPlanetInfluence()
+	{
+		_useGenesisPlanetTint = false;
+		_dynamicOceanColor = OceanLayerColor;
+		_dynamicRiverColor = RiverColor;
+		_dynamicTerrainLowColor = new Color(0.24f, 0.5f, 0.3f, 0.92f);
+		_dynamicTerrainHighColor = new Color(0.75f, 0.82f, 0.62f, 0.96f);
+		_dynamicTerrainBlend = 0.45f;
+		QueueRedraw();
+	}
+
+	public void SetGenesisTerrainHeightmap(float[] heightmap, int width, int height)
+	{
+		if (heightmap == null || width <= 1 || height <= 1)
+		{
+			_genesisTerrainHeightmap = null;
+			_genesisTerrainWidth = 0;
+			_genesisTerrainHeight = 0;
+			_mapGenerator?.ClearExternalHeightmap();
+			return;
+		}
+
+		int expectedLength = width * height;
+		if (heightmap.Length < expectedLength)
+		{
+			_genesisTerrainHeightmap = null;
+			_genesisTerrainWidth = 0;
+			_genesisTerrainHeight = 0;
+			_mapGenerator?.ClearExternalHeightmap();
+			return;
+		}
+
+		_genesisTerrainHeightmap = new float[expectedLength];
+		Array.Copy(heightmap, _genesisTerrainHeightmap, expectedLength);
+		_genesisTerrainWidth = width;
+		_genesisTerrainHeight = height;
+
+		ApplyGenesisTerrainHeightmapToGenerator();
+	}
+
+	private void ApplyGenesisTerrainHeightmapToGenerator()
+	{
+		if (_mapGenerator == null)
+		{
+			return;
+		}
+
+		if (_genesisTerrainHeightmap == null || _genesisTerrainWidth <= 1 || _genesisTerrainHeight <= 1)
+		{
+			_mapGenerator.ClearExternalHeightmap();
+			return;
+		}
+
+		_mapGenerator.SetExternalHeightmap(_genesisTerrainHeightmap, _genesisTerrainWidth, _genesisTerrainHeight);
+	}
+
 	private void SyncGeneratorSettings()
 	{
 		if (_mapGenerator == null)
@@ -2454,6 +2571,7 @@ public partial class MapView : Control
 		_mapGenerator.UseTemplate = _useTemplateGeneration;
 		_mapGenerator.RandomTemplate = _useRandomTemplateGeneration;
 		_mapGenerator.TemplateType = _generationTemplateType;
+		ApplyGenesisTerrainHeightmapToGenerator();
 	}
 
 	private void EnableLayers(params MapLayer[] layers)
@@ -2612,6 +2730,11 @@ public partial class MapView : Control
 			var highGray = new Color(0.88f, 0.88f, 0.88f, 0.94f);
 			baseHeightmapColor = LerpColor(lowGray, highGray, height);
 		}
+		if (_useGenesisPlanetTint && _visualStyleMode != MapVisualStyleSelection.Monochrome)
+		{
+			var dynamicTerrainColor = LerpColor(_dynamicTerrainLowColor, _dynamicTerrainHighColor, height);
+			baseHeightmapColor = baseHeightmapColor.Lerp(dynamicTerrainColor, _dynamicTerrainBlend);
+		}
 
 		switch (_terrainStyleMode)
 		{
@@ -2626,9 +2749,12 @@ public partial class MapView : Control
 				{
 					return LerpColor(new Color(0.35f, 0.35f, 0.35f, 0.95f), new Color(0.88f, 0.88f, 0.88f, 0.96f), bandValue);
 				}
-				return LerpColor(HeatmapLowColor, HeatmapHighColor, bandValue);
+				var contourLow = _useGenesisPlanetTint ? _dynamicTerrainLowColor : HeatmapLowColor;
+				var contourHigh = _useGenesisPlanetTint ? _dynamicTerrainHighColor : HeatmapHighColor;
+				return LerpColor(contourLow, contourHigh, bandValue);
 			case TerrainStyle.Heatmap:
-				return LerpColor(HeatmapLowColor, HeatmapHighColor, height);
+				var heatLow = _useGenesisPlanetTint ? _dynamicTerrainLowColor : HeatmapLowColor;
+				return LerpColor(heatLow, _useGenesisPlanetTint ? _dynamicTerrainHighColor : HeatmapHighColor, height);
 			default:
 				return baseHeightmapColor;
 		}
@@ -2642,7 +2768,7 @@ public partial class MapView : Control
 			MapVisualStyleSelection.Parchment => LerpColor(new Color(0.43f, 0.36f, 0.24f, 0.82f), new Color(0.61f, 0.5f, 0.31f, 0.88f), depth),
 			MapVisualStyleSelection.NavalChart => LerpColor(new Color(0.12f, 0.28f, 0.49f, 0.88f), new Color(0.25f, 0.52f, 0.75f, 0.95f), depth),
 			MapVisualStyleSelection.Monochrome => LerpColor(new Color(0.25f, 0.25f, 0.25f, 0.82f), new Color(0.55f, 0.55f, 0.55f, 0.88f), depth),
-			_ => new Color(OceanLayerColor.R, OceanLayerColor.G, OceanLayerColor.B, 0.8f)
+			_ => new Color(_dynamicOceanColor.R, _dynamicOceanColor.G, _dynamicOceanColor.B, 0.82f)
 		};
 	}
 

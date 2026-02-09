@@ -1,0 +1,332 @@
+[gd_scene format=3 uid="uid://dsxbt6x2day52"]
+
+[ext_resource type="Script" uid="uid://bafnu2a6ft0hv" path="res://Scripts/Genesis/PlanetTextureView.cs" id="1_planettextureview"]
+
+[sub_resource type="StyleBoxFlat" id="HudPanelStyle"]
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+bg_color = Color(0.05, 0.08, 0.12, 0.62)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.78, 0.66, 0.42, 0.34)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="BuildPanelStyle"]
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+bg_color = Color(0.05, 0.08, 0.12, 0.78)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.78, 0.66, 0.42, 0.45)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="PauseStyle"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.05, 0.08, 0.12, 0.66)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0, 0.94, 1, 0.6)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[node name="PlanetTexture" type="TextureRect" unique_id=1548536339]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+script = ExtResource("1_planettextureview")
+
+[node name="OrbitSection" type="PanelContainer" parent="." unique_id=2078800265]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 18.0
+offset_top = -142.0
+offset_right = 338.0
+offset_bottom = -18.0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("HudPanelStyle")
+
+[node name="OrbitSectionVBox" type="VBoxContainer" parent="OrbitSection" unique_id=1748635521]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="OrbitSectionTitle" type="Label" parent="OrbitSection/OrbitSectionVBox" unique_id=854264347]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.66, 0.42, 1)
+theme_override_font_sizes/font_size = 15
+text = "[肆] 轨道显示"
+
+[node name="ShowMoonOrbitToggle" type="CheckButton" parent="OrbitSection/OrbitSectionVBox" unique_id=2006948062]
+layout_mode = 2
+button_pressed = true
+text = "显示卫星轨道"
+
+[node name="ShowPlanetOrbitToggle" type="CheckButton" parent="OrbitSection/OrbitSectionVBox" unique_id=963980053]
+layout_mode = 2
+button_pressed = true
+text = "显示行星轨道"
+
+[node name="BuildPanel" type="PanelContainer" parent="." unique_id=844524379]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -184.0
+offset_top = -58.0
+offset_right = 184.0
+offset_bottom = 58.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("BuildPanelStyle")
+
+[node name="BuildVBox" type="VBoxContainer" parent="BuildPanel" unique_id=1266853108]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="BuildLabel" type="Label" parent="BuildPanel/BuildVBox" unique_id=1415793884]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.86, 0.9, 0.95)
+text = "正在构建3D寰宇..."
+horizontal_alignment = 1
+
+[node name="BuildProgress" type="ProgressBar" parent="BuildPanel/BuildVBox" unique_id=841054761]
+layout_mode = 2
+
+[node name="PauseBadge" type="PanelContainer" parent="." unique_id=305093227]
+visible = false
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -108.0
+offset_top = -54.0
+offset_right = -18.0
+offset_bottom = -18.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("PauseStyle")
+
+[node name="PauseLabel" type="Label" parent="PauseBadge" unique_id=267223413]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.94, 1, 0.95)
+theme_override_font_sizes/font_size = 26
+text = "⏸"
+horizontal_alignment = 1
+
+[node name="OrbitHudTopLeft" type="PanelContainer" parent="." unique_id=2015154]
+layout_mode = 1
+offset_left = 18.0
+offset_top = 18.0
+offset_right = 338.0
+offset_bottom = 206.0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("HudPanelStyle")
+
+[node name="OrbitHudTopVBox" type="VBoxContainer" parent="OrbitHudTopLeft" unique_id=86054771]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="OrbitHudTitle" type="Label" parent="OrbitHudTopLeft/OrbitHudTopVBox" unique_id=54605074]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.66, 0.42, 1)
+theme_override_font_sizes/font_size = 18
+text = "寰宇遨游 · GOD MODE"
+
+[node name="OrbitHudSubtitle" type="Label" parent="OrbitHudTopLeft/OrbitHudTopVBox" unique_id=1853807420]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.74, 0.78, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "左键旋转 | 右键平移 | 滚轮缩放"
+
+[node name="OrbitHudTarget" type="Label" parent="OrbitHudTopLeft/OrbitHudTopVBox" unique_id=1274344650]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.94, 1, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "恒星: 太一    行星: 后土"
+
+[node name="OrbitHudHint" type="Label" parent="OrbitHudTopLeft/OrbitHudTopVBox" unique_id=1699177448]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.68, 0.68, 0.72, 0.9)
+theme_override_font_sizes/font_size = 11
+text = "可自由环绕观察太阳、地月系统与星空。"
+autowrap_mode = 3
+
+[node name="OrbitHudBottomRight" type="PanelContainer" parent="." unique_id=1153711040]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -268.0
+offset_top = -104.0
+offset_right = -18.0
+offset_bottom = -18.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("HudPanelStyle")
+
+[node name="OrbitHudBottomVBox" type="VBoxContainer" parent="OrbitHudBottomRight" unique_id=1406860884]
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_constants/separation = 2
+
+[node name="CameraDistanceLabel" type="Label" parent="OrbitHudBottomRight/OrbitHudBottomVBox" unique_id=119901882]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0.94, 1, 0.95)
+theme_override_font_sizes/font_size = 24
+text = "1 AU"
+horizontal_alignment = 2
+
+[node name="CameraDescLabel" type="Label" parent="OrbitHudBottomRight/OrbitHudBottomVBox" unique_id=445058444]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "太阳系边缘"
+horizontal_alignment = 2
+
+[node name="PlanetPhotoPanel" type="PanelContainer" parent="." unique_id=686915203]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -348.0
+offset_top = 18.0
+offset_right = -18.0
+offset_bottom = 448.0
+grow_horizontal = 0
+mouse_filter = 0
+theme_override_styles/panel = SubResource("HudPanelStyle")
+
+[node name="PlanetPhotoVBox" type="VBoxContainer" parent="PlanetPhotoPanel" unique_id=1963887342]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PlanetPhotoTitle" type="Label" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=1595236320]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.66, 0.42, 1)
+theme_override_font_sizes/font_size = 15
+text = "行星照片"
+
+[node name="SkyTextureLabel" type="Label" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=1330194459]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "NASA 星空贴图"
+
+[node name="SkyTextureSelector" type="OptionButton" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=835975760]
+layout_mode = 2
+
+[node name="PlanetPhotoTexture" type="TextureRect" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=611271493]
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LivePhotoToggle" type="CheckButton" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=179472693]
+layout_mode = 2
+button_pressed = true
+text = "实时更新行星照片"
+
+[node name="LightFollowToggle" type="CheckButton" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=1442300745]
+layout_mode = 2
+button_pressed = true
+text = "光照跟随参数变化"
+
+[node name="LightResponseLabel" type="Label" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=102990136]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "光照响应: 75%"
+
+[node name="LightResponseSlider" type="HSlider" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=990362420]
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+value = 0.75
+
+[node name="RefreshPhotoButton" type="Button" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=1619456830]
+layout_mode = 2
+text = "刷新照片"
+
+[node name="PhotoViewerOverlay" type="Control" parent="." unique_id=1388122004]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+focus_mode = 2
+
+[node name="PhotoViewerBackdrop" type="ColorRect" parent="PhotoViewerOverlay" unique_id=1220984959]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.82)
+
+[node name="PhotoViewerTexture" type="TextureRect" parent="PhotoViewerOverlay" unique_id=204124949]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 56.0
+offset_top = 56.0
+offset_right = -56.0
+offset_bottom = -56.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PhotoViewerCloseButton" type="Button" parent="PhotoViewerOverlay" unique_id=1926055317]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -108.0
+offset_top = 16.0
+offset_right = -16.0
+offset_bottom = 52.0
+grow_horizontal = 0
+text = "关闭"

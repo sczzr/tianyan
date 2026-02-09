@@ -264,7 +264,11 @@ public partial class TranslationManager : Node
 			["controls_move_speed"] = "移动速度",
 			["controls_move_acceleration"] = "移动加速度",
 			["controls_move_damping"] = "移动阻尼",
-			["controls_reset"] = "恢复默认"
+			["controls_reset"] = "恢复默认",
+			["preview_camera_desc"] = "缩放 {0}% · 高度 {1}",
+			["preview_distance_au"] = "{0} 光年",
+			["preview_distance_million_km"] = "{0} 百万公里",
+			["preview_distance_km"] = "{0} 公里"
 		};
 
 		_translations["en"] = new Dictionary<string, string>
@@ -466,7 +470,11 @@ public partial class TranslationManager : Node
 			["controls_move_speed"] = "Move Speed",
 			["controls_move_acceleration"] = "Move Acceleration",
 			["controls_move_damping"] = "Move Damping",
-			["controls_reset"] = "Reset Defaults"
+			["controls_reset"] = "Reset Defaults",
+			["preview_camera_desc"] = "Zoom {0}% · Altitude {1}",
+			["preview_distance_au"] = "{0} AU",
+			["preview_distance_million_km"] = "{0}M km",
+			["preview_distance_km"] = "{0} km"
 		};
 	}
 

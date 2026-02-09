@@ -2,27 +2,9 @@
 
 [ext_resource type="Script" uid="uid://0k3w0uqrr6rl" path="res://Scripts/Core/MapGeneratorUI.cs" id="1_mapgeneratorui"]
 [ext_resource type="Theme" uid="uid://inkwashtheme" path="res://Themes/InkWashTheme.tres" id="2_theme"]
-[ext_resource type="PackedScene" path="res://Scenes/MapGenerator/Map/MapDisplay.tscn" id="3_mapdisplay"]
-[ext_resource type="PackedScene" path="res://Scenes/MapGenerator/UI/MapGeneratorUI.tscn" id="4_mapgeneratorui"]
-
-[sub_resource type="StyleBoxFlat" id="WelcomePanelStyle"]
-content_margin_left = 28.0
-content_margin_top = 24.0
-content_margin_right = 28.0
-content_margin_bottom = 24.0
-bg_color = Color(0.952, 0.913, 0.823, 0.98)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.741, 0.663, 0.486, 1)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
-shadow_color = Color(0, 0, 0, 0.18)
-shadow_size = 10
-shadow_offset = Vector2(2, 3)
+[ext_resource type="PackedScene" uid="uid://dkqweqfh0vyob" path="res://Scenes/MapGenerator/Map/MapDisplay.tscn" id="3_mapdisplay"]
+[ext_resource type="PackedScene" uid="uid://b7ask1wl4w4c6" path="res://Scenes/MapGenerator/UI/MapGeneratorUI.tscn" id="4_mapgeneratorui"]
+[ext_resource type="PackedScene" uid="uid://df2x17gnyh6pq" path="res://Scenes/MapGenerator/UI/GenesisHubUI.tscn" id="5_genesishub"]
 
 [node name="MapGeneratorUI" type="Control" unique_id=2146714292]
 layout_mode = 3
@@ -36,89 +18,9 @@ script = ExtResource("1_mapgeneratorui")
 
 [node name="MapDisplay" parent="." unique_id=1704997482 instance=ExtResource("3_mapdisplay")]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 
 [node name="MapGeneratorUI" parent="." unique_id=519384103 instance=ExtResource("4_mapgeneratorui")]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 
-[node name="WelcomeOverlay" type="Control" parent="." unique_id=1842301123]
+[node name="GenesisHubUI" parent="." unique_id=1842301123 instance=ExtResource("5_genesishub")]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="Shade" type="ColorRect" parent="WelcomeOverlay" unique_id=228305531]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.091, 0.082, 0.067, 0.45)
-
-[node name="WelcomeCenter" type="CenterContainer" parent="WelcomeOverlay" unique_id=50132714]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="WelcomePanel" type="PanelContainer" parent="WelcomeOverlay/WelcomeCenter" unique_id=1632941212]
-custom_minimum_size = Vector2(520, 280)
-layout_mode = 2
-theme_override_styles/panel = SubResource("WelcomePanelStyle")
-
-[node name="WelcomeVBox" type="VBoxContainer" parent="WelcomeOverlay/WelcomeCenter/WelcomePanel" unique_id=1115619460]
-layout_mode = 2
-theme_override_constants/separation = 16
-alignment = 1
-
-[node name="WelcomeTitle" type="Label" parent="WelcomeOverlay/WelcomeCenter/WelcomePanel/WelcomeVBox" unique_id=2086460258]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
-theme_override_font_sizes/font_size = 34
-text = "奇幻地图生成器"
-horizontal_alignment = 1
-
-[node name="WelcomeSubtitle" type="Label" parent="WelcomeOverlay/WelcomeCenter/WelcomePanel/WelcomeVBox" unique_id=671945885]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.322, 0.259, 0.173, 1)
-theme_override_font_sizes/font_size = 20
-text = "点击下方按钮生成地图"
-horizontal_alignment = 1
-
-[node name="WelcomeSpacer" type="Control" parent="WelcomeOverlay/WelcomeCenter/WelcomePanel/WelcomeVBox" unique_id=1307869924]
-custom_minimum_size = Vector2(0, 8)
-layout_mode = 2
-
-[node name="GenerateMapButton" type="Button" parent="WelcomeOverlay/WelcomeCenter/WelcomePanel/WelcomeVBox" unique_id=884548541]
-custom_minimum_size = Vector2(0, 56)
-layout_mode = 2
-text = "生成新地图"
-
-[node name="GenerateProgressLabel" type="Label" parent="WelcomeOverlay/WelcomeCenter/WelcomePanel/WelcomeVBox"]
-visible = false
-layout_mode = 2
-theme_override_colors/font_color = Color(0.322, 0.259, 0.173, 1)
-theme_override_font_sizes/font_size = 16
-text = "正在生成地图，请稍候..."
-horizontal_alignment = 1
-
-[node name="GenerateProgressBar" type="ProgressBar" parent="WelcomeOverlay/WelcomeCenter/WelcomePanel/WelcomeVBox"]
-visible = false
-custom_minimum_size = Vector2(0, 20)
-layout_mode = 2
-show_percentage = true
-value = 0.0

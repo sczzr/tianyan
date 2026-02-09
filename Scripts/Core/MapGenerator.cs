@@ -36,6 +36,11 @@ public class MapGenerator
     public bool UseTemplate { get; set; } = true;
     public HeightmapTemplateType TemplateType { get; set; } = HeightmapTemplateType.HighIsland;
     public bool RandomTemplate { get; set; } = true;
+    public bool HasExternalHeightmap => _externalHeightmap != null && _externalHeightmapWidth > 1 && _externalHeightmapHeight > 1;
+
+    private float[] _externalHeightmap;
+    private int _externalHeightmapWidth;
+    private int _externalHeightmapHeight;
 
     private const int LloydRelaxIterations = 2;
 
@@ -97,7 +102,12 @@ public class MapGenerator
         _heightmapProcessor.WaterLevel = WaterLevel;
 
         float[] heightmap;
-        if (UseTemplate)
+        if (HasExternalHeightmap)
+        {
+            heightmap = BuildHeightmapFromExternalSource(width, height);
+            _heightmapProcessor.ApplyToCells(cells, heightmap, width, height, UseMultithreading);
+        }
+        else if (UseTemplate)
         {
             if (RandomTemplate)
             {
@@ -249,7 +259,9 @@ public class MapGenerator
         _heightmapProcessor = new HeightmapProcessor(PRNG);
         _heightmapProcessor.WaterLevel = WaterLevel;
 
-        float[] heightmap = _heightmapProcessor.GenerateHeightmap(width, height);
+        float[] heightmap = HasExternalHeightmap
+            ? BuildHeightmapFromExternalSource(width, height)
+            : _heightmapProcessor.GenerateHeightmap(width, height);
         _heightmapProcessor.ApplyToCells(cells, heightmap, width, height, UseMultithreading);
         ForceBorderLand(cells, width, height);
         _heightmapProcessor.AssignColors(cells, UseMultithreading);
@@ -263,6 +275,88 @@ public class MapGenerator
             MapSize = MapSize,
             Seed = PRNG.NextInt()
         };
+    }
+
+    /// <summary>
+    /// 设置来自创世星球的高度图（0~1）
+    /// </summary>
+    public void SetExternalHeightmap(float[] heightmap, int width, int height)
+    {
+        if (heightmap == null || width <= 1 || height <= 1)
+        {
+            ClearExternalHeightmap();
+            return;
+        }
+
+        int expectedLength = width * height;
+        if (heightmap.Length < expectedLength)
+        {
+            ClearExternalHeightmap();
+            return;
+        }
+
+        _externalHeightmap = new float[expectedLength];
+        Array.Copy(heightmap, _externalHeightmap, expectedLength);
+        _externalHeightmapWidth = width;
+        _externalHeightmapHeight = height;
+    }
+
+    public void ClearExternalHeightmap()
+    {
+        _externalHeightmap = null;
+        _externalHeightmapWidth = 0;
+        _externalHeightmapHeight = 0;
+    }
+
+    private float[] BuildHeightmapFromExternalSource(int width, int height)
+    {
+        if (!HasExternalHeightmap)
+        {
+            return _heightmapProcessor.GenerateHeightmap(width, height);
+        }
+
+        if (_externalHeightmapWidth == width && _externalHeightmapHeight == height)
+        {
+            var copied = new float[_externalHeightmap.Length];
+            for (int i = 0; i < copied.Length; i++)
+            {
+                copied[i] = Mathf.Clamp(_externalHeightmap[i], 0f, 1f);
+            }
+            return copied;
+        }
+
+        var result = new float[width * height];
+        float srcMaxX = _externalHeightmapWidth - 1f;
+        float srcMaxY = _externalHeightmapHeight - 1f;
+
+        for (int y = 0; y < height; y++)
+        {
+            float v = height > 1 ? y / (float)(height - 1) : 0f;
+            float srcY = v * srcMaxY;
+            int y0 = Mathf.Clamp((int)Mathf.Floor(srcY), 0, _externalHeightmapHeight - 1);
+            int y1 = Mathf.Clamp(y0 + 1, 0, _externalHeightmapHeight - 1);
+            float ty = srcY - y0;
+
+            for (int x = 0; x < width; x++)
+            {
+                float u = width > 1 ? x / (float)(width - 1) : 0f;
+                float srcX = u * srcMaxX;
+                int x0 = Mathf.Clamp((int)Mathf.Floor(srcX), 0, _externalHeightmapWidth - 1);
+                int x1 = Mathf.Clamp(x0 + 1, 0, _externalHeightmapWidth - 1);
+                float tx = srcX - x0;
+
+                float h00 = _externalHeightmap[y0 * _externalHeightmapWidth + x0];
+                float h10 = _externalHeightmap[y0 * _externalHeightmapWidth + x1];
+                float h01 = _externalHeightmap[y1 * _externalHeightmapWidth + x0];
+                float h11 = _externalHeightmap[y1 * _externalHeightmapWidth + x1];
+
+                float top = Mathf.Lerp(h00, h10, tx);
+                float bottom = Mathf.Lerp(h01, h11, tx);
+                result[y * width + x] = Mathf.Clamp(Mathf.Lerp(top, bottom, ty), 0f, 1f);
+            }
+        }
+
+        return result;
     }
 
     /// <summary>
