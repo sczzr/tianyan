@@ -334,6 +334,16 @@ public class RiverGenerator
 			rivers.Add(river);
 		}
 
+		float maxDischarge = rivers.Count > 0 ? rivers.Max(r => r.Discharge) : 1f;
+		float maxLength = rivers.Count > 0 ? rivers.Max(r => r.Length) : 1f;
+		if (maxDischarge <= 0f) maxDischarge = 1f;
+		if (maxLength <= 0f) maxLength = 1f;
+
+		foreach (var river in rivers)
+		{
+			river.Type = ResolveRiverType(river, maxDischarge, maxLength);
+		}
+
 		// 设置流域ID
 		foreach (var river in rivers)
 		{
@@ -341,6 +351,56 @@ public class RiverGenerator
 		}
 
 		return rivers;
+	}
+
+	private static RiverType ResolveRiverType(River river, float maxDischarge, float maxLength)
+	{
+		if (river == null)
+		{
+			return RiverType.Stream;
+		}
+
+		bool isMainStem = river.Parent <= 0 || river.Parent == river.Id;
+		float dischargeRatio = Mathf.Clamp(river.Discharge / MathF.Max(1f, maxDischarge), 0f, 1f);
+		float lengthRatio = Mathf.Clamp(river.Length / MathF.Max(1f, maxLength), 0f, 1f);
+		float score = dischargeRatio * 0.68f + lengthRatio * 0.32f;
+
+		if (isMainStem)
+		{
+			if (score >= 0.72f)
+			{
+				return RiverType.River;
+			}
+
+			if (score >= 0.48f)
+			{
+				return RiverType.Stream;
+			}
+
+			if (score >= 0.3f)
+			{
+				return RiverType.Brook;
+			}
+
+			return RiverType.Creek;
+		}
+
+		if (score >= 0.58f)
+		{
+			return RiverType.Fork;
+		}
+
+		if (score >= 0.34f)
+		{
+			return RiverType.Branch;
+		}
+
+		if (score >= 0.2f)
+		{
+			return RiverType.Brook;
+		}
+
+		return RiverType.Creek;
 	}
 
 	/// <summary>

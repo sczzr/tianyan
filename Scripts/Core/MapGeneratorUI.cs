@@ -627,16 +627,34 @@ public partial class MapGeneratorUI : Control
 			return;
 		}
 
-		if (@event is InputEventKey keyEvent && keyEvent.Pressed && !keyEvent.Echo && keyEvent.Keycode == Key.Escape)
+		if (@event is InputEventKey keyEvent && keyEvent.Pressed && !keyEvent.Echo)
 		{
-			if (_menuController != null && _menuController.IsMapSettingsVisible)
+			if (keyEvent.CtrlPressed && keyEvent.ShiftPressed && keyEvent.Keycode == Key.E)
 			{
-				HideMapSettingsPopup();
+				string outputPath = _mapView?.ExportWorldVectorSvg() ?? string.Empty;
+				if (!string.IsNullOrWhiteSpace(outputPath))
+				{
+					GD.Print($"[MapGeneratorUI] SVG exported: {ProjectSettings.GlobalizePath(outputPath)}");
+					_menuController?.ShowMapSettingsNotice("map_svg_exported");
+				}
+				else
+				{
+					_menuController?.ShowMapSettingsNotice("map_svg_export_failed");
+				}
 				return;
 			}
 
-			HideDropdowns();
-			ToggleMenu();
+			if (keyEvent.Keycode == Key.Escape)
+			{
+				if (_menuController != null && _menuController.IsMapSettingsVisible)
+				{
+					HideMapSettingsPopup();
+					return;
+				}
+
+				HideDropdowns();
+				ToggleMenu();
+			}
 		}
 
 		if (@event is InputEventMouseButton mouseButton && mouseButton.Pressed && mouseButton.ButtonIndex == MouseButton.Left)

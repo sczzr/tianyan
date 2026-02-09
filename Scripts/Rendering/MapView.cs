@@ -933,6 +933,8 @@ public partial class MapView : Control
 	public void GenerateMap()
 	{
 		if (_isGenerating) return;
+		_activeContextLevel = MapLevel.World;
+		InvalidateHighPrecisionWorldVectorCache();
 		_isGenerating = true;
 		_selectedCellId = -1;
 		SyncGeneratorSettings();
@@ -947,6 +949,8 @@ public partial class MapView : Control
 	public void GenerateMapWithSeed(string seed)
 	{
 		if (_isGenerating) return;
+		_activeContextLevel = MapLevel.World;
+		InvalidateHighPrecisionWorldVectorCache();
 		_isGenerating = true;
 		_selectedCellId = -1;
 		SyncGeneratorSettings();
@@ -970,6 +974,8 @@ public partial class MapView : Control
 			return;
 		}
 
+		_activeContextLevel = context.Level;
+
 		if (context.ParentMapData != null && context.ParentCellId.HasValue)
 		{
 			progressCallback?.Invoke(0f);
@@ -989,6 +995,8 @@ public partial class MapView : Control
 			return;
 		}
 
+		_activeContextLevel = context.Level;
+
 		if (context.ParentMapData != null && context.ParentCellId.HasValue)
 		{
 			GenerateChildMapFromParent(context);
@@ -1005,6 +1013,8 @@ public partial class MapView : Control
 		{
 			return;
 		}
+
+		InvalidateHighPrecisionWorldVectorCache();
 
 		_isGenerating = true;
 		_selectedCellId = -1;
@@ -1112,21 +1122,32 @@ public partial class MapView : Control
 				continue;
 			}
 
+			bool useHighPrecisionWorld = IsHighPrecisionWorldModeEnabled();
+
 			switch (layer)
 			{
 				case MapLayer.Texture:
 					break;
 				case MapLayer.Heightmap:
-					DrawCellPolygons(GetTerrainColor);
-					if (ShowOceanLayers)
+					if (useHighPrecisionWorld)
 					{
-						DrawOceanLayers();
+						DrawHighPrecisionWorldHeightmap(baseRect);
+					}
+					else
+					{
+						DrawCellPolygons(GetTerrainColor);
+						if (ShowOceanLayers)
+						{
+							DrawOceanLayers();
+						}
 					}
 					break;
 				case MapLayer.Biomes:
+					if (useHighPrecisionWorld) break;
 					DrawCellPolygons(GetBiomeColor);
 					break;
 				case MapLayer.Cells:
+					if (useHighPrecisionWorld) break;
 					DrawCellStructure();
 					break;
 				case MapLayer.Grid:
@@ -1139,42 +1160,59 @@ public partial class MapView : Control
 					DrawCompass();
 					break;
 				case MapLayer.Rivers:
-					DrawRivers();
+					if (useHighPrecisionWorld)
+					{
+						DrawHighPrecisionWorldRivers(baseRect);
+					}
+					else
+					{
+						DrawRivers();
+					}
 					break;
 				case MapLayer.Relief:
 					DrawReliefMarkers();
 					break;
 				case MapLayer.Religions:
+					if (useHighPrecisionWorld) break;
 					DrawCellPolygons(GetReligionColor);
 					break;
 				case MapLayer.Cultures:
+					if (useHighPrecisionWorld) break;
 					DrawCellPolygons(GetCultureColor);
 					break;
 				case MapLayer.States:
+					if (useHighPrecisionWorld) break;
 					DrawCellPolygons(GetCountryColor);
 					break;
 				case MapLayer.Provinces:
+					if (useHighPrecisionWorld) break;
 					DrawCellPolygons(GetProvinceColor);
 					break;
 				case MapLayer.Zones:
+					if (useHighPrecisionWorld) break;
 					DrawCellPolygons(GetZoneColor);
 					break;
 				case MapLayer.Borders:
+					if (useHighPrecisionWorld) break;
 					DrawCountryBorders();
 					break;
 				case MapLayer.Routes:
 					DrawRoutes();
 					break;
 				case MapLayer.Temperature:
+					if (useHighPrecisionWorld) break;
 					DrawCellPolygons(GetTemperatureColor);
 					break;
 				case MapLayer.Population:
+					if (useHighPrecisionWorld) break;
 					DrawCellPolygons(GetPopulationColor);
 					break;
 				case MapLayer.Ice:
+					if (useHighPrecisionWorld) break;
 					DrawIceOverlay();
 					break;
 				case MapLayer.Precipitation:
+					if (useHighPrecisionWorld) break;
 					DrawCellPolygons(GetPrecipitationColor);
 					break;
 				case MapLayer.Emblems:
@@ -2496,6 +2534,68 @@ public partial class MapView : Control
 		_dynamicTerrainBlend = Mathf.Lerp(0.2f, 0.64f, atmosphere * 0.55f + oceanCoverage * 0.45f);
 		_useGenesisPlanetTint = true;
 		QueueRedraw();
+	}
+
+	private Color GetTerrainColorFromHeightSample(float height, bool isLand)
+	{
+		if (!isLand)
+		{
+			return GetWaterColor(height);
+		}
+
+		float clampedHeight = Mathf.Clamp(height, 0f, 1f);
+		Color baseHeightmapColor;
+		if (_visualStyleMode == MapVisualStyleSelection.Parchment)
+		{
+			var parchmentLow = new Color(0.66f, 0.57f, 0.41f, 0.92f);
+			var parchmentHigh = new Color(0.95f, 0.87f, 0.66f, 0.96f);
+			baseHeightmapColor = LerpColor(parchmentLow, parchmentHigh, clampedHeight);
+		}
+		else if (_visualStyleMode == MapVisualStyleSelection.NavalChart)
+		{
+			var coastTint = new Color(0.79f, 0.88f, 0.74f, 0.9f);
+			var uplandTint = new Color(0.52f, 0.72f, 0.58f, 0.9f);
+			baseHeightmapColor = LerpColor(coastTint, uplandTint, clampedHeight);
+		}
+		else if (_visualStyleMode == MapVisualStyleSelection.Monochrome)
+		{
+			var lowGray = new Color(0.42f, 0.42f, 0.42f, 0.92f);
+			var highGray = new Color(0.88f, 0.88f, 0.88f, 0.94f);
+			baseHeightmapColor = LerpColor(lowGray, highGray, clampedHeight);
+		}
+		else
+		{
+			baseHeightmapColor = LerpColor(new Color(0.24f, 0.5f, 0.3f, 0.92f), new Color(0.75f, 0.82f, 0.62f, 0.96f), clampedHeight);
+		}
+
+		if (_useGenesisPlanetTint && _visualStyleMode != MapVisualStyleSelection.Monochrome)
+		{
+			var dynamicTerrainColor = LerpColor(_dynamicTerrainLowColor, _dynamicTerrainHighColor, clampedHeight);
+			baseHeightmapColor = baseHeightmapColor.Lerp(dynamicTerrainColor, _dynamicTerrainBlend);
+		}
+
+		switch (_terrainStyleMode)
+		{
+			case TerrainStyle.Contour:
+				const int bands = 8;
+				float bandValue = Mathf.Floor(clampedHeight * bands) / bands;
+				if (_visualStyleMode == MapVisualStyleSelection.Parchment)
+				{
+					return LerpColor(new Color(0.53f, 0.44f, 0.31f, 0.95f), new Color(0.9f, 0.8f, 0.58f, 0.96f), bandValue);
+				}
+				if (_visualStyleMode == MapVisualStyleSelection.Monochrome)
+				{
+					return LerpColor(new Color(0.35f, 0.35f, 0.35f, 0.95f), new Color(0.88f, 0.88f, 0.88f, 0.96f), bandValue);
+				}
+				var contourLow = _useGenesisPlanetTint ? _dynamicTerrainLowColor : HeatmapLowColor;
+				var contourHigh = _useGenesisPlanetTint ? _dynamicTerrainHighColor : HeatmapHighColor;
+				return LerpColor(contourLow, contourHigh, bandValue);
+			case TerrainStyle.Heatmap:
+				var heatLow = _useGenesisPlanetTint ? _dynamicTerrainLowColor : HeatmapLowColor;
+				return LerpColor(heatLow, _useGenesisPlanetTint ? _dynamicTerrainHighColor : HeatmapHighColor, clampedHeight);
+			default:
+				return baseHeightmapColor;
+		}
 	}
 
 	public void ClearGenesisPlanetInfluence()

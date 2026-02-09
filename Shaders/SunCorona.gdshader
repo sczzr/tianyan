@@ -1,13 +1,13 @@
 shader_type spatial;
 
-render_mode unshaded, cull_disabled, depth_draw_never, blend_add, shadows_disabled;
+render_mode unshaded, cull_back, depth_draw_never, blend_add, shadows_disabled;
 
-uniform vec4 core_color : source_color = vec4(1.0, 0.55, 0.22, 1.0);
-uniform vec4 rim_color : source_color = vec4(1.0, 0.78, 0.42, 0.85);
-uniform float intensity : hint_range(0.0, 6.0) = 2.2;
+uniform vec4 core_color : source_color = vec4(1.0, 0.78, 0.34, 1.0);
+uniform vec4 rim_color : source_color = vec4(1.0, 0.94, 0.62, 0.96);
+uniform float intensity : hint_range(0.0, 18.0) = 6.6;
 uniform float distance_boost : hint_range(0.5, 3.5) = 1.0;
-uniform float rim_power : hint_range(0.8, 8.0) = 2.8;
-uniform float flicker_speed : hint_range(0.0, 8.0) = 1.4;
+uniform float rim_power : hint_range(0.8, 8.0) = 3.1;
+uniform float flicker_speed : hint_range(0.0, 8.0) = 1.6;
 uniform float band_scale : hint_range(0.0, 32.0) = 8.0;
 uniform float jet_strength : hint_range(0.0, 3.0) = 1.15;
 uniform float jet_speed : hint_range(0.0, 8.0) = 2.1;
@@ -44,21 +44,27 @@ void fragment()
 	float angle = atan(centered_uv.y, centered_uv.x);
 
 	float fresnel = pow(1.0 - clamp(dot(normal_dir, view_dir), 0.0, 1.0), rim_power);
-	float bands = 0.5 + 0.5 * sin((UV.x + UV.y) * band_scale + TIME * flicker_speed);
+	float bands = 0.5 + 0.5 * sin((UV.x + UV.y + radial * 0.25) * band_scale + TIME * flicker_speed);
 
-	float jetWave = 0.5 + 0.5 * sin(angle * jet_scale + TIME * jet_speed + radial * 3.6);
-	float jetNoiseA = noise21(vec2(angle * 2.8, radial * noise_scale + TIME * 0.28));
-	float jetNoiseB = noise21(vec2(angle * 5.6 - TIME * 0.21, radial * (noise_scale * 1.35)));
-	float jets = pow(clamp(jetWave * 0.52 + jetNoiseA * 0.34 + jetNoiseB * 0.24, 0.0, 1.0), 1.7);
+	float jet_wave = 0.5 + 0.5 * sin(angle * jet_scale + TIME * jet_speed + radial * 2.4);
+	float jet_noise_a = noise21(vec2(angle * 2.2, radial * noise_scale + TIME * 0.22));
+	float jet_noise_b = noise21(vec2(angle * 4.4 - TIME * 0.18, radial * (noise_scale * 1.12)));
+	float jets = pow(clamp(jet_wave * 0.52 + jet_noise_a * 0.34 + jet_noise_b * 0.24, 0.0, 1.0), 1.7);
 
-	float rimMask = smoothstep(0.45, 1.15, radial);
-	float corona = fresnel * (0.56 + 0.34 * bands) + jets * jet_strength * rimMask * 0.7;
+	float inner_suppress = smoothstep(0.52, 0.92, radial);
+	float rim_mask = smoothstep(0.58, 1.18, radial);
+	float corona = fresnel * (0.42 + 0.26 * bands) + jets * jet_strength * rim_mask * 0.72;
+	corona *= inner_suppress;
 	corona *= distance_boost;
 
-	float core = pow(1.0 - clamp(radial, 0.0, 1.0), 3.2) * 0.18;
+	float alpha = smoothstep(0.34, 0.82, corona) * rim_color.a;
+	if (alpha < 0.02)
+	{
+		discard;
+	}
 
-	vec3 color_mix = mix(core_color.rgb, rim_color.rgb, clamp(corona * 1.25, 0.0, 1.0));
-	ALBEDO = color_mix;
-	EMISSION = color_mix * (corona + core) * intensity;
-	ALPHA = clamp(corona * rim_color.a + core * 0.26, 0.0, 1.0);
+	vec3 glow = mix(core_color.rgb, rim_color.rgb, clamp(corona, 0.0, 1.0));
+	ALBEDO = vec3(0.0);
+	EMISSION = glow * alpha * intensity;
+	ALPHA = alpha;
 }

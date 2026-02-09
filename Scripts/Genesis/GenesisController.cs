@@ -53,6 +53,12 @@ public partial class GenesisController : Control
 	private UniverseData _tempUniverse;
 	private readonly Random _random = new();
 	private bool _isQuickRolling;
+	private bool _isPreviewRootGuiInputBound;
+	private bool _isPlanetTextureSignalsBound;
+	private float _lastSolarBrightness = -1f;
+
+	[Export]
+	private CelestialSystemPhysicsConfig _defaultCelestialPhysics = CelestialSystemPhysicsConfig.CreateDefault();
 
 	public event Action<UniverseData> GenerateRequested;
 
@@ -68,6 +74,11 @@ public partial class GenesisController : Control
 		BindEvents();
 
 		_tempUniverse = BuildDefaultUniverse();
+		if (_defaultCelestialPhysics != null)
+		{
+			_tempUniverse.CelestialPhysics = _defaultCelestialPhysics.DuplicateConfig();
+		}
+
 		ApplyUniverseToControls(_tempUniverse);
 		UpdateLocalizedText();
 		RefreshAllViews();
@@ -76,23 +87,27 @@ public partial class GenesisController : Control
 
 	public override void _ExitTree()
 	{
-		if (_previewRoot != null)
+		if (_previewRoot != null && _isPreviewRootGuiInputBound)
 		{
 			_previewRoot.GuiInput -= OnPreviewRootGuiInput;
+			_isPreviewRootGuiInputBound = false;
 		}
 
-		if (_planetTextureView != null)
+		if (_planetTextureView != null && _isPlanetTextureSignalsBound)
 		{
 			_planetTextureView.PreviewActivated -= OnPlanetTextureActivated;
 			_planetTextureView.LivePhotoModeChanged -= OnLivePhotoModeChanged;
 			_planetTextureView.LightFollowModeChanged -= OnLightFollowModeChanged;
 			_planetTextureView.LightResponseChanged -= OnLightResponseChanged;
+			_planetTextureView.SolarBrightnessChanged -= OnSolarBrightnessChanged;
 			_planetTextureView.SnapshotRefreshRequested -= OnSnapshotRefreshRequested;
 			_planetTextureView.SkyTextureChanged -= OnSkyTextureChanged;
 			_planetTextureView.PlanetSurfaceTextureChanged -= OnPlanetSurfaceTextureChanged;
 			_planetTextureView.MoonTextureChanged -= OnMoonTextureChanged;
 			_planetTextureView.SunTextureChanged -= OnSunTextureChanged;
 			_planetTextureView.DownloadedOnlyFilterChanged -= OnDownloadedOnlyFilterChanged;
+			_planetTextureView.CelestialPhysicsChanged -= OnCelestialPhysicsChanged;
+			_isPlanetTextureSignalsBound = false;
 		}
 
 		if (_translationManager != null)
@@ -104,6 +119,7 @@ public partial class GenesisController : Control
 	public override void _Process(double delta)
 	{
 		_planetPreviewController?.Tick(delta);
+		SyncSolarBrightnessFromUi();
 		UpdatePreviewBuildState();
 		UpdatePreviewCameraHud();
 	}
@@ -207,7 +223,7 @@ public partial class GenesisController : Control
 
 		if (_cameraDescLabel != null && string.IsNullOrWhiteSpace(_cameraDescLabel.Text))
 		{
-			_cameraDescLabel.Text = isZh ? "太阳系边缘" : "Solar System Edge";
+			_cameraDescLabel.Text = _translationManager.Tr("preview_camera_idle_desc");
 		}
 
 		PopulatePlanetElementSelector(_tempUniverse?.CurrentPlanet?.Element ?? PlanetElement.Terra);
@@ -347,23 +363,27 @@ public partial class GenesisController : Control
 			_showPlanetOrbitToggle.Toggled += OnShowPlanetOrbitToggled;
 		}
 
-		if (_previewRoot != null)
+		if (_previewRoot != null && !_isPreviewRootGuiInputBound)
 		{
 			_previewRoot.GuiInput += OnPreviewRootGuiInput;
+			_isPreviewRootGuiInputBound = true;
 		}
 
-		if (_planetTextureView != null)
+		if (_planetTextureView != null && !_isPlanetTextureSignalsBound)
 		{
 			_planetTextureView.PreviewActivated += OnPlanetTextureActivated;
 			_planetTextureView.LivePhotoModeChanged += OnLivePhotoModeChanged;
 			_planetTextureView.LightFollowModeChanged += OnLightFollowModeChanged;
 			_planetTextureView.LightResponseChanged += OnLightResponseChanged;
+			_planetTextureView.SolarBrightnessChanged += OnSolarBrightnessChanged;
 			_planetTextureView.SnapshotRefreshRequested += OnSnapshotRefreshRequested;
 			_planetTextureView.SkyTextureChanged += OnSkyTextureChanged;
 			_planetTextureView.PlanetSurfaceTextureChanged += OnPlanetSurfaceTextureChanged;
 			_planetTextureView.MoonTextureChanged += OnMoonTextureChanged;
 			_planetTextureView.SunTextureChanged += OnSunTextureChanged;
 			_planetTextureView.DownloadedOnlyFilterChanged += OnDownloadedOnlyFilterChanged;
+			_planetTextureView.CelestialPhysicsChanged += OnCelestialPhysicsChanged;
+			_isPlanetTextureSignalsBound = true;
 		}
 
 		ApplyOrbitToggleState();
@@ -416,6 +436,12 @@ public partial class GenesisController : Control
 		_planetPreviewController?.SetLightResponse(strength);
 	}
 
+	private void OnSolarBrightnessChanged(float brightness)
+	{
+		_lastSolarBrightness = brightness;
+		_planetPreviewController?.SetSolarBrightness(brightness);
+	}
+
 	private void OnSnapshotRefreshRequested()
 	{
 		_planetPreviewController?.RefreshPlanetSnapshot();
@@ -451,6 +477,14 @@ public partial class GenesisController : Control
 		ApplyPlanetTextureOptions();
 	}
 
+	private void OnCelestialPhysicsChanged(CelestialSystemPhysicsConfig config)
+	{
+		EnsureUniverseData();
+		_tempUniverse.CelestialPhysics = config?.DuplicateConfig() ?? CelestialSystemPhysicsConfig.CreateDefault();
+		_planetPreviewController?.SetCelestialSystemConfig(_tempUniverse.CelestialPhysics);
+		UpdatePreviewCameraHud();
+	}
+
 	private void ApplyPlanetTextureOptions()
 	{
 		if (_planetPreviewController == null || _planetTextureView == null)
@@ -461,6 +495,7 @@ public partial class GenesisController : Control
 		_planetPreviewController.SetPlanetPhotoRealtime(_planetTextureView.IsLivePhotoUpdateEnabled);
 		_planetPreviewController.SetLightFollowEnabled(_planetTextureView.IsLightFollowEnabled);
 		_planetPreviewController.SetLightResponse(_planetTextureView.LightResponseStrength);
+		_planetPreviewController.SetSolarBrightness(_planetTextureView.SolarBrightness);
 
 		if (!string.IsNullOrWhiteSpace(_planetTextureView.SelectedSkyTexturePath))
 		{
@@ -477,6 +512,23 @@ public partial class GenesisController : Control
 		_planetPreviewController?.NotifyControlEditing();
 	}
 
+	private void SyncSolarBrightnessFromUi()
+	{
+		if (_planetPreviewController == null || _planetTextureView == null)
+		{
+			return;
+		}
+
+		float brightness = _planetTextureView.SolarBrightness;
+		if (Mathf.IsEqualApprox(brightness, _lastSolarBrightness))
+		{
+			return;
+		}
+
+		_lastSolarBrightness = brightness;
+		_planetPreviewController.SetSolarBrightness(brightness);
+	}
+
 	private void UpdatePreviewCameraHud()
 	{
 		if (_planetPreviewController == null)
@@ -484,17 +536,16 @@ public partial class GenesisController : Control
 			return;
 		}
 
-		bool isZh = IsChineseMode();
 		if (_planetPreviewController.IsBuildingThreeD)
 		{
 			if (_cameraDistanceLabel != null)
 			{
-				_cameraDistanceLabel.Text = isZh ? "构建中" : "Building";
+				_cameraDistanceLabel.Text = _translationManager.Tr("preview_camera_status_building");
 			}
 
 			if (_cameraDescLabel != null)
 			{
-				_cameraDescLabel.Text = isZh ? "正在创建3D寰宇..." : "Creating 3D cosmos...";
+				_cameraDescLabel.Text = _translationManager.Tr("preview_camera_desc_building");
 			}
 			return;
 		}
@@ -503,12 +554,12 @@ public partial class GenesisController : Control
 		{
 			if (_cameraDistanceLabel != null)
 			{
-				_cameraDistanceLabel.Text = isZh ? "点击星球" : "Click Planet";
+				_cameraDistanceLabel.Text = _translationManager.Tr("preview_camera_status_click");
 			}
 
 			if (_cameraDescLabel != null)
 			{
-				_cameraDescLabel.Text = isZh ? "启动3D寰宇预览" : "Start 3D cosmos preview";
+				_cameraDescLabel.Text = _translationManager.Tr("preview_camera_desc_click");
 			}
 			return;
 		}
@@ -701,6 +752,7 @@ public partial class GenesisController : Control
 
 	private void OnPlanetParamsChanged()
 	{
+		_planetPreviewController?.SetCelestialSystemConfig(_tempUniverse.CelestialPhysics);
 		_planetPreviewController?.UpdateUniverseMood(_tempUniverse.LawAlignment);
 		_planetPreviewController?.UpdateShader(_tempUniverse.CurrentPlanet);
 		RefreshNarrative();
@@ -715,6 +767,7 @@ public partial class GenesisController : Control
 		}
 
 		_themeManager?.UpdateVisuals(_tempUniverse.LawAlignment);
+		_planetPreviewController?.SetCelestialSystemConfig(_tempUniverse.CelestialPhysics);
 		_planetPreviewController?.UpdateUniverseMood(_tempUniverse.LawAlignment);
 		_planetPreviewController?.UpdateShader(_tempUniverse.CurrentPlanet);
 		RefreshNarrative();
@@ -880,6 +933,8 @@ public partial class GenesisController : Control
 			_atmosphereSlider.Value = universeData.CurrentPlanet?.AtmosphereDensity ?? 0.5f;
 		}
 
+		_planetTextureView?.ApplyCelestialConfig(universeData.CelestialPhysics);
+
 		PopulatePlanetElementSelector(universeData.CurrentPlanet?.Element ?? PlanetElement.Terra);
 		PopulateHierarchySelector(universeData.HierarchyConfig?.Archetype ?? HierarchyArchetype.Standard);
 	}
@@ -984,6 +1039,11 @@ public partial class GenesisController : Control
 		{
 			_tempUniverse.CurrentPlanet = new PlanetData();
 		}
+
+		if (_tempUniverse.CelestialPhysics == null)
+		{
+			_tempUniverse.CelestialPhysics = CelestialSystemPhysicsConfig.CreateDefault();
+		}
 	}
 
 	private static UniverseData BuildDefaultUniverse()
@@ -1004,10 +1064,10 @@ public partial class GenesisController : Control
 				OceanCoverage = 0.35f,
 				Temperature = 0.5f,
 				AtmosphereDensity = 0.55f
-			}
+			},
+			CelestialPhysics = CelestialSystemPhysicsConfig.CreateDefault()
 		};
 	}
-
 	private static UniverseData CloneUniverse(UniverseData source)
 	{
 		if (source == null)
@@ -1053,12 +1113,13 @@ public partial class GenesisController : Control
 					Temperature = source.CurrentPlanet.Temperature,
 					AtmosphereDensity = source.CurrentPlanet.AtmosphereDensity
 				},
+			CelestialPhysics = source.CelestialPhysics?.DuplicateConfig()
+				?? CelestialSystemPhysicsConfig.CreateDefault(),
 			PlanetTerrainHeightmap = planetTerrain,
 			PlanetTerrainWidth = source.PlanetTerrainWidth,
 			PlanetTerrainHeight = source.PlanetTerrainHeight
 		};
 	}
-
 	private bool IsChineseMode()
 	{
 		string language = _translationManager?.CurrentLanguage ?? "zh-CN";

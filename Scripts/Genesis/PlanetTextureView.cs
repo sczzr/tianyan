@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Godot;
 using FantasyMapGenerator.Scripts.Data;
+using FantasyMapGenerator.Scripts.Utils;
 
 namespace FantasyMapGenerator.Scripts.Genesis;
 
@@ -17,6 +18,9 @@ public partial class PlanetTextureView : TextureRect
 
 	[Signal]
 	public delegate void LightResponseChangedEventHandler(float strength);
+
+	[Signal]
+	public delegate void SolarBrightnessChangedEventHandler(float brightness);
 
 	[Signal]
 	public delegate void SnapshotRefreshRequestedEventHandler();
@@ -36,6 +40,9 @@ public partial class PlanetTextureView : TextureRect
 	[Signal]
 	public delegate void DownloadedOnlyFilterChangedEventHandler(bool enabled);
 
+	[Signal]
+	public delegate void CelestialPhysicsChangedEventHandler(CelestialSystemPhysicsConfig config);
+
 	private ShaderMaterial _previewMaterial;
 	private PanelContainer _buildPanel;
 	private Label _buildLabel;
@@ -51,12 +58,48 @@ public partial class PlanetTextureView : TextureRect
 	private CheckButton _lightFollowToggle;
 	private Label _lightResponseLabel;
 	private HSlider _lightResponseSlider;
+	private Label _solarBrightnessLabel;
+	private HSlider _solarBrightnessSlider;
 	private Button _refreshPhotoButton;
 	private OptionButton _skyTextureSelector;
 	private OptionButton _planetSurfaceTextureSelector;
 	private OptionButton _moonTextureSelector;
 	private OptionButton _sunTextureSelector;
 	private CheckButton _downloadedOnlyToggle;
+	private Label _starMassLabel;
+	private HSlider _starMassSlider;
+	private Label _planetRadiusLabel;
+	private HSlider _planetRadiusSlider;
+	private Label _planetMassLabel;
+	private HSlider _planetMassSlider;
+	private Label _planetOrbitDistanceLabel;
+	private HSlider _planetOrbitDistanceSlider;
+	private CheckButton _autoPlanetRevolutionToggle;
+	private Label _planetRotationLabel;
+	private HSlider _planetRotationSlider;
+	private Label _planetRevolutionLabel;
+	private HSlider _planetRevolutionSlider;
+	private Label _moonOrbitDistanceLabel;
+	private HSlider _moonOrbitDistanceSlider;
+	private CheckButton _autoMoonRevolutionToggle;
+	private Label _moonRotationLabel;
+	private HSlider _moonRotationSlider;
+	private Label _moonRevolutionLabel;
+	private HSlider _moonRevolutionSlider;
+	private Label _extraPlanetsCountLabel;
+	private HSlider _extraPlanetsCountSlider;
+	private Label _extraPlanetFirstOrbitLabel;
+	private HSlider _extraPlanetFirstOrbitSlider;
+	private Label _extraPlanetOrbitStepLabel;
+	private HSlider _extraPlanetOrbitStepSlider;
+	private Label _extraMoonsCountLabel;
+	private HSlider _extraMoonsCountSlider;
+	private Label _extraMoonFirstOrbitLabel;
+	private HSlider _extraMoonFirstOrbitSlider;
+	private Label _extraMoonOrbitStepLabel;
+	private HSlider _extraMoonOrbitStepSlider;
+	private bool _isApplyingCelestialUi;
+	private TranslationManager _translationManager;
 
 	private int _lawAlignment = 50;
 	private PlanetData _planetData = new PlanetData
@@ -127,6 +170,9 @@ public partial class PlanetTextureView : TextureRect
 	public float LightResponseStrength => _lightResponseSlider != null
 		? Mathf.Clamp((float)_lightResponseSlider.Value, 0f, 1f)
 		: 0.75f;
+	public float SolarBrightness => _solarBrightnessSlider != null
+		? Mathf.Clamp((float)_solarBrightnessSlider.Value, 0.5f, 2.5f)
+		: 1.0f;
 	public bool ShowDownloadedOnly => _downloadedOnlyToggle?.ButtonPressed ?? false;
 	public string SelectedSkyTexturePath { get; private set; } = string.Empty;
 	public string SelectedPlanetSurfaceTexturePath { get; private set; } = string.Empty;
@@ -138,6 +184,12 @@ public partial class PlanetTextureView : TextureRect
 		ExpandMode = ExpandModeEnum.IgnoreSize;
 		StretchMode = StretchModeEnum.Scale;
 		MouseFilter = MouseFilterEnum.Stop;
+
+		_translationManager = TranslationManager.Instance;
+		if (_translationManager != null)
+		{
+			_translationManager.LanguageChanged += OnLanguageChanged;
+		}
 
 		_buildPanel = GetNodeOrNull<PanelContainer>("BuildPanel");
 		_buildLabel = GetNodeOrNull<Label>("BuildPanel/BuildVBox/BuildLabel");
@@ -153,6 +205,8 @@ public partial class PlanetTextureView : TextureRect
 		_lightFollowToggle = GetNodeOrNull<CheckButton>("PlanetPhotoPanel/PlanetPhotoVBox/LightFollowToggle");
 		_lightResponseLabel = GetNodeOrNull<Label>("PlanetPhotoPanel/PlanetPhotoVBox/LightResponseLabel");
 		_lightResponseSlider = GetNodeOrNull<HSlider>("PlanetPhotoPanel/PlanetPhotoVBox/LightResponseSlider");
+		_solarBrightnessLabel = GetNodeOrNull<Label>("PlanetPhotoPanel/PlanetPhotoVBox/SolarBrightnessLabel");
+		_solarBrightnessSlider = GetNodeOrNull<HSlider>("PlanetPhotoPanel/PlanetPhotoVBox/SolarBrightnessSlider");
 		_refreshPhotoButton = GetNodeOrNull<Button>("PlanetPhotoPanel/PlanetPhotoVBox/RefreshPhotoButton");
 		_skyTextureSelector = GetNodeOrNull<OptionButton>("PlanetPhotoPanel/PlanetPhotoVBox/SkyTextureSelector");
 		_planetSurfaceTextureSelector = GetNodeOrNull<OptionButton>("PlanetPhotoPanel/PlanetPhotoVBox/PlanetSurfaceTextureSelector");
@@ -161,8 +215,11 @@ public partial class PlanetTextureView : TextureRect
 		_downloadedOnlyToggle = GetNodeOrNull<CheckButton>("PlanetPhotoPanel/PlanetPhotoVBox/DownloadedOnlyToggle");
 
 		EnsureTextureSelectorNodes();
+		EnsureCelestialPhysicsNodes();
 
 		SetupTextureSelectors();
+		BindCelestialPhysicsUi();
+		ApplyCelestialConfig(CelestialSystemPhysicsConfig.CreateDefault());
 
 		if (_planetPhotoTexture != null)
 		{
@@ -199,6 +256,16 @@ public partial class PlanetTextureView : TextureRect
 			UpdateLightResponseLabel((float)_lightResponseSlider.Value);
 		}
 
+		if (_solarBrightnessSlider != null)
+		{
+			_solarBrightnessSlider.MinValue = 0.5;
+			_solarBrightnessSlider.MaxValue = 2.5;
+			_solarBrightnessSlider.Step = 0.01;
+			_solarBrightnessSlider.Value = Mathf.Clamp(_solarBrightnessSlider.Value, 0.5, 2.5);
+			_solarBrightnessSlider.ValueChanged += OnSolarBrightnessSliderChanged;
+			UpdateSolarBrightnessLabel((float)_solarBrightnessSlider.Value);
+		}
+
 		if (_refreshPhotoButton != null)
 		{
 			_refreshPhotoButton.Pressed += OnRefreshPhotoPressed;
@@ -213,6 +280,14 @@ public partial class PlanetTextureView : TextureRect
 		SetEditingPaused(false);
 		EnterStaticMode();
 		UpdatePreview(_planetData, _lawAlignment);
+	}
+
+	public override void _Notification(int what)
+	{
+		if (what == NotificationExitTree)
+		{
+			CleanupEventBindings();
+		}
 	}
 
 	public override void _Process(double delta)
@@ -287,6 +362,7 @@ public partial class PlanetTextureView : TextureRect
 		UpdatePreview(_planetData, _lawAlignment);
 	}
 
+
 	public void SetBuildState(bool isBuilding, float progress01, bool isZh)
 	{
 		if (_buildPanel != null)
@@ -296,7 +372,8 @@ public partial class PlanetTextureView : TextureRect
 
 		if (_buildLabel != null)
 		{
-			_buildLabel.Text = isZh ? "正在构建3D寰宇..." : "Building 3D cosmos...";
+			_buildLabel.Text = _translationManager?.Tr("preview_building_cosmos")
+				?? (isZh ? "正在构建3D寰宇..." : "Building 3D cosmos...");
 		}
 
 		if (_buildProgress != null)
@@ -345,6 +422,580 @@ public partial class PlanetTextureView : TextureRect
 		_useStaticPreview = false;
 		MouseFilter = MouseFilterEnum.Ignore;
 		Material = null;
+	}
+
+	public void ApplyCelestialConfig(CelestialSystemPhysicsConfig config)
+	{
+		var source = config?.DuplicateConfig() ?? CelestialSystemPhysicsConfig.CreateDefault();
+		var primary = source.PrimaryPlanet ?? new CelestialPlanetPhysicsConfig();
+		var primaryMoon = source.Satellites != null && source.Satellites.Count > 0
+			? source.Satellites[0]
+			: new CelestialSatellitePhysicsConfig();
+
+		_isApplyingCelestialUi = true;
+
+		if (_starMassSlider != null)
+		{
+			_starMassSlider.Value = Mathf.Clamp(source.StarMassSolar, 0.08f, 80f);
+		}
+
+		if (_planetRadiusSlider != null)
+		{
+			_planetRadiusSlider.Value = Mathf.Clamp(primary.RadiusEarth, 0.1f, 20f);
+		}
+
+		if (_planetMassSlider != null)
+		{
+			_planetMassSlider.Value = Mathf.Clamp(primary.MassEarth, 0.01f, 500f);
+		}
+
+		if (_planetOrbitDistanceSlider != null)
+		{
+			_planetOrbitDistanceSlider.Value = Mathf.Clamp(primary.OrbitDistanceAu, 0.03f, 80f);
+		}
+
+		if (_planetRotationSlider != null)
+		{
+			_planetRotationSlider.Value = Mathf.Clamp(primary.RotationPeriodHours, 2f, 5000f);
+		}
+
+		if (_planetRevolutionSlider != null)
+		{
+			_planetRevolutionSlider.Value = Mathf.Clamp(primary.RevolutionPeriodDays, 0.2f, 500000f);
+		}
+
+		if (_autoPlanetRevolutionToggle != null)
+		{
+			_autoPlanetRevolutionToggle.ButtonPressed = primary.AutoResolveRevolutionPeriod;
+		}
+
+		if (_moonOrbitDistanceSlider != null)
+		{
+			_moonOrbitDistanceSlider.Value = Mathf.Clamp(primaryMoon.OrbitDistancePlanetRadii, 2f, 500f);
+		}
+
+		if (_moonRotationSlider != null)
+		{
+			_moonRotationSlider.Value = Mathf.Clamp(primaryMoon.RotationPeriodHours, 1f, 5000f);
+		}
+
+		if (_moonRevolutionSlider != null)
+		{
+			_moonRevolutionSlider.Value = Mathf.Clamp(primaryMoon.RevolutionPeriodDays, 0.1f, 100000f);
+		}
+
+		if (_autoMoonRevolutionToggle != null)
+		{
+			_autoMoonRevolutionToggle.ButtonPressed = primaryMoon.AutoResolveRevolutionPeriod;
+		}
+
+		int extraPlanetCount = Mathf.Max(0, (source.AdditionalPlanets?.Count ?? 0));
+		if (_extraPlanetsCountSlider != null)
+		{
+			_extraPlanetsCountSlider.Value = extraPlanetCount;
+		}
+
+		float firstPlanetOrbit = 1.6f;
+		float planetStep = 0.8f;
+		if (source.AdditionalPlanets != null && source.AdditionalPlanets.Count > 0)
+		{
+			firstPlanetOrbit = Mathf.Max(0.1f, source.AdditionalPlanets[0].OrbitDistanceAu);
+			if (source.AdditionalPlanets.Count > 1)
+			{
+				planetStep = Mathf.Max(0.1f, source.AdditionalPlanets[1].OrbitDistanceAu - source.AdditionalPlanets[0].OrbitDistanceAu);
+			}
+		}
+
+		if (_extraPlanetFirstOrbitSlider != null)
+		{
+			_extraPlanetFirstOrbitSlider.Value = firstPlanetOrbit;
+		}
+
+		if (_extraPlanetOrbitStepSlider != null)
+		{
+			_extraPlanetOrbitStepSlider.Value = planetStep;
+		}
+
+		int extraMoonCount = Mathf.Max(0, (source.Satellites?.Count ?? 0) - 1);
+		if (_extraMoonsCountSlider != null)
+		{
+			_extraMoonsCountSlider.Value = extraMoonCount;
+		}
+
+		float firstMoonOrbit = 86f;
+		float moonStep = 24f;
+		if (source.Satellites != null && source.Satellites.Count > 1)
+		{
+			firstMoonOrbit = Mathf.Max(2f, source.Satellites[1].OrbitDistancePlanetRadii);
+			if (source.Satellites.Count > 2)
+			{
+				moonStep = Mathf.Max(1f, source.Satellites[2].OrbitDistancePlanetRadii - source.Satellites[1].OrbitDistancePlanetRadii);
+			}
+		}
+
+		if (_extraMoonFirstOrbitSlider != null)
+		{
+			_extraMoonFirstOrbitSlider.Value = firstMoonOrbit;
+		}
+
+		if (_extraMoonOrbitStepSlider != null)
+		{
+			_extraMoonOrbitStepSlider.Value = moonStep;
+		}
+
+		_isApplyingCelestialUi = false;
+		UpdateCelestialLabels();
+	}
+
+	private CelestialSystemPhysicsConfig BuildCelestialConfigFromControls()
+	{
+		var config = CelestialSystemPhysicsConfig.CreateDefault();
+
+		if (_starMassSlider != null)
+		{
+			config.StarMassSolar = Mathf.Clamp((float)_starMassSlider.Value, 0.08f, 80f);
+		}
+
+		var primary = config.PrimaryPlanet;
+		if (_planetRadiusSlider != null)
+		{
+			primary.RadiusEarth = Mathf.Clamp((float)_planetRadiusSlider.Value, 0.1f, 20f);
+		}
+
+		if (_planetMassSlider != null)
+		{
+			primary.MassEarth = Mathf.Clamp((float)_planetMassSlider.Value, 0.01f, 500f);
+		}
+
+		if (_planetOrbitDistanceSlider != null)
+		{
+			primary.OrbitDistanceAu = Mathf.Clamp((float)_planetOrbitDistanceSlider.Value, 0.03f, 80f);
+		}
+
+		if (_planetRotationSlider != null)
+		{
+			primary.RotationPeriodHours = Mathf.Clamp((float)_planetRotationSlider.Value, 2f, 5000f);
+		}
+
+		if (_planetRevolutionSlider != null)
+		{
+			primary.RevolutionPeriodDays = Mathf.Clamp((float)_planetRevolutionSlider.Value, 0.2f, 500000f);
+		}
+
+		if (_autoPlanetRevolutionToggle != null)
+		{
+			primary.AutoResolveRevolutionPeriod = _autoPlanetRevolutionToggle.ButtonPressed;
+		}
+
+		config.Satellites.Clear();
+		var moon = new CelestialSatellitePhysicsConfig
+		{
+			BodyId = "moon_0",
+			Name = "广寒",
+			Visible = true,
+			RadiusEarth = 0.2724f,
+			MassEarth = 0.0123f,
+			OrbitDistancePlanetRadii = _moonOrbitDistanceSlider != null ? Mathf.Clamp((float)_moonOrbitDistanceSlider.Value, 2f, 500f) : 60.3f,
+			RotationPeriodHours = _moonRotationSlider != null ? Mathf.Clamp((float)_moonRotationSlider.Value, 1f, 5000f) : 655.7f,
+			RevolutionPeriodDays = _moonRevolutionSlider != null ? Mathf.Clamp((float)_moonRevolutionSlider.Value, 0.1f, 100000f) : 27.3f,
+			AutoResolveRevolutionPeriod = _autoMoonRevolutionToggle?.ButtonPressed ?? true
+		};
+		config.Satellites.Add(moon);
+
+		config.AdditionalPlanets.Clear();
+		int extraPlanetCount = _extraPlanetsCountSlider != null ? Mathf.RoundToInt((float)_extraPlanetsCountSlider.Value) : 0;
+		float firstPlanetOrbit = _extraPlanetFirstOrbitSlider != null ? Mathf.Max(0.1f, (float)_extraPlanetFirstOrbitSlider.Value) : 1.6f;
+		float planetStep = _extraPlanetOrbitStepSlider != null ? Mathf.Max(0.1f, (float)_extraPlanetOrbitStepSlider.Value) : 0.8f;
+		for (int i = 0; i < extraPlanetCount; i++)
+		{
+			float t = (i + 1f) / Mathf.Max(1f, extraPlanetCount + 1f);
+			float radiusEarth = Mathf.Lerp(0.45f, 1.35f, t);
+			float massEarth = Mathf.Pow(radiusEarth, 3f) * Mathf.Lerp(0.72f, 1.28f, t);
+			var extraPlanet = new CelestialPlanetPhysicsConfig
+			{
+				BodyId = $"planet_{i}",
+				Name = $"辅星-{i + 1}",
+				Visible = true,
+				Element = (PlanetElement)(i % 4),
+				RadiusEarth = radiusEarth,
+				MassEarth = massEarth,
+				OrbitDistanceAu = firstPlanetOrbit + i * planetStep,
+				OrbitEccentricity = Mathf.Clamp(0.02f + i * 0.01f, 0f, 0.2f),
+				OrbitInclinationDeg = -4f + i * 2.5f,
+				RotationPeriodHours = 10f + i * 6f,
+				RevolutionPeriodDays = 120f + i * 80f,
+				AutoResolveRevolutionPeriod = true
+			};
+			config.AdditionalPlanets.Add(extraPlanet);
+		}
+
+		int extraMoonCount = _extraMoonsCountSlider != null ? Mathf.RoundToInt((float)_extraMoonsCountSlider.Value) : 0;
+		float firstMoonOrbit = _extraMoonFirstOrbitSlider != null ? Mathf.Max(2f, (float)_extraMoonFirstOrbitSlider.Value) : 86f;
+		float moonStep = _extraMoonOrbitStepSlider != null ? Mathf.Max(1f, (float)_extraMoonOrbitStepSlider.Value) : 24f;
+		for (int i = 0; i < extraMoonCount; i++)
+		{
+			float t = (i + 1f) / Mathf.Max(1f, extraMoonCount + 1f);
+			var extraMoon = new CelestialSatellitePhysicsConfig
+			{
+				BodyId = $"moon_{i + 1}",
+				Name = $"伴月-{i + 1}",
+				Visible = true,
+				RadiusEarth = Mathf.Lerp(0.08f, 0.24f, t),
+				MassEarth = Mathf.Lerp(0.001f, 0.018f, t),
+				OrbitDistancePlanetRadii = firstMoonOrbit + i * moonStep,
+				OrbitEccentricity = Mathf.Clamp(0.01f + i * 0.01f, 0f, 0.35f),
+				OrbitInclinationDeg = -12f + i * 5f,
+				RotationPeriodHours = 40f + i * 20f,
+				RevolutionPeriodDays = 8f + i * 6f,
+				AutoResolveRevolutionPeriod = true
+			};
+			config.Satellites.Add(extraMoon);
+		}
+
+		return config;
+	}
+
+	private void EmitCelestialPhysicsChanged()
+	{
+		if (_isApplyingCelestialUi)
+		{
+			return;
+		}
+
+		EmitSignal(SignalName.CelestialPhysicsChanged, BuildCelestialConfigFromControls());
+	}
+
+	private void EnsureCelestialPhysicsNodes()
+	{
+		var orbitVBox = GetNodeOrNull<VBoxContainer>("OrbitSection/OrbitSectionVBox");
+		if (orbitVBox == null)
+		{
+			return;
+		}
+
+		if (_orbitSection != null)
+		{
+			_orbitSection.OffsetTop = -700.0f;
+		}
+
+		if (_starMassLabel == null)
+		{
+			_starMassLabel = CreateCompactSelectorLabel("StarMassLabel", "恒星质量: 1.00 M☉");
+			orbitVBox.AddChild(_starMassLabel);
+		}
+
+		if (_starMassSlider == null)
+		{
+			_starMassSlider = new HSlider { Name = "StarMassSlider", MinValue = 0.08, MaxValue = 8.0, Step = 0.01, Value = 1.0 };
+			orbitVBox.AddChild(_starMassSlider);
+		}
+
+		if (_planetRadiusLabel == null)
+		{
+			_planetRadiusLabel = CreateCompactSelectorLabel("PlanetRadiusLabel", "行星半径: 1.00 R⊕");
+			orbitVBox.AddChild(_planetRadiusLabel);
+		}
+
+		if (_planetRadiusSlider == null)
+		{
+			_planetRadiusSlider = new HSlider { Name = "PlanetRadiusSlider", MinValue = 0.1, MaxValue = 20.0, Step = 0.01, Value = 1.0 };
+			orbitVBox.AddChild(_planetRadiusSlider);
+		}
+
+		if (_planetMassLabel == null)
+		{
+			_planetMassLabel = CreateCompactSelectorLabel("PlanetMassLabel", "行星质量: 1.00 M⊕");
+			orbitVBox.AddChild(_planetMassLabel);
+		}
+
+		if (_planetMassSlider == null)
+		{
+			_planetMassSlider = new HSlider { Name = "PlanetMassSlider", MinValue = 0.01, MaxValue = 500.0, Step = 0.01, Value = 1.0 };
+			orbitVBox.AddChild(_planetMassSlider);
+		}
+
+		if (_planetOrbitDistanceLabel == null)
+		{
+			_planetOrbitDistanceLabel = CreateCompactSelectorLabel("PlanetOrbitDistanceLabel", "行星轨道: 1.000 AU");
+			orbitVBox.AddChild(_planetOrbitDistanceLabel);
+		}
+
+		if (_planetOrbitDistanceSlider == null)
+		{
+			_planetOrbitDistanceSlider = new HSlider { Name = "PlanetOrbitDistanceSlider", MinValue = 0.03, MaxValue = 20.0, Step = 0.001, Value = 1.0 };
+			orbitVBox.AddChild(_planetOrbitDistanceSlider);
+		}
+
+		if (_autoPlanetRevolutionToggle == null)
+		{
+			_autoPlanetRevolutionToggle = new CheckButton { Name = "AutoPlanetRevolutionToggle", Text = "行星公转周期自动求解", ButtonPressed = true };
+			orbitVBox.AddChild(_autoPlanetRevolutionToggle);
+		}
+
+		if (_planetRotationLabel == null)
+		{
+			_planetRotationLabel = CreateCompactSelectorLabel("PlanetRotationLabel", "行星自转: 23.9 小时");
+			orbitVBox.AddChild(_planetRotationLabel);
+		}
+
+		if (_planetRotationSlider == null)
+		{
+			_planetRotationSlider = new HSlider { Name = "PlanetRotationSlider", MinValue = 2.0, MaxValue = 5000.0, Step = 0.1, Value = 23.934 };
+			orbitVBox.AddChild(_planetRotationSlider);
+		}
+
+		if (_planetRevolutionLabel == null)
+		{
+			_planetRevolutionLabel = CreateCompactSelectorLabel("PlanetRevolutionLabel", "行星公转: 365.3 天");
+			orbitVBox.AddChild(_planetRevolutionLabel);
+		}
+
+		if (_planetRevolutionSlider == null)
+		{
+			_planetRevolutionSlider = new HSlider { Name = "PlanetRevolutionSlider", MinValue = 0.2, MaxValue = 500000.0, Step = 0.1, Value = 365.256 };
+			orbitVBox.AddChild(_planetRevolutionSlider);
+		}
+
+		if (_moonOrbitDistanceLabel == null)
+		{
+			_moonOrbitDistanceLabel = CreateCompactSelectorLabel("MoonOrbitDistanceLabel", "卫星轨道: 60.3 Rplanet");
+			orbitVBox.AddChild(_moonOrbitDistanceLabel);
+		}
+
+		if (_moonOrbitDistanceSlider == null)
+		{
+			_moonOrbitDistanceSlider = new HSlider { Name = "MoonOrbitDistanceSlider", MinValue = 2.0, MaxValue = 500.0, Step = 0.1, Value = 60.3 };
+			orbitVBox.AddChild(_moonOrbitDistanceSlider);
+		}
+
+		if (_autoMoonRevolutionToggle == null)
+		{
+			_autoMoonRevolutionToggle = new CheckButton { Name = "AutoMoonRevolutionToggle", Text = "卫星公转周期自动求解", ButtonPressed = true };
+			orbitVBox.AddChild(_autoMoonRevolutionToggle);
+		}
+
+		if (_moonRotationLabel == null)
+		{
+			_moonRotationLabel = CreateCompactSelectorLabel("MoonRotationLabel", "卫星自转: 655.7 小时");
+			orbitVBox.AddChild(_moonRotationLabel);
+		}
+
+		if (_moonRotationSlider == null)
+		{
+			_moonRotationSlider = new HSlider { Name = "MoonRotationSlider", MinValue = 1.0, MaxValue = 5000.0, Step = 0.1, Value = 655.7 };
+			orbitVBox.AddChild(_moonRotationSlider);
+		}
+
+		if (_moonRevolutionLabel == null)
+		{
+			_moonRevolutionLabel = CreateCompactSelectorLabel("MoonRevolutionLabel", "卫星公转: 27.3 天");
+			orbitVBox.AddChild(_moonRevolutionLabel);
+		}
+
+		if (_moonRevolutionSlider == null)
+		{
+			_moonRevolutionSlider = new HSlider { Name = "MoonRevolutionSlider", MinValue = 0.1, MaxValue = 100000.0, Step = 0.1, Value = 27.3217 };
+			orbitVBox.AddChild(_moonRevolutionSlider);
+		}
+
+		if (_extraPlanetsCountLabel == null)
+		{
+			_extraPlanetsCountLabel = CreateCompactSelectorLabel("ExtraPlanetsCountLabel", "额外行星: 0");
+			orbitVBox.AddChild(_extraPlanetsCountLabel);
+		}
+
+		if (_extraPlanetsCountSlider == null)
+		{
+			_extraPlanetsCountSlider = new HSlider { Name = "ExtraPlanetsCountSlider", MinValue = 0.0, MaxValue = 6.0, Step = 1.0, Value = 0.0 };
+			orbitVBox.AddChild(_extraPlanetsCountSlider);
+		}
+
+		if (_extraPlanetFirstOrbitLabel == null)
+		{
+			_extraPlanetFirstOrbitLabel = CreateCompactSelectorLabel("ExtraPlanetFirstOrbitLabel", "额外行星起始轨道: 1.60 AU");
+			orbitVBox.AddChild(_extraPlanetFirstOrbitLabel);
+		}
+
+		if (_extraPlanetFirstOrbitSlider == null)
+		{
+			_extraPlanetFirstOrbitSlider = new HSlider { Name = "ExtraPlanetFirstOrbitSlider", MinValue = 0.1, MaxValue = 30.0, Step = 0.01, Value = 1.6 };
+			orbitVBox.AddChild(_extraPlanetFirstOrbitSlider);
+		}
+
+		if (_extraPlanetOrbitStepLabel == null)
+		{
+			_extraPlanetOrbitStepLabel = CreateCompactSelectorLabel("ExtraPlanetOrbitStepLabel", "额外行星轨道间隔: 0.80 AU");
+			orbitVBox.AddChild(_extraPlanetOrbitStepLabel);
+		}
+
+		if (_extraPlanetOrbitStepSlider == null)
+		{
+			_extraPlanetOrbitStepSlider = new HSlider { Name = "ExtraPlanetOrbitStepSlider", MinValue = 0.1, MaxValue = 10.0, Step = 0.01, Value = 0.8 };
+			orbitVBox.AddChild(_extraPlanetOrbitStepSlider);
+		}
+
+		if (_extraMoonsCountLabel == null)
+		{
+			_extraMoonsCountLabel = CreateCompactSelectorLabel("ExtraMoonsCountLabel", "额外卫星: 0");
+			orbitVBox.AddChild(_extraMoonsCountLabel);
+		}
+
+		if (_extraMoonsCountSlider == null)
+		{
+			_extraMoonsCountSlider = new HSlider { Name = "ExtraMoonsCountSlider", MinValue = 0.0, MaxValue = 6.0, Step = 1.0, Value = 0.0 };
+			orbitVBox.AddChild(_extraMoonsCountSlider);
+		}
+
+		if (_extraMoonFirstOrbitLabel == null)
+		{
+			_extraMoonFirstOrbitLabel = CreateCompactSelectorLabel("ExtraMoonFirstOrbitLabel", "额外卫星起始轨道: 86.0 Rplanet");
+			orbitVBox.AddChild(_extraMoonFirstOrbitLabel);
+		}
+
+		if (_extraMoonFirstOrbitSlider == null)
+		{
+			_extraMoonFirstOrbitSlider = new HSlider { Name = "ExtraMoonFirstOrbitSlider", MinValue = 2.0, MaxValue = 500.0, Step = 0.1, Value = 86.0 };
+			orbitVBox.AddChild(_extraMoonFirstOrbitSlider);
+		}
+
+		if (_extraMoonOrbitStepLabel == null)
+		{
+			_extraMoonOrbitStepLabel = CreateCompactSelectorLabel("ExtraMoonOrbitStepLabel", "额外卫星轨道间隔: 24.0 Rplanet");
+			orbitVBox.AddChild(_extraMoonOrbitStepLabel);
+		}
+
+		if (_extraMoonOrbitStepSlider == null)
+		{
+			_extraMoonOrbitStepSlider = new HSlider { Name = "ExtraMoonOrbitStepSlider", MinValue = 1.0, MaxValue = 150.0, Step = 0.1, Value = 24.0 };
+			orbitVBox.AddChild(_extraMoonOrbitStepSlider);
+		}
+	}
+
+	private void BindCelestialPhysicsUi()
+	{
+		BindCelestialSlider(_starMassSlider);
+		BindCelestialSlider(_planetRadiusSlider);
+		BindCelestialSlider(_planetMassSlider);
+		BindCelestialSlider(_planetOrbitDistanceSlider);
+		BindCelestialSlider(_planetRotationSlider);
+		BindCelestialSlider(_planetRevolutionSlider);
+		BindCelestialSlider(_moonOrbitDistanceSlider);
+		BindCelestialSlider(_moonRotationSlider);
+		BindCelestialSlider(_moonRevolutionSlider);
+		BindCelestialSlider(_extraPlanetsCountSlider);
+		BindCelestialSlider(_extraPlanetFirstOrbitSlider);
+		BindCelestialSlider(_extraPlanetOrbitStepSlider);
+		BindCelestialSlider(_extraMoonsCountSlider);
+		BindCelestialSlider(_extraMoonFirstOrbitSlider);
+		BindCelestialSlider(_extraMoonOrbitStepSlider);
+
+		if (_autoPlanetRevolutionToggle != null)
+		{
+			_autoPlanetRevolutionToggle.Toggled += OnCelestialToggleChanged;
+		}
+
+		if (_autoMoonRevolutionToggle != null)
+		{
+			_autoMoonRevolutionToggle.Toggled += OnCelestialToggleChanged;
+		}
+	}
+
+	private void BindCelestialSlider(HSlider slider)
+	{
+		if (slider != null)
+		{
+			slider.ValueChanged += OnCelestialSliderValueChanged;
+		}
+	}
+
+	private void OnCelestialSliderValueChanged(double value)
+	{
+		UpdateCelestialLabels();
+		EmitCelestialPhysicsChanged();
+	}
+
+	private void OnCelestialToggleChanged(bool toggled)
+	{
+		UpdateCelestialLabels();
+		EmitCelestialPhysicsChanged();
+	}
+
+	private void UpdateCelestialLabels()
+	{
+		if (_starMassLabel != null && _starMassSlider != null)
+		{
+			_starMassLabel.Text = $"恒星质量: {(float)_starMassSlider.Value:0.00} M☉";
+		}
+
+		if (_planetRadiusLabel != null && _planetRadiusSlider != null)
+		{
+			_planetRadiusLabel.Text = $"行星半径: {(float)_planetRadiusSlider.Value:0.00} R⊕";
+		}
+
+		if (_planetMassLabel != null && _planetMassSlider != null)
+		{
+			_planetMassLabel.Text = $"行星质量: {(float)_planetMassSlider.Value:0.00} M⊕";
+		}
+
+		if (_planetOrbitDistanceLabel != null && _planetOrbitDistanceSlider != null)
+		{
+			_planetOrbitDistanceLabel.Text = $"行星轨道: {(float)_planetOrbitDistanceSlider.Value:0.000} AU";
+		}
+
+		if (_planetRotationLabel != null && _planetRotationSlider != null)
+		{
+			_planetRotationLabel.Text = $"行星自转: {(float)_planetRotationSlider.Value:0.0} 小时";
+		}
+
+		if (_planetRevolutionLabel != null && _planetRevolutionSlider != null)
+		{
+			_planetRevolutionLabel.Text = $"行星公转: {(float)_planetRevolutionSlider.Value:0.0} 天";
+		}
+
+		if (_moonOrbitDistanceLabel != null && _moonOrbitDistanceSlider != null)
+		{
+			_moonOrbitDistanceLabel.Text = $"卫星轨道: {(float)_moonOrbitDistanceSlider.Value:0.0} Rplanet";
+		}
+
+		if (_moonRotationLabel != null && _moonRotationSlider != null)
+		{
+			_moonRotationLabel.Text = $"卫星自转: {(float)_moonRotationSlider.Value:0.0} 小时";
+		}
+
+		if (_moonRevolutionLabel != null && _moonRevolutionSlider != null)
+		{
+			_moonRevolutionLabel.Text = $"卫星公转: {(float)_moonRevolutionSlider.Value:0.0} 天";
+		}
+
+		if (_extraPlanetsCountLabel != null && _extraPlanetsCountSlider != null)
+		{
+			_extraPlanetsCountLabel.Text = $"额外行星: {Mathf.RoundToInt((float)_extraPlanetsCountSlider.Value)}";
+		}
+
+		if (_extraPlanetFirstOrbitLabel != null && _extraPlanetFirstOrbitSlider != null)
+		{
+			_extraPlanetFirstOrbitLabel.Text = $"额外行星起始轨道: {(float)_extraPlanetFirstOrbitSlider.Value:0.00} AU";
+		}
+
+		if (_extraPlanetOrbitStepLabel != null && _extraPlanetOrbitStepSlider != null)
+		{
+			_extraPlanetOrbitStepLabel.Text = $"额外行星轨道间隔: {(float)_extraPlanetOrbitStepSlider.Value:0.00} AU";
+		}
+
+		if (_extraMoonsCountLabel != null && _extraMoonsCountSlider != null)
+		{
+			_extraMoonsCountLabel.Text = $"额外卫星: {Mathf.RoundToInt((float)_extraMoonsCountSlider.Value)}";
+		}
+
+		if (_extraMoonFirstOrbitLabel != null && _extraMoonFirstOrbitSlider != null)
+		{
+			_extraMoonFirstOrbitLabel.Text = $"额外卫星起始轨道: {(float)_extraMoonFirstOrbitSlider.Value:0.0} Rplanet";
+		}
+
+		if (_extraMoonOrbitStepLabel != null && _extraMoonOrbitStepSlider != null)
+		{
+			_extraMoonOrbitStepLabel.Text = $"额外卫星轨道间隔: {(float)_extraMoonOrbitStepSlider.Value:0.0} Rplanet";
+		}
 	}
 
 	private void EnsureTextureSelectorNodes()
@@ -397,6 +1048,26 @@ public partial class PlanetTextureView : TextureRect
 			};
 			InsertBeforePlanetPhoto(photoVBox, label);
 			InsertBeforePlanetPhoto(photoVBox, _moonTextureSelector);
+		}
+
+		if (_solarBrightnessLabel == null)
+		{
+			_solarBrightnessLabel = CreateCompactSelectorLabel("SolarBrightnessLabel", "太阳亮度: 100%");
+			InsertBeforePlanetPhoto(photoVBox, _solarBrightnessLabel);
+		}
+
+		if (_solarBrightnessSlider == null)
+		{
+			_solarBrightnessSlider = new HSlider
+			{
+				Name = "SolarBrightnessSlider",
+				MinValue = 0.5,
+				MaxValue = 2.5,
+				Step = 0.01,
+				Value = 1.0,
+				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
+			};
+			InsertBeforePlanetPhoto(photoVBox, _solarBrightnessSlider);
 		}
 	}
 
@@ -646,6 +1317,133 @@ public partial class PlanetTextureView : TextureRect
 		EmitSignal(SignalName.DownloadedOnlyFilterChanged, toggledOn);
 	}
 
+	private void OnLanguageChanged(string language)
+	{
+		if (_buildLabel != null)
+		{
+			_buildLabel.Text = _translationManager?.Tr("preview_building_cosmos") ?? _buildLabel.Text;
+		}
+
+		if (_lightResponseSlider != null)
+		{
+			UpdateLightResponseLabel((float)_lightResponseSlider.Value);
+		}
+
+		if (_solarBrightnessSlider != null)
+		{
+			UpdateSolarBrightnessLabel((float)_solarBrightnessSlider.Value);
+		}
+
+		UpdateCelestialLabels();
+	}
+
+	private void CleanupEventBindings()
+	{
+		if (_translationManager != null)
+		{
+			_translationManager.LanguageChanged -= OnLanguageChanged;
+		}
+
+		if (_planetPhotoTexture != null)
+		{
+			_planetPhotoTexture.GuiInput -= OnPlanetPhotoTextureGuiInput;
+		}
+
+		if (_photoViewerOverlay != null)
+		{
+			_photoViewerOverlay.GuiInput -= OnPhotoViewerOverlayGuiInput;
+		}
+
+		if (_photoViewerCloseButton != null)
+		{
+			_photoViewerCloseButton.Pressed -= OnPhotoViewerClosePressed;
+		}
+
+		if (_livePhotoToggle != null)
+		{
+			_livePhotoToggle.Toggled -= OnLivePhotoToggleChanged;
+		}
+
+		if (_lightFollowToggle != null)
+		{
+			_lightFollowToggle.Toggled -= OnLightFollowToggleChanged;
+		}
+
+		if (_lightResponseSlider != null)
+		{
+			_lightResponseSlider.ValueChanged -= OnLightResponseSliderChanged;
+		}
+
+		if (_solarBrightnessSlider != null)
+		{
+			_solarBrightnessSlider.ValueChanged -= OnSolarBrightnessSliderChanged;
+		}
+
+		if (_refreshPhotoButton != null)
+		{
+			_refreshPhotoButton.Pressed -= OnRefreshPhotoPressed;
+		}
+
+		if (_downloadedOnlyToggle != null)
+		{
+			_downloadedOnlyToggle.Toggled -= OnDownloadedOnlyToggleChanged;
+		}
+
+		if (_skyTextureSelector != null)
+		{
+			_skyTextureSelector.ItemSelected -= OnSkyTextureSelectorItemSelected;
+		}
+
+		if (_planetSurfaceTextureSelector != null)
+		{
+			_planetSurfaceTextureSelector.ItemSelected -= OnPlanetSurfaceTextureSelectorItemSelected;
+		}
+
+		if (_moonTextureSelector != null)
+		{
+			_moonTextureSelector.ItemSelected -= OnMoonTextureSelectorItemSelected;
+		}
+
+		if (_sunTextureSelector != null)
+		{
+			_sunTextureSelector.ItemSelected -= OnSunTextureSelectorItemSelected;
+		}
+		UnbindCelestialSlider(_starMassSlider);
+		UnbindCelestialSlider(_planetRadiusSlider);
+		UnbindCelestialSlider(_planetMassSlider);
+		UnbindCelestialSlider(_planetOrbitDistanceSlider);
+		UnbindCelestialSlider(_planetRotationSlider);
+		UnbindCelestialSlider(_planetRevolutionSlider);
+		UnbindCelestialSlider(_moonOrbitDistanceSlider);
+		UnbindCelestialSlider(_moonRotationSlider);
+		UnbindCelestialSlider(_moonRevolutionSlider);
+		UnbindCelestialSlider(_extraPlanetsCountSlider);
+		UnbindCelestialSlider(_extraPlanetFirstOrbitSlider);
+		UnbindCelestialSlider(_extraPlanetOrbitStepSlider);
+		UnbindCelestialSlider(_extraMoonsCountSlider);
+		UnbindCelestialSlider(_extraMoonFirstOrbitSlider);
+		UnbindCelestialSlider(_extraMoonOrbitStepSlider);
+
+		if (_autoPlanetRevolutionToggle != null)
+		{
+			_autoPlanetRevolutionToggle.Toggled -= OnCelestialToggleChanged;
+		}
+
+		if (_autoMoonRevolutionToggle != null)
+		{
+			_autoMoonRevolutionToggle.Toggled -= OnCelestialToggleChanged;
+		}
+
+	}
+
+	private void UnbindCelestialSlider(HSlider slider)
+	{
+		if (slider != null)
+		{
+			slider.ValueChanged -= OnCelestialSliderValueChanged;
+		}
+	}
+
 	private void OnLivePhotoToggleChanged(bool toggledOn)
 	{
 		EmitSignal(SignalName.LivePhotoModeChanged, toggledOn);
@@ -661,6 +1459,13 @@ public partial class PlanetTextureView : TextureRect
 		float strength = Mathf.Clamp((float)value, 0f, 1f);
 		UpdateLightResponseLabel(strength);
 		EmitSignal(SignalName.LightResponseChanged, strength);
+	}
+
+	private void OnSolarBrightnessSliderChanged(double value)
+	{
+		float brightness = Mathf.Clamp((float)value, 0.5f, 2.5f);
+		UpdateSolarBrightnessLabel(brightness);
+		EmitSignal(SignalName.SolarBrightnessChanged, brightness);
 	}
 
 	private void OnRefreshPhotoPressed()
@@ -709,8 +1514,24 @@ public partial class PlanetTextureView : TextureRect
 	{
 		if (_lightResponseLabel != null)
 		{
-			_lightResponseLabel.Text = $"光照响应: {Mathf.RoundToInt(Mathf.Clamp(value, 0f, 1f) * 100f)}%";
+			int percent = Mathf.RoundToInt(Mathf.Clamp(value, 0f, 1f) * 100f);
+			_lightResponseLabel.Text = _translationManager?.TrWithFormat("preview_light_response", $"{percent}")
+				?? $"Light Response: {percent}%";
 		}
+	}
+
+	private void UpdateSolarBrightnessLabel(float value)
+	{
+		if (_solarBrightnessLabel == null)
+		{
+			return;
+		}
+
+		int percent = Mathf.RoundToInt(Mathf.Clamp(value, 0.5f, 2.5f) * 100f);
+		bool isZh = _translationManager?.CurrentLanguage == "zh-CN";
+		_solarBrightnessLabel.Text = isZh
+			? $"太阳亮度: {percent}%"
+			: $"Solar Brightness: {percent}%";
 	}
 
 	private void OpenPhotoViewer(Texture2D texture)

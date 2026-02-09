@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Godot;
 using FantasyMapGenerator.Scripts.Data;
 using FantasyMapGenerator.Scripts.Utils;
@@ -30,6 +31,17 @@ public class PlanetPreviewController
 	private Node3D _planetOrbit;
 	private MeshInstance3D _starShell;
 	private Node3D _starPointCloud;
+	private readonly List<Node3D> _extraPlanetPivots = new();
+	private readonly List<MeshInstance3D> _extraPlanetMeshes = new();
+	private readonly List<float> _extraPlanetOrbitSpeeds = new();
+	private readonly List<float> _extraPlanetSpinSpeeds = new();
+	private readonly List<Node3D> _extraPlanetOrbitLines = new();
+	private readonly List<Node3D> _extraMoonPivots = new();
+	private readonly List<MeshInstance3D> _extraMoonMeshes = new();
+	private readonly List<float> _extraMoonOrbitSpeeds = new();
+	private readonly List<float> _extraMoonSpinSpeeds = new();
+	private readonly List<float> _extraMoonOrbitDistances = new();
+	private readonly List<Node3D> _extraMoonOrbitLines = new();
 	private Control _armillaryRing1;
 	private Control _armillaryRing2;
 	private WorldEnvironment _worldEnvironment;
@@ -49,14 +61,16 @@ public class PlanetPreviewController
 	private StandardMaterial3D _shellMaterial;
 	private StandardMaterial3D _moonMaterial;
 	private StandardMaterial3D _sunCoreMaterial;
+	private ShaderMaterial _sunCoreShaderMaterial;
 	private ShaderMaterial _sunCoronaMaterial;
 	private Texture2D _activeSkyTexture;
+	private Texture2D _sunDetailTexture;
 	private string _selectedPlanetSurfaceTexturePath = string.Empty;
 	private string _selectedMoonTexturePath = string.Empty;
 	private string _selectedSunTexturePath = string.Empty;
 
 	private readonly Vector3 _earthOrigin = Vector3.Zero;
-	private readonly Vector3 _sunPosition = new(-420f, 0f, -860f);
+	private Vector3 _sunPosition = new(-420f, 0f, -860f);
 
 	private bool _isOrbitDragging;
 	private bool _isPanDragging;
@@ -81,6 +95,9 @@ public class PlanetPreviewController
 	private const float MoonOrbitRadius = 40f;
 	private const float MoonOrbitAngularSpeed = 0.22f;
 	private const float ControlEditPauseSeconds = 0.9f;
+	private const float MoonOrbitVisibleMaxDistance = 520f;
+	private const float PlanetOrbitVisibleMinDistance = 150f;
+	private const float MaxFocusRadius = 2400f;
 
 	private float _moonOrbitAngle = 0f;
 	private int _currentLawAlignment = 50;
@@ -98,12 +115,22 @@ public class PlanetPreviewController
 	private bool _planetPhotoRealtimeUpdate = true;
 	private bool _lightFollowWithPlanet = true;
 	private float _lightResponseStrength = 0.75f;
+	private float _solarBrightness = 1.0f;
 	private float _currentPlanetRadiusUnits = 10f;
 	private readonly TranslationManager _translationManager;
+	private CelestialSystemPhysicsConfig _celestialSystemConfig = CelestialSystemPhysicsConfig.CreateDefault();
+	private CelestialPhysicsSolver.ResolvedSystem _resolvedCelestialSystem;
+	private float _primaryPlanetSpinSpeed = 0.16f;
+	private float _primaryPlanetRadiusFactor = 1.0f;
+	private float _primaryMoonOrbitDistancePlanetRadii = 4.0f;
+	private float _primaryMoonOrbitSpeed = MoonOrbitAngularSpeed;
+	private float _primaryMoonSpinSpeed = 0.35f;
 
 	private const float PlanetRadiusUnits = 10f;
 	private const float KilometersPerSceneUnit = 125000f;
 	private const float AstronomicalUnitKm = 149597870.7f;
+	private const float OrbitTimeAcceleration = 86400f;
+	private const float SpinTimeAcceleration = 2200f;
 
 	public string CameraDistanceText { get; private set; } = "20,000 km";
 	public string CameraDescriptionText { get; private set; } = "高轨观测点";
@@ -118,7 +145,66 @@ public class PlanetPreviewController
 		_planetTextureView = planetTextureView;
 		_translationManager = TranslationManager.Instance;
 		_planetTextureView?.EnterStaticMode();
+		_resolvedCelestialSystem = CelestialPhysicsSolver.Resolve(_celestialSystemConfig);
+		ApplyResolvedCelestialConfig();
 		UpdateCameraHud();
+	}
+
+	public void SetCelestialSystemConfig(CelestialSystemPhysicsConfig config)
+	{
+		_celestialSystemConfig = config?.DuplicateConfig() ?? CelestialSystemPhysicsConfig.CreateDefault();
+		_resolvedCelestialSystem = CelestialPhysicsSolver.Resolve(_celestialSystemConfig);
+		ApplyResolvedCelestialConfig();
+	}
+
+	public void ConfigurePrimaryPlanet(
+		float radiusEarth,
+		float massEarth,
+		float orbitDistanceAu,
+		float rotationPeriodHours,
+		float revolutionPeriodDays,
+		bool autoResolveRevolution = true)
+	{
+		if (_celestialSystemConfig == null)
+		{
+			_celestialSystemConfig = CelestialSystemPhysicsConfig.CreateDefault();
+		}
+
+		if (_celestialSystemConfig.PrimaryPlanet == null)
+		{
+			_celestialSystemConfig.PrimaryPlanet = new CelestialPlanetPhysicsConfig();
+		}
+
+		_celestialSystemConfig.PrimaryPlanet.RadiusEarth = radiusEarth;
+		_celestialSystemConfig.PrimaryPlanet.MassEarth = massEarth;
+		_celestialSystemConfig.PrimaryPlanet.OrbitDistanceAu = orbitDistanceAu;
+		_celestialSystemConfig.PrimaryPlanet.RotationPeriodHours = rotationPeriodHours;
+		_celestialSystemConfig.PrimaryPlanet.RevolutionPeriodDays = revolutionPeriodDays;
+		_celestialSystemConfig.PrimaryPlanet.AutoResolveRevolutionPeriod = autoResolveRevolution;
+
+		SetCelestialSystemConfig(_celestialSystemConfig);
+	}
+
+	public void ConfigureAdditionalPlanets(Godot.Collections.Array<CelestialPlanetPhysicsConfig> planets)
+	{
+		if (_celestialSystemConfig == null)
+		{
+			_celestialSystemConfig = CelestialSystemPhysicsConfig.CreateDefault();
+		}
+
+		_celestialSystemConfig.AdditionalPlanets = planets ?? new Godot.Collections.Array<CelestialPlanetPhysicsConfig>();
+		SetCelestialSystemConfig(_celestialSystemConfig);
+	}
+
+	public void ConfigureSatellites(Godot.Collections.Array<CelestialSatellitePhysicsConfig> satellites)
+	{
+		if (_celestialSystemConfig == null)
+		{
+			_celestialSystemConfig = CelestialSystemPhysicsConfig.CreateDefault();
+		}
+
+		_celestialSystemConfig.Satellites = satellites ?? new Godot.Collections.Array<CelestialSatellitePhysicsConfig>();
+		SetCelestialSystemConfig(_celestialSystemConfig);
 	}
 
 	public void RequestActivateThreeD()
@@ -243,9 +329,8 @@ public class PlanetPreviewController
 
 		if (string.IsNullOrWhiteSpace(_selectedSunTexturePath))
 		{
-			_sunCoreMaterial.AlbedoTexture = null;
-			_sunCoreMaterial.AlbedoColor = new Color(1f, 0.86f, 0.66f);
-			_sunCoreMaterial.Emission = new Color(1f, 0.64f, 0.24f);
+			_sunDetailTexture = null;
+			ApplySunCoreVisualStyle(false);
 			return true;
 		}
 
@@ -255,10 +340,79 @@ public class PlanetPreviewController
 			return false;
 		}
 
-		_sunCoreMaterial.AlbedoTexture = texture;
-		_sunCoreMaterial.AlbedoColor = Colors.White;
-		_sunCoreMaterial.Emission = new Color(1f, 0.86f, 0.66f);
+		_sunDetailTexture = texture;
+		ApplySunCoreVisualStyle(true);
 		return true;
+	}
+
+	private void ApplySunCoreVisualStyle(bool usingTexture)
+	{
+		if (_sunCoreMaterial == null)
+		{
+			return;
+		}
+
+		EnsureSunSurfaceShader();
+
+		if (_sunCoreShaderMaterial != null)
+		{
+			_sunCoreShaderMaterial.SetShaderParameter("use_detail_tex", usingTexture && _sunDetailTexture != null);
+			if (usingTexture && _sunDetailTexture != null)
+			{
+				_sunCoreShaderMaterial.SetShaderParameter("detail_tex", _sunDetailTexture);
+			}
+
+			if (usingTexture)
+			{
+				_sunCoreShaderMaterial.SetShaderParameter("emission_strength", 26.0f * _solarBrightness);
+				_sunCoreShaderMaterial.SetShaderParameter("detail_mix", 0.14f);
+			}
+			else
+			{
+				_sunCoreShaderMaterial.SetShaderParameter("emission_strength", 22.0f * _solarBrightness);
+				_sunCoreShaderMaterial.SetShaderParameter("detail_mix", 0.0f);
+			}
+		}
+
+		ApplySolarBrightness();
+	}
+
+	private void EnsureSunSurfaceShader()
+	{
+		if (_sunCore == null)
+		{
+			return;
+		}
+
+		if (_sunCoreShaderMaterial != null)
+		{
+			if (_sunCore.MaterialOverride != _sunCoreShaderMaterial)
+			{
+				_sunCore.MaterialOverride = _sunCoreShaderMaterial;
+			}
+			return;
+		}
+
+		Shader shader = GD.Load<Shader>("res://Shaders/SunSurface.gdshader");
+		if (shader == null)
+		{
+			return;
+		}
+
+		_sunCoreShaderMaterial = new ShaderMaterial
+		{
+			Shader = shader
+		};
+
+		_sunCoreShaderMaterial.SetShaderParameter("base_color", new Color(1.0f, 0.78f, 0.34f, 1.0f));
+		_sunCoreShaderMaterial.SetShaderParameter("hot_color", new Color(1.0f, 0.98f, 0.74f, 1.0f));
+		_sunCoreShaderMaterial.SetShaderParameter("emission_strength", 22.0f * _solarBrightness);
+		_sunCoreShaderMaterial.SetShaderParameter("flow_speed", 0.52f);
+		_sunCoreShaderMaterial.SetShaderParameter("granulation_scale", 14.5f);
+		_sunCoreShaderMaterial.SetShaderParameter("pulse_strength", 0.10f);
+		_sunCoreShaderMaterial.SetShaderParameter("detail_mix", 0.0f);
+		_sunCoreShaderMaterial.SetShaderParameter("brightness_multiplier", _solarBrightness);
+		_sunCore.MaterialOverride = _sunCoreShaderMaterial;
 	}
 
 	public void HandleGuiInput(InputEvent inputEvent)
@@ -320,6 +474,10 @@ public class PlanetPreviewController
 			Vector3 up = right.Cross(forward).Normalized();
 			float scale = Mathf.Max(2.8f, _currentDistance * PanSensitivity);
 			_targetFocus += (-right * mouseMotion.Relative.X + up * mouseMotion.Relative.Y) * scale;
+			if (_targetFocus.Length() > MaxFocusRadius)
+			{
+				_targetFocus = _targetFocus.Normalized() * MaxFocusRadius;
+			}
 		}
 	}
 
@@ -398,6 +556,10 @@ public class PlanetPreviewController
 		{
 			ApplyLightingFromPlanet(_cachedPlanetData);
 		}
+		else
+		{
+			ApplySolarBrightness();
+		}
 	}
 
 	public void SetLightResponse(float strength)
@@ -406,6 +568,53 @@ public class PlanetPreviewController
 		if (_lightFollowWithPlanet)
 		{
 			ApplyLightingFromPlanet(_cachedPlanetData);
+		}
+	}
+
+	public void SetSolarBrightness(float brightness)
+	{
+		_solarBrightness = Mathf.Clamp(brightness, 0.5f, 2.5f);
+		ApplySolarBrightness();
+	}
+
+	private void ApplySolarBrightness()
+	{
+		bool usingTexture = !string.IsNullOrWhiteSpace(_selectedSunTexturePath) && _sunDetailTexture != null;
+
+		if (_sunCoreShaderMaterial != null)
+		{
+			float baseEmission = usingTexture ? 26.0f : 22.0f;
+			_sunCoreShaderMaterial.SetShaderParameter("emission_strength", baseEmission * _solarBrightness);
+			_sunCoreShaderMaterial.SetShaderParameter("brightness_multiplier", _solarBrightness);
+		}
+
+		if (_sunCoronaMaterial != null)
+		{
+			_sunCoronaMaterial.SetShaderParameter("intensity", 6.6f * _solarBrightness);
+		}
+
+		if (_sunCoreMaterial != null)
+		{
+			float colorBoost = Mathf.Clamp(_solarBrightness, 0.5f, 2.5f);
+			_sunCoreMaterial.AlbedoColor = new Color(1.12f, 0.9f, 0.68f) * colorBoost;
+			_sunCoreMaterial.Emission = new Color(1.2f, 0.68f, 0.24f) * colorBoost;
+			_sunCoreMaterial.EmissionEnergyMultiplier = 5.8f * _solarBrightness;
+		}
+
+		if (_lightFollowWithPlanet)
+		{
+			ApplyLightingFromPlanet(_cachedPlanetData);
+			return;
+		}
+
+		if (_sunPointLight != null)
+		{
+			_sunPointLight.LightEnergy = 30.0f * _solarBrightness;
+		}
+
+		if (_sunDirectionalLight != null)
+		{
+			_sunDirectionalLight.LightEnergy = 0.36f * _solarBrightness;
 		}
 	}
 
@@ -505,16 +714,7 @@ public class PlanetPreviewController
 	{
 		_showMoonOrbit = showMoonOrbit;
 		_showPlanetOrbit = showPlanetOrbit;
-
-		if (_moonOrbit != null)
-		{
-			_moonOrbit.Visible = _showMoonOrbit;
-		}
-
-		if (_planetOrbit != null)
-		{
-			_planetOrbit.Visible = _showPlanetOrbit;
-		}
+		UpdateOrbitVisibilityByCameraDistance();
 	}
 
 	public void Tick(double delta)
@@ -565,44 +765,98 @@ public class PlanetPreviewController
 
 		_camera.Position = _currentFocus + orbitOffset;
 		_camera.LookAt(_currentFocus, Vector3.Up);
+		UpdateSkyBackdropTransform();
 
 		if (!_isControlEditPaused)
 		{
 			if (_planetMesh != null)
 			{
 				var planetRot = _planetMesh.Rotation;
-				planetRot.Y += deltaF * 0.16f;
+				planetRot.Y += deltaF * _primaryPlanetSpinSpeed;
 				_planetMesh.Rotation = planetRot;
 			}
 
 			if (_cloudLayer != null)
 			{
 				var cloudRot = _cloudLayer.Rotation;
-				cloudRot.Y += deltaF * 0.21f;
+				cloudRot.Y += deltaF * (_primaryPlanetSpinSpeed + 0.06f);
 				cloudRot.X = Mathf.Sin(elapsed * 0.25f) * 0.03f;
 				_cloudLayer.Rotation = cloudRot;
 			}
 
+			float moonOrbitRadiusUnits = Mathf.Max(1.2f, _primaryMoonOrbitDistancePlanetRadii * _currentPlanetRadiusUnits);
+			if (_moonOrbit != null)
+			{
+				float baseOrbitPlanetRadii = MoonOrbitRadius / Mathf.Max(0.001f, PlanetRadiusUnits);
+				float moonOrbitScale = (_currentPlanetRadiusUnits / Mathf.Max(0.001f, PlanetRadiusUnits))
+					* (_primaryMoonOrbitDistancePlanetRadii / Mathf.Max(0.001f, baseOrbitPlanetRadii));
+				_moonOrbit.Scale = new Vector3(moonOrbitScale, moonOrbitScale, moonOrbitScale);
+			}
+
 			if (_moonMesh != null)
 			{
-				_moonOrbitAngle = Mathf.PosMod(_moonOrbitAngle + deltaF * MoonOrbitAngularSpeed, Mathf.Tau);
+				_moonOrbitAngle = Mathf.PosMod(_moonOrbitAngle + deltaF * _primaryMoonOrbitSpeed, Mathf.Tau);
 				_moonMesh.Position = new Vector3(
-					Mathf.Cos(_moonOrbitAngle) * MoonOrbitRadius,
+					Mathf.Cos(_moonOrbitAngle) * moonOrbitRadiusUnits,
 					0f,
-					Mathf.Sin(_moonOrbitAngle) * MoonOrbitRadius);
+					Mathf.Sin(_moonOrbitAngle) * moonOrbitRadiusUnits);
 
 				var selfRot = _moonMesh.Rotation;
-				selfRot.Y += deltaF * 0.35f;
+				selfRot.Y += deltaF * _primaryMoonSpinSpeed;
 				_moonMesh.Rotation = selfRot;
 			}
 
-		if (_sunGlow != null)
-		{
-			var glowScale = 1.0f + Mathf.Sin(elapsed * 0.85f) * 0.02f;
-			_sunGlow.Scale *= glowScale;
-		}
+			for (int i = 0; i < _extraPlanetPivots.Count; i++)
+			{
+				Node3D pivot = _extraPlanetPivots[i];
+				MeshInstance3D mesh = i < _extraPlanetMeshes.Count ? _extraPlanetMeshes[i] : null;
+				float orbitSpeed = i < _extraPlanetOrbitSpeeds.Count ? _extraPlanetOrbitSpeeds[i] : 0f;
+				float spinSpeed = i < _extraPlanetSpinSpeeds.Count ? _extraPlanetSpinSpeeds[i] : 0f;
 
-		UpdateSunCoronaByCameraDistance();
+				if (pivot != null)
+				{
+					var rotation = pivot.Rotation;
+					rotation.Y += deltaF * orbitSpeed;
+					pivot.Rotation = rotation;
+				}
+
+				if (mesh != null)
+				{
+					var rotation = mesh.Rotation;
+					rotation.Y += deltaF * spinSpeed;
+					mesh.Rotation = rotation;
+				}
+			}
+
+			for (int i = 0; i < _extraMoonPivots.Count; i++)
+			{
+				Node3D pivot = _extraMoonPivots[i];
+				MeshInstance3D mesh = i < _extraMoonMeshes.Count ? _extraMoonMeshes[i] : null;
+				float orbitSpeed = i < _extraMoonOrbitSpeeds.Count ? _extraMoonOrbitSpeeds[i] : 0f;
+				float spinSpeed = i < _extraMoonSpinSpeeds.Count ? _extraMoonSpinSpeeds[i] : 0f;
+				float orbitDistanceRadii = i < _extraMoonOrbitDistances.Count ? _extraMoonOrbitDistances[i] : 6f;
+
+				if (pivot != null)
+				{
+					var rotation = pivot.Rotation;
+					rotation.Y += deltaF * orbitSpeed;
+					pivot.Rotation = rotation;
+				}
+
+				if (mesh != null)
+				{
+					mesh.Position = new Vector3(Mathf.Max(1.0f, orbitDistanceRadii * _currentPlanetRadiusUnits), 0f, 0f);
+					var rotation = mesh.Rotation;
+					rotation.Y += deltaF * spinSpeed;
+					mesh.Rotation = rotation;
+				}
+
+				if (i < _extraMoonOrbitLines.Count && _extraMoonOrbitLines[i] != null)
+				{
+					float moonOrbitScale = _currentPlanetRadiusUnits / Mathf.Max(0.001f, PlanetRadiusUnits);
+					_extraMoonOrbitLines[i].Scale = new Vector3(moonOrbitScale, moonOrbitScale, moonOrbitScale);
+				}
+			}
 
 			if (_starFieldPivot != null)
 			{
@@ -622,7 +876,89 @@ public class PlanetPreviewController
 			}
 		}
 
+		UpdateSunCoronaByCameraDistance();
+		UpdateOrbitVisibilityByCameraDistance();
+
 		UpdateCameraHud();
+	}
+
+	private void UpdateSkyBackdropTransform()
+	{
+		if (_camera == null)
+		{
+			return;
+		}
+
+		if (_starShell != null)
+		{
+			_starShell.GlobalPosition = _camera.GlobalPosition;
+		}
+
+		if (_starFieldPivot != null)
+		{
+			_starFieldPivot.GlobalPosition = _camera.GlobalPosition;
+		}
+	}
+
+	private void UpdateOrbitVisibilityByCameraDistance()
+	{
+		if (_camera == null)
+		{
+			if (_moonOrbit != null)
+			{
+				_moonOrbit.Visible = _showMoonOrbit;
+			}
+
+			for (int i = 0; i < _extraMoonOrbitLines.Count; i++)
+			{
+				if (_extraMoonOrbitLines[i] != null)
+				{
+					_extraMoonOrbitLines[i].Visible = _showMoonOrbit;
+				}
+			}
+
+			if (_planetOrbit != null)
+			{
+				_planetOrbit.Visible = _showPlanetOrbit;
+			}
+
+			for (int i = 0; i < _extraPlanetOrbitLines.Count; i++)
+			{
+				if (_extraPlanetOrbitLines[i] != null)
+				{
+					_extraPlanetOrbitLines[i].Visible = _showPlanetOrbit;
+				}
+			}
+			return;
+		}
+
+		float focusDistance = _camera.GlobalPosition.DistanceTo(_earthOrigin);
+
+		if (_moonOrbit != null)
+		{
+			_moonOrbit.Visible = _showMoonOrbit && focusDistance <= MoonOrbitVisibleMaxDistance;
+		}
+
+		for (int i = 0; i < _extraMoonOrbitLines.Count; i++)
+		{
+			if (_extraMoonOrbitLines[i] != null)
+			{
+				_extraMoonOrbitLines[i].Visible = _showMoonOrbit && focusDistance <= MoonOrbitVisibleMaxDistance;
+			}
+		}
+
+		if (_planetOrbit != null)
+		{
+			_planetOrbit.Visible = _showPlanetOrbit && focusDistance >= PlanetOrbitVisibleMinDistance;
+		}
+
+		for (int i = 0; i < _extraPlanetOrbitLines.Count; i++)
+		{
+			if (_extraPlanetOrbitLines[i] != null)
+			{
+				_extraPlanetOrbitLines[i].Visible = _showPlanetOrbit && focusDistance >= PlanetOrbitVisibleMinDistance;
+			}
+		}
 	}
 
 	private void EnsureViewportInfrastructure()
@@ -635,7 +971,7 @@ public class PlanetPreviewController
 		_subViewport = new SubViewport
 		{
 			Name = "Planet3DViewport",
-			TransparentBg = true,
+			TransparentBg = false,
 			Disable3D = false,
 			HandleInputLocally = false,
 			Msaa3D = Viewport.Msaa.Msaa8X,
@@ -773,6 +1109,16 @@ public class PlanetPreviewController
 			return;
 		}
 
+		if (_worldEnvironment?.Environment != null
+			&& _worldEnvironment.Environment.BackgroundMode == Environment.BGMode.Sky)
+		{
+			if (_starShell != null)
+			{
+				_starShell.Visible = false;
+			}
+			return;
+		}
+
 		_shellMaterial.Transparency = BaseMaterial3D.TransparencyEnum.Disabled;
 		_shellMaterial.AlbedoTexture = skyTexture;
 		_shellMaterial.AlbedoColor = Colors.White;
@@ -804,7 +1150,7 @@ public class PlanetPreviewController
 			Current = true,
 			Fov = 45f,
 			Near = 0.1f,
-			Far = 12000f
+			Far = 24000f
 		};
 		_worldRoot.AddChild(_camera);
 		ConfigureWorldEnvironment();
@@ -834,6 +1180,9 @@ public class PlanetPreviewController
 		};
 		_sunCoreMaterial = BuildSunCoreMaterial();
 		_sunCore.MaterialOverride = _sunCoreMaterial;
+		_sunCore.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
+		EnsureSunSurfaceShader();
+		ApplySunCoreVisualStyle(!string.IsNullOrWhiteSpace(_selectedSunTexturePath));
 		_sunGroup.AddChild(_sunCore);
 
 		_sunGlow = new MeshInstance3D
@@ -855,7 +1204,7 @@ public class PlanetPreviewController
 		_sunDirectionalLight = new DirectionalLight3D
 		{
 			Name = "SunDirectionalLight",
-			LightEnergy = 1.9f,
+			LightEnergy = 0.32f,
 			LightColor = new Color(1f, 0.95f, 0.88f),
 			ShadowEnabled = true
 		};
@@ -867,9 +1216,9 @@ public class PlanetPreviewController
 		{
 			Name = "SunPointLight",
 			Position = _sunPosition,
-			LightEnergy = 14.0f,
+			LightEnergy = 30.0f * _solarBrightness,
 			LightColor = new Color(1f, 0.92f, 0.82f),
-			OmniRange = 5200f,
+			OmniRange = 7200f,
 			ShadowEnabled = true
 		};
 		_worldRoot.AddChild(_sunPointLight);
@@ -961,10 +1310,10 @@ public class PlanetPreviewController
 			Name = "StarShell",
 			Mesh = new SphereMesh
 			{
-				Radius = 4200f,
-				Height = 8400f,
-				RadialSegments = 36,
-				Rings = 20
+				Radius = 12000f,
+				Height = 24000f,
+				RadialSegments = 96,
+				Rings = 64
 			}
 		};
 		_shellMaterial = BuildStarShellMaterial();
@@ -980,6 +1329,11 @@ public class PlanetPreviewController
 			_starFieldPivot.AddChild(_starPointCloud);
 		}
 
+		SetPlanetSurfaceTexturePath(_selectedPlanetSurfaceTexturePath);
+		SetMoonTexturePath(_selectedMoonTexturePath);
+		SetSunTexturePath(_selectedSunTexturePath);
+
+		ApplyResolvedCelestialConfig();
 		SetOrbitVisibility(_showMoonOrbit, _showPlanetOrbit);
 		if (_lightFollowWithPlanet)
 		{
@@ -987,10 +1341,265 @@ public class PlanetPreviewController
 		}
 
 		UpdateSunCoronaByCameraDistance();
+		UpdateSkyBackdropTransform();
+		UpdateOrbitVisibilityByCameraDistance();
+	}
 
-		SetPlanetSurfaceTexturePath(_selectedPlanetSurfaceTexturePath);
-		SetMoonTexturePath(_selectedMoonTexturePath);
-		SetSunTexturePath(_selectedSunTexturePath);
+	private void ApplyResolvedCelestialConfig()
+	{
+		_resolvedCelestialSystem ??= CelestialPhysicsSolver.Resolve(_celestialSystemConfig);
+		var primary = _resolvedCelestialSystem?.PrimaryPlanet;
+		if (primary == null)
+		{
+			return;
+		}
+
+		_primaryPlanetRadiusFactor = Mathf.Clamp(primary.RadiusEarth, 0.1f, 20.0f);
+		_primaryPlanetSpinSpeed = Mathf.Max(0.0f, primary.SpinAngularSpeedRadPerSec * SpinTimeAcceleration);
+		_sunPosition = ResolveSunPosition(primary.OrbitDistanceAu);
+
+		if (_sunGroup != null)
+		{
+			_sunGroup.Position = _sunPosition;
+		}
+
+		if (_sunPointLight != null)
+		{
+			_sunPointLight.Position = _sunPosition;
+		}
+
+		if (_sunDirectionalLight != null)
+		{
+			_sunDirectionalLight.Position = _sunPosition;
+			_sunDirectionalLight.LookAt(_earthOrigin, Vector3.Up);
+		}
+
+		UpdatePlanetScale(_cachedPlanetData?.Size ?? PlanetSize.Medium);
+		ApplyPrimaryMoonPhysics();
+		RebuildPrimaryPlanetOrbitLine();
+		RebuildExtraPlanets();
+		RebuildExtraSatellites();
+		UpdateCameraHud();
+	}
+
+	private static Vector3 ResolveSunPosition(float orbitDistanceAu)
+	{
+		float normalized = Mathf.Clamp(
+			Mathf.Log(1.0f + Mathf.Max(0.03f, orbitDistanceAu)) / Mathf.Log(21.0f),
+			0f,
+			1f);
+		float distanceUnits = Mathf.Lerp(220f, 1200f, normalized);
+		Vector3 direction = new Vector3(-0.44f, 0f, -0.90f).Normalized();
+		return direction * distanceUnits;
+	}
+
+	private void ApplyPrimaryMoonPhysics()
+	{
+		CelestialPhysicsSolver.ResolvedSatellite primaryMoon = null;
+		if (_resolvedCelestialSystem?.Satellites != null && _resolvedCelestialSystem.Satellites.Count > 0)
+		{
+			primaryMoon = _resolvedCelestialSystem.Satellites[0];
+		}
+
+		if (primaryMoon == null)
+		{
+			_primaryMoonOrbitDistancePlanetRadii = MoonOrbitRadius / Mathf.Max(0.001f, PlanetRadiusUnits);
+			_primaryMoonOrbitSpeed = MoonOrbitAngularSpeed;
+			_primaryMoonSpinSpeed = 0.35f;
+			return;
+		}
+
+		_primaryMoonOrbitDistancePlanetRadii = Mathf.Max(2.0f, primaryMoon.OrbitDistancePlanetRadii);
+		_primaryMoonOrbitSpeed = Mathf.Max(0.0f, primaryMoon.OrbitAngularSpeedRadPerSec * OrbitTimeAcceleration);
+		_primaryMoonSpinSpeed = Mathf.Max(0.0f, primaryMoon.SpinAngularSpeedRadPerSec * SpinTimeAcceleration);
+
+		if (_moonMesh != null)
+		{
+			float moonScale = Mathf.Clamp(primaryMoon.RadiusEarth / 0.2724f, 0.2f, 7.5f);
+			_moonMesh.Scale = new Vector3(moonScale, moonScale, moonScale);
+		}
+
+		if (_moonOrbit != null)
+		{
+			float baseOrbitPlanetRadii = MoonOrbitRadius / Mathf.Max(0.001f, PlanetRadiusUnits);
+			float orbitScale = (_currentPlanetRadiusUnits / Mathf.Max(0.001f, PlanetRadiusUnits))
+				* (_primaryMoonOrbitDistancePlanetRadii / Mathf.Max(0.001f, baseOrbitPlanetRadii));
+			_moonOrbit.Scale = new Vector3(orbitScale, orbitScale, orbitScale);
+		}
+	}
+
+	private void RebuildPrimaryPlanetOrbitLine()
+	{
+		if (_worldRoot == null)
+		{
+			return;
+		}
+
+		if (_planetOrbit != null)
+		{
+			_planetOrbit.QueueFree();
+			_planetOrbit = null;
+		}
+
+		float radius = _sunPosition.DistanceTo(_earthOrigin);
+		_planetOrbit = BuildOrbitNode(
+			"PlanetOrbit",
+			radius,
+			2200,
+			new Color(1f, 0.82f, 0.58f, 0.5f),
+			new Color(1f, 0.68f, 0.44f, 0.22f),
+			0.18f);
+		_planetOrbit.Position = _sunPosition;
+		_worldRoot.AddChild(_planetOrbit);
+	}
+
+	private void RebuildExtraPlanets()
+	{
+		ClearNodeList(_extraPlanetOrbitLines);
+		ClearNodeList(_extraPlanetPivots);
+		_extraPlanetMeshes.Clear();
+		_extraPlanetOrbitSpeeds.Clear();
+		_extraPlanetSpinSpeeds.Clear();
+
+		if (_worldRoot == null || _resolvedCelestialSystem?.AdditionalPlanets == null)
+		{
+			return;
+		}
+
+		for (int i = 0; i < _resolvedCelestialSystem.AdditionalPlanets.Count; i++)
+		{
+			var planet = _resolvedCelestialSystem.AdditionalPlanets[i];
+			if (planet == null || !planet.Visible)
+			{
+				continue;
+			}
+
+			float orbitRadius = Mathf.Clamp((planet.OrbitDistanceAu * AstronomicalUnitKm) / KilometersPerSceneUnit, 40f, 3800f);
+			float radiusUnits = Mathf.Clamp(planet.RadiusEarth * PlanetRadiusUnits * 0.62f, 1.2f, 30f);
+
+			var pivot = new Node3D
+			{
+				Name = $"ExtraPlanetPivot_{i}",
+				Position = _sunPosition,
+				Rotation = new Vector3(Mathf.DegToRad(planet.OrbitInclinationDeg), 0f, 0f)
+			};
+			_worldRoot.AddChild(pivot);
+			_extraPlanetPivots.Add(pivot);
+
+			var mesh = new MeshInstance3D
+			{
+				Name = $"ExtraPlanet_{i}",
+				Position = new Vector3(orbitRadius, 0f, 0f),
+				Mesh = new SphereMesh
+				{
+					Radius = radiusUnits,
+					Height = radiusUnits * 2f,
+					RadialSegments = 40,
+					Rings = 24
+				},
+				MaterialOverride = BuildAuxPlanetMaterial(planet.Element)
+			};
+			mesh.CastShadow = GeometryInstance3D.ShadowCastingSetting.On;
+			pivot.AddChild(mesh);
+			_extraPlanetMeshes.Add(mesh);
+			_extraPlanetOrbitSpeeds.Add(Mathf.Max(0f, planet.OrbitAngularSpeedRadPerSec * OrbitTimeAcceleration));
+			_extraPlanetSpinSpeeds.Add(Mathf.Max(0f, planet.SpinAngularSpeedRadPerSec * SpinTimeAcceleration));
+
+			Node3D orbitLine = BuildOrbitNode(
+				$"ExtraPlanetOrbit_{i}",
+				orbitRadius,
+				1600,
+				new Color(1f, 0.84f, 0.62f, 0.38f),
+				new Color(1f, 0.66f, 0.44f, 0.16f),
+				0.12f);
+			orbitLine.Position = _sunPosition;
+			_worldRoot.AddChild(orbitLine);
+			_extraPlanetOrbitLines.Add(orbitLine);
+		}
+	}
+
+	private void RebuildExtraSatellites()
+	{
+		ClearNodeList(_extraMoonOrbitLines);
+		ClearNodeList(_extraMoonPivots);
+		_extraMoonMeshes.Clear();
+		_extraMoonOrbitSpeeds.Clear();
+		_extraMoonSpinSpeeds.Clear();
+		_extraMoonOrbitDistances.Clear();
+
+		if (_earthGroup == null || _resolvedCelestialSystem?.Satellites == null || _resolvedCelestialSystem.Satellites.Count <= 1)
+		{
+			return;
+		}
+
+		for (int i = 1; i < _resolvedCelestialSystem.Satellites.Count; i++)
+		{
+			var moon = _resolvedCelestialSystem.Satellites[i];
+			if (moon == null || !moon.Visible)
+			{
+				continue;
+			}
+
+			float baseOrbit = Mathf.Max(2.2f, moon.OrbitDistancePlanetRadii);
+			float moonRadiusUnits = Mathf.Clamp(moon.RadiusEarth * PlanetRadiusUnits, 0.5f, 8f);
+
+			var pivot = new Node3D
+			{
+				Name = $"ExtraMoonPivot_{i}",
+				Rotation = new Vector3(Mathf.DegToRad(moon.OrbitInclinationDeg), 0f, 0f)
+			};
+			_earthGroup.AddChild(pivot);
+			_extraMoonPivots.Add(pivot);
+
+			var mesh = new MeshInstance3D
+			{
+				Name = $"ExtraMoon_{i}",
+				Position = new Vector3(baseOrbit * _currentPlanetRadiusUnits, 0f, 0f),
+				Mesh = new SphereMesh
+				{
+					Radius = moonRadiusUnits,
+					Height = moonRadiusUnits * 2f,
+					RadialSegments = 24,
+					Rings = 14
+				},
+				MaterialOverride = BuildMoonMaterial()
+			};
+			mesh.CastShadow = GeometryInstance3D.ShadowCastingSetting.On;
+			pivot.AddChild(mesh);
+			_extraMoonMeshes.Add(mesh);
+			_extraMoonOrbitSpeeds.Add(Mathf.Max(0f, moon.OrbitAngularSpeedRadPerSec * OrbitTimeAcceleration));
+			_extraMoonSpinSpeeds.Add(Mathf.Max(0f, moon.SpinAngularSpeedRadPerSec * SpinTimeAcceleration));
+			_extraMoonOrbitDistances.Add(baseOrbit);
+
+			Node3D orbitLine = BuildOrbitNode(
+				$"ExtraMoonOrbit_{i}",
+				baseOrbit * PlanetRadiusUnits,
+				1280,
+				new Color(0.82f, 0.92f, 1f, 0.58f),
+				new Color(0.58f, 0.76f, 1f, 0.2f),
+				0.04f);
+			_earthGroup.AddChild(orbitLine);
+			_extraMoonOrbitLines.Add(orbitLine);
+		}
+	}
+
+	private static void ClearNodeList(List<Node3D> nodes)
+	{
+		if (nodes == null)
+		{
+			return;
+		}
+
+		for (int i = 0; i < nodes.Count; i++)
+		{
+			Node3D node = nodes[i];
+			if (node != null)
+			{
+				node.QueueFree();
+			}
+		}
+
+		nodes.Clear();
 	}
 
 	private Node3D BuildStarPointCloud(int starCount)
@@ -1148,7 +1757,7 @@ public class PlanetPreviewController
 
 		if (_sunPointLight != null)
 		{
-			float baseEnergy = 14.0f;
+			float baseEnergy = 30.0f * _solarBrightness;
 			float temperatureShift = Mathf.Lerp(-2.4f, 3.0f, temperature) * response;
 			float atmosphereShift = Mathf.Lerp(-0.8f, 1.4f, atmosphere) * response;
 			_sunPointLight.LightEnergy = Mathf.Max(2.5f, baseEnergy + temperatureShift + atmosphereShift);
@@ -1164,9 +1773,9 @@ public class PlanetPreviewController
 
 		if (_sunDirectionalLight != null)
 		{
-			float baseDirectional = 1.9f;
+			float baseDirectional = 0.36f * _solarBrightness;
 			float directionalShift = Mathf.Lerp(-0.4f, 0.9f, temperature) * response;
-			_sunDirectionalLight.LightEnergy = Mathf.Max(0.6f, baseDirectional + directionalShift);
+			_sunDirectionalLight.LightEnergy = Mathf.Max(0.05f, baseDirectional + directionalShift * 0.35f);
 		}
 
 		if (_nightFillLight != null)
@@ -1445,7 +2054,7 @@ public class PlanetPreviewController
 			return;
 		}
 
-		float scale = size switch
+		float sizeScale = size switch
 		{
 			PlanetSize.Small => 0.8f,
 			PlanetSize.Medium => 1.0f,
@@ -1454,8 +2063,11 @@ public class PlanetPreviewController
 			_ => 1.0f
 		};
 
-		_earthGroup.Scale = new Vector3(scale, scale, scale);
-		_currentPlanetRadiusUnits = PlanetRadiusUnits * scale;
+		float physicalScale = Mathf.Clamp(_primaryPlanetRadiusFactor, 0.1f, 20.0f);
+		float finalScale = sizeScale * physicalScale;
+
+		_earthGroup.Scale = new Vector3(finalScale, finalScale, finalScale);
+		_currentPlanetRadiusUnits = PlanetRadiusUnits * finalScale;
 	}
 
 	private void UpdateStarfieldByElement(PlanetElement element)
@@ -1492,11 +2104,21 @@ public class PlanetPreviewController
 		float zoomPercent = Mathf.Clamp(radiusUnits / distanceUnits * 100f, 0f, 100f);
 		string altitudeText = FormatDistance(altitudeKm);
 
+		float gravityEarth = Mathf.Max(0.01f, _resolvedCelestialSystem?.PrimaryPlanet?.SurfaceGravityEarth ?? 1.0f);
+		float gravityMs2 = Mathf.Max(0.1f, _resolvedCelestialSystem?.PrimaryPlanet?.SurfaceGravityMs2 ?? 9.80665f);
+
 		CameraDistanceText = FormatDistance(centerDistanceKm);
-		CameraDescriptionText = _translationManager?.TrWithFormat(
+		string baseDesc = _translationManager?.TrWithFormat(
 			"preview_camera_desc",
 			$"{zoomPercent:0.0}",
 			altitudeText) ?? $"Zoom {zoomPercent:0.0}% · Altitude {altitudeText}";
+
+		bool isZh = _translationManager?.CurrentLanguage?.StartsWith("zh") ?? true;
+		string gravityDesc = isZh
+			? $"地表重力 {gravityEarth:0.00}g ({gravityMs2:0.00}m/s²)"
+			: $"Surface Gravity {gravityEarth:0.00}g ({gravityMs2:0.00}m/s²)";
+
+		CameraDescriptionText = $"{baseDesc} · {gravityDesc}";
 	}
 
 	private void UpdateSunCoronaByCameraDistance()
@@ -1513,11 +2135,21 @@ public class PlanetPreviewController
 		if (_sunCoronaMaterial != null)
 		{
 			_sunCoronaMaterial.SetShaderParameter("distance_boost", distanceBoost);
-			_sunCoronaMaterial.SetShaderParameter("jet_strength", Mathf.Lerp(0.9f, 1.5f, distanceT));
+			_sunCoronaMaterial.SetShaderParameter("jet_strength", Mathf.Lerp(0.75f, 1.22f, distanceT));
 			_sunCoronaMaterial.SetShaderParameter("flicker_speed", Mathf.Lerp(1.25f, 2.05f, distanceT));
 		}
 
-		float scale = Mathf.Lerp(1.0f, 1.18f, distanceT);
+		if (_sunCoreShaderMaterial != null)
+		{
+			float detailMix = string.IsNullOrWhiteSpace(_selectedSunTexturePath) ? 0.0f : Mathf.Lerp(0.08f, 0.16f, distanceT);
+			_sunCoreShaderMaterial.SetShaderParameter("flow_speed", Mathf.Lerp(0.46f, 0.62f, distanceT));
+			_sunCoreShaderMaterial.SetShaderParameter("pulse_strength", Mathf.Lerp(0.06f, 0.10f, distanceT));
+			_sunCoreShaderMaterial.SetShaderParameter("detail_mix", detailMix);
+		}
+
+		float elapsed = (float)Time.GetTicksMsec() / 1000f;
+		float pulse = 1.0f + Mathf.Sin(elapsed * 0.85f) * 0.02f;
+		float scale = Mathf.Lerp(1.0f, 1.18f, distanceT) * pulse;
 		_sunGlow.Scale = _sunGlow.Scale.Lerp(new Vector3(scale, scale, scale), 0.08f);
 	}
 
@@ -1633,6 +2265,22 @@ public class PlanetPreviewController
 		};
 	}
 
+	private static StandardMaterial3D BuildAuxPlanetMaterial(PlanetElement element)
+	{
+		ResolveSurfacePalette(element, out Color landColor, out Color oceanColor);
+		Color albedo = landColor.Lerp(oceanColor, 0.35f);
+		return new StandardMaterial3D
+		{
+			ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel,
+			AlbedoColor = albedo,
+			EmissionEnabled = true,
+			Emission = albedo.Darkened(0.25f),
+			EmissionEnergyMultiplier = 0.08f,
+			Roughness = 0.74f,
+			Metallic = 0.02f
+		};
+	}
+
 	private static StandardMaterial3D BuildMoonMaterial()
 	{
 		return new StandardMaterial3D
@@ -1722,10 +2370,12 @@ public class PlanetPreviewController
 		return new StandardMaterial3D
 		{
 			ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded,
-			AlbedoColor = new Color(1f, 0.86f, 0.66f),
+			AlbedoColor = new Color(1.12f, 0.9f, 0.68f),
 			EmissionEnabled = true,
-			Emission = new Color(1f, 0.64f, 0.24f),
-			EmissionEnergyMultiplier = 4.2f
+			Emission = new Color(1.2f, 0.68f, 0.24f),
+			EmissionEnergyMultiplier = 5.8f,
+			Roughness = 0.0f,
+			Metallic = 0.0f
 		};
 	}
 
@@ -1739,13 +2389,13 @@ public class PlanetPreviewController
 				Shader = shader
 			};
 
-			shaderMaterial.SetShaderParameter("intensity", 2.35f);
+			shaderMaterial.SetShaderParameter("intensity", 6.6f);
 			shaderMaterial.SetShaderParameter("rim_power", 2.7f);
 			shaderMaterial.SetShaderParameter("jet_strength", 1.15f);
 			shaderMaterial.SetShaderParameter("jet_speed", 2.0f);
 			shaderMaterial.SetShaderParameter("jet_scale", 10.5f);
 			shaderMaterial.SetShaderParameter("noise_scale", 7.8f);
-			shaderMaterial.SetShaderParameter("distance_boost", 1.0f);
+			shaderMaterial.SetShaderParameter("distance_boost", 1.25f);
 			return shaderMaterial;
 		}
 
