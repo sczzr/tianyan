@@ -138,28 +138,28 @@ public class PlanetPreviewController
 	private const float CivilizationAtmosphereDensity = 0.62f;
 	private static readonly bool ForceEcologicalProceduralSurface = true;
 
-	private static readonly Color DrawJsOceanDeep = new Color(0.05f, 0.19f, 0.37f, 1f);
-	private static readonly Color DrawJsOceanMid = new Color(0.16f, 0.42f, 0.62f, 1f);
-	private static readonly Color DrawJsOceanShallow = new Color(0.32f, 0.61f, 0.75f, 1f);
-	private static readonly Color DrawJsCoastland = new Color(0.82f, 0.79f, 0.63f, 1f);
-	private static readonly Color DrawJsTropicalRainForest = new Color(0f, 0.28235f, 0f, 1f);
-	private static readonly Color DrawJsTropicalSeasonalForest = new Color(0.04706f, 0.55294f, 0.04706f, 1f);
-	private static readonly Color DrawJsShrubland = new Color(0.37647f, 0.47059f, 0.09412f, 1f);
-	private static readonly Color DrawJsSavannah = new Color(0.95686f, 0.95686f, 0.54510f, 1f);
-	private static readonly Color DrawJsTropicalDesert = new Color(0.65882f, 0.37647f, 0.28235f, 1f);
-	private static readonly Color DrawJsTemperateRainForest = new Color(0.39216f, 0.70588f, 0.39216f, 1f);
-	private static readonly Color DrawJsTemperateSeasonalForest = new Color(0.38431f, 0.56078f, 0.33725f, 1f);
-	private static readonly Color DrawJsChaparral = new Color(0.56078f, 0.51765f, 0.60392f, 1f);
-	private static readonly Color DrawJsGrassland = new Color(0.56471f, 0.84706f, 0.28235f, 1f);
-	private static readonly Color DrawJsSteppe = new Color(0.74902f, 0.74902f, 0.74902f, 1f);
-	private static readonly Color DrawJsTemperateDesert = new Color(0.84706f, 0.65882f, 0.47059f, 1f);
-	private static readonly Color DrawJsBorealForest = new Color(0f, 0.37647f, 0.28235f, 1f);
-	private static readonly Color DrawJsTaiga = new Color(0.28235f, 0.56471f, 0.56471f, 1f);
-	private static readonly Color DrawJsTundra = new Color(0.54902f, 0.8f, 0.74118f, 1f);
-	private static readonly Color DrawJsIce = new Color(0.70196f, 0.92549f, 1f, 1f);
-	private static readonly Color DrawJsRockyMountain = new Color(0.52f, 0.5f, 0.46f, 1f);
-	private static readonly Color DrawJsSnowyMountain = new Color(0.92f, 0.95f, 0.98f, 1f);
-	private static readonly Color DrawJsRiver = new Color(0.2f, 0.49f, 0.71f, 1f);
+	private static readonly Color DrawJsOceanDeep = new Color(0.12157f, 0.24706f, 0.55294f, 1f);           // #1f3f8d
+	private static readonly Color DrawJsOceanMid = new Color(0.16863f, 0.33725f, 0.66275f, 1f);            // #2b56a9
+	private static readonly Color DrawJsOceanShallow = new Color(0.18431f, 0.41961f, 0.72157f, 1f);        // #2f6bb8
+	private static readonly Color DrawJsCoastland = new Color(0.78039f, 0.72549f, 0.56078f, 1f);           // #c7b98f
+	private static readonly Color DrawJsTropicalRainForest = new Color(0.08627f, 0.43137f, 0.12157f, 1f); // #166e1f
+	private static readonly Color DrawJsTropicalSeasonalForest = new Color(0.2f, 0.47059f, 0.18824f, 1f); // #337830
+	private static readonly Color DrawJsShrubland = new Color(0.43529f, 0.45490f, 0.25882f, 1f);           // #6f7442
+	private static readonly Color DrawJsSavannah = new Color(0.60392f, 0.58039f, 0.34510f, 1f);            // #9a9458
+	private static readonly Color DrawJsTropicalDesert = new Color(0.76471f, 0.69020f, 0.52157f, 1f);      // #c3b085
+	private static readonly Color DrawJsTemperateRainForest = new Color(0.15686f, 0.45490f, 0.18431f, 1f); // #28742f
+	private static readonly Color DrawJsTemperateSeasonalForest = new Color(0.27451f, 0.47059f, 0.25098f, 1f); // #467840
+	private static readonly Color DrawJsChaparral = new Color(0.54118f, 0.49804f, 0.36863f, 1f);           // #8a7f5e
+	private static readonly Color DrawJsGrassland = new Color(0.50980f, 0.60784f, 0.30980f, 1f);           // #829b4f
+	private static readonly Color DrawJsSteppe = new Color(0.61176f, 0.57255f, 0.44706f, 1f);              // #9c9272
+	private static readonly Color DrawJsTemperateDesert = new Color(0.73725f, 0.64706f, 0.48235f, 1f);     // #bca57b
+	private static readonly Color DrawJsBorealForest = new Color(0.20392f, 0.38824f, 0.25882f, 1f);        // #346343
+	private static readonly Color DrawJsTaiga = new Color(0.37255f, 0.43529f, 0.38431f, 1f);               // #5f6f62
+	private static readonly Color DrawJsTundra = new Color(0.55294f, 0.58039f, 0.53333f, 1f);              // #8d9488
+	private static readonly Color DrawJsIce = new Color(0.93333f, 0.94510f, 0.96078f, 1f);                 // #eef1f5
+	private static readonly Color DrawJsRockyMountain = new Color(0.56078f, 0.48627f, 0.38824f, 1f);       // #8f7c63
+	private static readonly Color DrawJsSnowyMountain = new Color(0.95686f, 0.96471f, 0.98039f, 1f);       // #f4f6fa
+	private static readonly Color DrawJsRiver = new Color(0.16863f, 0.4f, 0.74510f, 1f);                   // #2b66be
 
 	public string CameraDistanceText { get; private set; } = "20,000 km";
 	public string CameraDescriptionText { get; private set; } = "高轨观测点";
@@ -1859,228 +1859,355 @@ public class PlanetPreviewController
 	{
 		var image = Image.CreateEmpty(width, height, false, Image.Format.Rgba8);
 
-		ResolveEffectiveClimate(planetData, out float oceanCoverage, out float temperature, out float atmosphere);
+		const int MaxGenerationPixels = 2400000;
+		float generationScale = 1f;
+		int requestedPixels = width * height;
+		if (requestedPixels > MaxGenerationPixels)
+		{
+			generationScale = Mathf.Sqrt(MaxGenerationPixels / (float)requestedPixels);
+		}
+
+		int surfaceWidth = Mathf.Clamp(Mathf.RoundToInt(width * generationScale), 512, width);
+		int surfaceHeight = Mathf.Clamp(Mathf.RoundToInt(height * generationScale), 256, height);
+
 		int seed = BuildTextureSeed(planetData, 137);
-		float[] elevationMap = PlanetTerrainGenerator.GenerateHeightmap(
+		PlanetTerrainGenerator.PlanetSurfaceData surfaceData = PlanetTerrainGenerator.GenerateSurfaceData(
 			planetData,
 			_generationProfile,
-			width,
-			height,
+			surfaceWidth,
+			surfaceHeight,
 			seed);
 
-		if (elevationMap == null || elevationMap.Length != width * height)
+		if (surfaceData.Elevation == null
+			|| surfaceData.Biomes == null
+			|| surfaceData.RiverLayer == null
+			|| surfaceData.Elevation.Length != surfaceWidth * surfaceHeight
+			|| surfaceData.Biomes.Length != surfaceWidth * surfaceHeight
+			|| surfaceData.RiverLayer.Length != surfaceWidth * surfaceHeight)
 		{
 			return ImageTexture.CreateFromImage(image);
 		}
 
-		elevationMap = BlurScalarMap(elevationMap, width, height, 1);
-
-		float windScale = Mathf.Clamp((_generationProfile.WindCellCount - 1f) / 23f, 0f, 1f);
-		float tectonicScale = Mathf.Clamp((_generationProfile.TectonicPlateCount - 1f) / 63f, 0f, 1f);
-		float erosionScale = Mathf.Clamp(_generationProfile.ErosionStrength * (_generationProfile.ErosionIterations / 16f), 0f, 1f);
-		float heatNormalized = Mathf.Clamp((1000f - _generationProfile.HeatFactor) / 999f, 0f, 1f);
-		float moistureTransport = Mathf.Clamp(_generationProfile.MoistureTransport, 0f, 1f);
-		float desertStrength = Mathf.Clamp(planetData.DesertRatio, 0f, 1f);
-		float mountainStrength = Mathf.Clamp(planetData.MountainIntensity, 0f, 1f);
-		float polarStrength = Mathf.Clamp(planetData.PolarCoverage, 0f, 1f);
-
-		var moistureNoise = new FastNoiseLite
-		{
-			Seed = seed + 503,
-			NoiseType = FastNoiseLite.NoiseTypeEnum.SimplexSmooth,
-			Frequency = Mathf.Lerp(0.9f, 2.4f, windScale),
-			FractalOctaves = 3,
-			FractalGain = 0.56f
-		};
-
-		var riverNoise = new FastNoiseLite
-		{
-			Seed = seed + 809,
-			NoiseType = FastNoiseLite.NoiseTypeEnum.Perlin,
-			Frequency = Mathf.Lerp(9.6f, 14.2f, erosionScale),
-			FractalOctaves = 2,
-			FractalGain = 0.5f
-		};
-
-		int pixelCount = width * height;
-		float[] humidityMap = new float[pixelCount];
-		float[] temperatureMap = new float[pixelCount];
-		float[] reliefMap = new float[pixelCount];
-		float[] latitudeMap = new float[pixelCount];
-		float[] waterMask = new float[pixelCount];
-		bool[] landMask = new bool[pixelCount];
-
-		float seaLevel = Mathf.Clamp(
-			Mathf.Lerp(0.46f, 0.68f, oceanCoverage)
-			+ (0.62f - _generationProfile.ContinentalFrequency) * 0.08f,
-			0.24f,
-			0.78f);
-
-		int climateCellsX = Mathf.RoundToInt(Mathf.Lerp(6f, 30f, windScale * 0.72f + tectonicScale * 0.28f));
-		int climateCellsY = Mathf.RoundToInt(Mathf.Lerp(4f, 14f, windScale));
-		climateCellsX = Mathf.Clamp(climateCellsX, 4, 36);
-		climateCellsY = Mathf.Clamp(climateCellsY, 3, 18);
-
-		for (int y = 0; y < height; y++)
-		{
-			float v = y / (float)(height - 1);
-			float lat01 = Mathf.Abs(v - 0.5f) * 2f;
-			float latHeat = 1f - Mathf.Pow(lat01, Mathf.Lerp(1.9f, 0.66f, heatNormalized));
-
-			for (int x = 0; x < width; x++)
-			{
-				int index = y * width + x;
-				float u = x / (float)(width - 1);
-				Vector3 direction = GetSphericalDirection(u, v);
-
-				float elevation = Mathf.Clamp(elevationMap[index], 0f, 1f);
-				float relief = Mathf.Clamp((elevation - seaLevel) / Mathf.Max(0.0001f, 1f - seaLevel), 0f, 1f);
-
-				float chunkU = (Mathf.Floor(u * climateCellsX) + 0.5f) / climateCellsX;
-				float chunkV = (Mathf.Floor(v * climateCellsY) + 0.5f) / climateCellsY;
-				Vector3 climateDirection = GetSphericalDirection(chunkU, chunkV);
-				float climateChunk = NoiseToUnitRange(moistureNoise.GetNoise3D(
-					climateDirection.X * 3.4f,
-					climateDirection.Y * 3.4f,
-					climateDirection.Z * 3.4f));
-				float localMoisture = NoiseToUnitRange(moistureNoise.GetNoise3D(
-					direction.X * 6.1f,
-					direction.Y * 6.1f,
-					direction.Z * 6.1f));
-
-				float temperature01 = Mathf.Clamp(
-					latHeat * 0.66f
-					+ temperature * 0.34f
-					- relief * 0.31f
-					+ (climateChunk - 0.5f) * 0.08f * windScale,
-					0f,
-					1f);
-
-				float humidity01 = Mathf.Clamp(
-					climateChunk * (0.66f + moistureTransport * 0.34f)
-					+ localMoisture * 0.14f
-					+ oceanCoverage * 0.22f
-					+ (1f - lat01) * 0.12f
-					- relief * 0.18f
-					- desertStrength * 0.08f,
-					0f,
-					1f);
-
-				temperatureMap[index] = temperature01;
-				humidityMap[index] = humidity01;
-				reliefMap[index] = relief;
-				latitudeMap[index] = lat01;
-				landMask[index] = elevation >= seaLevel;
-				waterMask[index] = landMask[index] ? 0f : 1f;
-			}
-		}
-
-		int humidityBlurPasses = 1 + Mathf.RoundToInt(erosionScale);
-		humidityMap = BlurScalarMap(humidityMap, width, height, humidityBlurPasses);
-		temperatureMap = BlurScalarMap(temperatureMap, width, height, 1);
-		reliefMap = BlurScalarMap(reliefMap, width, height, 1);
-
-		ApplyChunkMajorityFilter(landMask, width, height, Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(3f, 1f, tectonicScale)), 1, 4));
-		for (int i = 0; i < landMask.Length; i++)
-		{
-			waterMask[i] = landMask[i] ? 0f : 1f;
-			if (landMask[i])
-			{
-				elevationMap[i] = Mathf.Max(elevationMap[i], seaLevel + 0.03f);
-			}
-			else
-			{
-				elevationMap[i] = Mathf.Min(elevationMap[i], seaLevel - 0.028f);
-			}
-
-			reliefMap[i] = Mathf.Clamp((elevationMap[i] - seaLevel) / Mathf.Max(0.0001f, 1f - seaLevel), 0f, 1f);
-		}
-
-		float[] waterInfluence = BlurScalarMap(waterMask, width, height, 2 + Mathf.RoundToInt(erosionScale));
-
 		ResolveSurfacePalette(planetData.Element, out Color elementLandColor, out Color elementOceanColor);
 		bool isTerra = planetData.Element == PlanetElement.Terra;
-		float forestPreference = Mathf.Clamp(
-			atmosphere * 0.52f + windScale * 0.36f + moistureTransport * 0.22f - desertStrength * 0.28f,
-			0f,
-			1f);
-		float grassPreference = Mathf.Clamp(
-			desertStrength * 0.58f + (1f - forestPreference) * 0.42f + erosionScale * 0.15f,
-			0f,
-			1f);
+		bool hasTemperature = surfaceData.Temperature != null && surfaceData.Temperature.Length == surfaceWidth * surfaceHeight;
+		bool hasMoisture = surfaceData.Moisture != null && surfaceData.Moisture.Length == surfaceWidth * surfaceHeight;
 
-		for (int y = 0; y < height; y++)
+		var surfaceImage = Image.CreateEmpty(surfaceWidth, surfaceHeight, false, Image.Format.Rgba8);
+
+		for (int y = 0; y < surfaceHeight; y++)
 		{
-			for (int x = 0; x < width; x++)
+			for (int x = 0; x < surfaceWidth; x++)
 			{
-				int index = y * width + x;
-				float elevation = elevationMap[index];
-				bool isLand = landMask[index];
-				float lat01 = latitudeMap[index];
-				float humidity01 = Mathf.Clamp(humidityMap[index] + waterInfluence[index] * 0.3f, 0f, 1f);
-				float temperature01 = temperatureMap[index];
-				float relief = reliefMap[index];
+				int index = y * surfaceWidth + x;
+				float elevation = surfaceData.Elevation[index];
+				bool isLand = elevation >= surfaceData.SeaLevel;
+				float temperature = hasTemperature ? surfaceData.Temperature[index] : 0.5f;
+				float moisture = hasMoisture ? surfaceData.Moisture[index] : 0.5f;
+				float latitude01 = surfaceHeight > 1 ? y / (float)(surfaceHeight - 1) : 0.5f;
+				PlanetTerrainGenerator.PlanetBiomeType biome = surfaceData.Biomes[index];
+				int westX = x > 0 ? x - 1 : surfaceWidth - 1;
+				int eastX = x + 1 < surfaceWidth ? x + 1 : 0;
+				int northY = y > 0 ? y - 1 : 0;
+				int southY = y + 1 < surfaceHeight ? y + 1 : surfaceHeight - 1;
+				float elevationDx = surfaceData.Elevation[y * surfaceWidth + eastX] - surfaceData.Elevation[y * surfaceWidth + westX];
+				float elevationDy = surfaceData.Elevation[southY * surfaceWidth + x] - surfaceData.Elevation[northY * surfaceWidth + x];
+				float relief = Mathf.Clamp(Mathf.Sqrt(elevationDx * elevationDx + elevationDy * elevationDy) * 5.8f, 0f, 1f);
 
-				Color color;
-				if (!isLand)
+				Color color = ResolveDrawJsBiomeColor(biome);
+				color = ApplyEarthPaletteShading(
+					color,
+					biome,
+					elevation,
+					surfaceData.SeaLevel,
+					temperature,
+					moisture,
+					latitude01);
+				float riverStrength = surfaceData.RiverLayer[index];
+				if (isLand && riverStrength > 0.0001f && !IsFrozenBiomeForRiver(biome))
 				{
-					if (elevation < seaLevel * 0.5714f)
-					{
-						color = DrawJsOceanDeep;
-					}
-					else if (elevation < seaLevel * 0.8f)
-					{
-						color = DrawJsOceanMid;
-					}
-					else
-					{
-						color = DrawJsOceanShallow;
-					}
-
-					float depth = Mathf.Clamp((seaLevel - elevation) / Mathf.Max(0.0001f, seaLevel), 0f, 1f);
-					color = color.Lerp(DrawJsIce, Mathf.Clamp((lat01 - 0.82f) * 3.6f + (0.38f - temperature01) * 0.6f, 0f, 1f) * 0.18f);
-					color = color.Lerp(color.Darkened(0.18f), depth * 0.18f);
-				}
-				else
-				{
-					bool nearOcean = HasOceanNeighbor(landMask, width, height, x, y);
-					color = ResolveDrawJsBiomeColor(
-						temperature01,
-						humidity01,
-						relief,
-						lat01,
-						desertStrength,
-						mountainStrength,
-						polarStrength,
-						forestPreference,
-						grassPreference);
-
-					if (nearOcean)
-					{
-						color = DrawJsCoastland.Lerp(color, 0.44f);
-					}
-
-					float riverSignal = NoiseToUnitRange(riverNoise.GetNoise2D(x * 0.92f, y * 0.92f));
-					bool hasRiver = relief > 0.06f && relief < 0.56f
-						&& humidity01 > Mathf.Lerp(0.74f, 0.62f, forestPreference)
-						&& Mathf.Abs(riverSignal - 0.5f) < Mathf.Lerp(0.02f, 0.032f, erosionScale);
-					if (hasRiver)
-					{
-						color = color.Lerp(DrawJsRiver, 0.62f);
-					}
+					color = color.Lerp(DrawJsRiver, Mathf.Clamp(0.16f + riverStrength * 0.42f, 0f, 0.58f));
 				}
 
 				if (!isTerra)
 				{
 					Color elementBase = isLand ? elementLandColor : elementOceanColor;
-					color = color.Lerp(elementBase, isLand ? 0.08f : 0.12f);
+					color = color.Lerp(elementBase, isLand ? 0.04f : 0.06f);
 				}
 
-				image.SetPixel(x, y, color);
+				if (isLand)
+				{
+					color = color.Lerp(color.Darkened(0.16f), relief * 0.18f);
+				}
+				else
+				{
+					color = color.Lightened(relief * 0.04f);
+				}
+
+				surfaceImage.SetPixel(x, y, color);
 			}
 		}
 
+		surfaceImage = BlendBiomeColorEdges(
+			surfaceImage,
+			surfaceData.Biomes,
+			surfaceData.Elevation,
+			surfaceWidth,
+			surfaceHeight,
+			surfaceData.SeaLevel,
+			2,
+			0.28f);
+
+		if (surfaceWidth != width || surfaceHeight != height)
+		{
+			surfaceImage.Resize(width, height, Image.Interpolation.Bilinear);
+		}
+
+		BlendVerticalSeam(surfaceImage, 0, 2);
+		BlendVerticalSeam(surfaceImage, width / 2, 2);
+		image = surfaceImage;
+
 		return ImageTexture.CreateFromImage(image);
+	}
+
+	private static Image BlendBiomeColorEdges(
+		Image source,
+		PlanetTerrainGenerator.PlanetBiomeType[] biomes,
+		float[] elevation,
+		int width,
+		int height,
+		float seaLevel,
+		int passes,
+		float strength)
+	{
+		if (source == null
+			|| biomes == null
+			|| elevation == null
+			|| biomes.Length != width * height
+			|| elevation.Length != width * height)
+		{
+			return source;
+		}
+
+		Image current = source;
+		for (int pass = 0; pass < passes; pass++)
+		{
+			var blended = Image.CreateEmpty(width, height, false, Image.Format.Rgba8);
+			for (int y = 0; y < height; y++)
+			{
+				for (int x = 0; x < width; x++)
+				{
+					int index = y * width + x;
+					Color center = current.GetPixel(x, y);
+
+					if (elevation[index] < seaLevel)
+					{
+						blended.SetPixel(x, y, center);
+						continue;
+					}
+
+					PlanetTerrainGenerator.PlanetBiomeType biome = biomes[index];
+					int differentNeighbors = 0;
+					float sumR = center.R;
+					float sumG = center.G;
+					float sumB = center.B;
+					float sumA = center.A;
+					int samples = 1;
+
+					for (int q = -1; q <= 1; q++)
+					{
+						for (int p = -1; p <= 1; p++)
+						{
+							if (p == 0 && q == 0)
+							{
+								continue;
+							}
+
+							int sampleY = y + q;
+							if (sampleY < 0 || sampleY >= height)
+							{
+								continue;
+							}
+
+							int sampleX = ((x + p) % width + width) % width;
+							int sampleIndex = sampleY * width + sampleX;
+							if (elevation[sampleIndex] < seaLevel)
+							{
+								continue;
+							}
+
+							PlanetTerrainGenerator.PlanetBiomeType neighborBiome = biomes[sampleIndex];
+							if (neighborBiome == biome)
+							{
+								continue;
+							}
+
+							differentNeighbors++;
+							Color neighborColor = current.GetPixel(sampleX, sampleY);
+							sumR += neighborColor.R;
+							sumG += neighborColor.G;
+							sumB += neighborColor.B;
+							sumA += neighborColor.A;
+							samples++;
+						}
+					}
+
+					if (differentNeighbors < 2)
+					{
+						blended.SetPixel(x, y, center);
+						continue;
+					}
+
+					Color average = new Color(
+						sumR / samples,
+						sumG / samples,
+						sumB / samples,
+						sumA / samples);
+					float blendFactor = Mathf.Clamp(strength * (differentNeighbors / 8f), 0f, 0.45f);
+					blended.SetPixel(x, y, center.Lerp(average, blendFactor));
+				}
+			}
+
+			current = blended;
+		}
+
+		return current;
+	}
+
+	private static Color ApplyEarthPaletteShading(
+		Color baseColor,
+		PlanetTerrainGenerator.PlanetBiomeType biome,
+		float elevation,
+		float seaLevel,
+		float temperature,
+		float moisture,
+		float latitude01)
+	{
+		bool isOcean = biome == PlanetTerrainGenerator.PlanetBiomeType.Ocean
+			|| biome == PlanetTerrainGenerator.PlanetBiomeType.ShallowOcean;
+
+		float latAbs = Mathf.Abs(latitude01 * 2f - 1f);
+		float coldness = Mathf.Clamp(1f - temperature, 0f, 1f);
+		float humidity = Mathf.Clamp(moisture, 0f, 1f);
+		float dryness = 1f - humidity;
+
+		if (isOcean)
+		{
+			float depth = Mathf.Clamp((seaLevel - elevation) / Mathf.Max(0.0001f, seaLevel), 0f, 1f);
+
+			Color shallow = new Color(0.23922f, 0.48235f, 0.73333f, 1f); // #3d7bbb
+			Color tropical = new Color(0.10980f, 0.30980f, 0.57255f, 1f); // #1c4f92
+			Color temperate = new Color(0.09020f, 0.26275f, 0.52157f, 1f); // #174385
+			Color deep = new Color(0.04314f, 0.14510f, 0.34118f, 1f); // #0b2557
+
+			Color warmSea = shallow.Lerp(tropical, depth * 0.62f);
+			Color coolSea = shallow.Lerp(temperate, depth * 0.68f);
+			float coldLatitude = Mathf.Clamp(latAbs * 0.82f + coldness * 0.34f, 0f, 1f);
+			Color ocean = warmSea.Lerp(coolSea, coldLatitude);
+			ocean = ocean.Lerp(deep, depth * 0.66f);
+			return ocean;
+		}
+
+		float normalizedHeight = Mathf.Clamp((elevation - seaLevel) / Mathf.Max(0.0001f, 1f - seaLevel), 0f, 1f);
+
+		Color humidWarm = new Color(0.17647f, 0.40392f, 0.15686f, 1f); // #2d6728
+		Color humidCool = new Color(0.25098f, 0.41569f, 0.22745f, 1f); // #406a3a
+		Color dryWarm = new Color(0.73333f, 0.66667f, 0.52941f, 1f); // #bba987
+		Color dryCool = new Color(0.55686f, 0.52549f, 0.44706f, 1f); // #8e8672
+		Color alpine = new Color(0.56078f, 0.52941f, 0.48627f, 1f); // #8f877c
+
+		float warmness = Mathf.Clamp((temperature - 0.18f) / 0.62f, 0f, 1f);
+		Color warmBlend = dryWarm.Lerp(humidWarm, humidity);
+		Color coolBlend = dryCool.Lerp(humidCool, humidity);
+		Color climateColor = coolBlend.Lerp(warmBlend, warmness);
+		Color land = climateColor.Lerp(baseColor, 0.22f);
+
+		switch (biome)
+		{
+			case PlanetTerrainGenerator.PlanetBiomeType.TropicalDesert:
+				land = land.Lerp(new Color(0.79216f, 0.72157f, 0.58039f, 1f), 0.46f);
+				break;
+			case PlanetTerrainGenerator.PlanetBiomeType.TemperateDesert:
+				land = land.Lerp(new Color(0.74118f, 0.67843f, 0.55294f, 1f), 0.42f);
+				break;
+			case PlanetTerrainGenerator.PlanetBiomeType.Savannah:
+				land = land.Lerp(new Color(0.52941f, 0.58039f, 0.27843f, 1f), 0.24f);
+				break;
+			case PlanetTerrainGenerator.PlanetBiomeType.Shrubland:
+				land = land.Lerp(new Color(0.45098f, 0.52941f, 0.25098f, 1f), 0.28f);
+				break;
+			case PlanetTerrainGenerator.PlanetBiomeType.Grassland:
+				land = land.Lerp(new Color(0.47059f, 0.60784f, 0.26275f, 1f), 0.32f);
+				break;
+			case PlanetTerrainGenerator.PlanetBiomeType.Chaparral:
+				land = land.Lerp(new Color(0.52549f, 0.53333f, 0.31765f, 1f), 0.2f);
+				break;
+			case PlanetTerrainGenerator.PlanetBiomeType.TropicalRainForest:
+				land = land.Lerp(new Color(0.08235f, 0.47451f, 0.10980f, 1f), 0.62f);
+				break;
+			case PlanetTerrainGenerator.PlanetBiomeType.TemperateRainForest:
+			case PlanetTerrainGenerator.PlanetBiomeType.TemperateSeasonalForest:
+				land = land.Lerp(new Color(0.15686f, 0.45882f, 0.16471f, 1f), 0.52f);
+				break;
+			case PlanetTerrainGenerator.PlanetBiomeType.BorealForest:
+			case PlanetTerrainGenerator.PlanetBiomeType.Taiga:
+				land = land.Lerp(new Color(0.21961f, 0.40784f, 0.23137f, 1f), 0.44f);
+				break;
+			case PlanetTerrainGenerator.PlanetBiomeType.RockyMountain:
+				land = land.Lerp(new Color(0.58039f, 0.53333f, 0.47451f, 1f), 0.38f);
+				break;
+			case PlanetTerrainGenerator.PlanetBiomeType.SnowyMountain:
+				land = land.Lerp(new Color(0.94118f, 0.94510f, 0.95294f, 1f), 0.76f);
+				break;
+			case PlanetTerrainGenerator.PlanetBiomeType.Ice:
+				float iceCover = Mathf.Clamp(0.5f + coldness * 0.35f + latAbs * 0.35f - normalizedHeight * 0.08f, 0.45f, 0.92f);
+				land = land.Lerp(new Color(0.94902f, 0.95294f, 0.96078f, 1f), iceCover);
+				break;
+		}
+
+		float lowland = Mathf.Clamp(1f - normalizedHeight * 1.65f, 0f, 1f);
+		land = land.Lerp(new Color(0.27059f, 0.56078f, 0.21569f, 1f), humidity * lowland * 0.34f);
+		land = land.Lerp(new Color(0.74118f, 0.68627f, 0.57255f, 1f), dryness * 0.1f);
+		land = land.Lerp(alpine, Mathf.Pow(normalizedHeight, 1.22f) * 0.32f);
+
+		float polarSnow = Mathf.Clamp(coldness * 0.82f + latAbs * 0.34f + normalizedHeight * 0.28f - 0.72f, 0f, 1f);
+		land = land.Lerp(new Color(0.92941f, 0.93333f, 0.94118f, 1f), polarSnow * 0.75f);
+
+		return land;
+	}
+
+	private static void BlendVerticalSeam(Image image, int seamX, int feather)
+	{
+		if (image == null || seamX < 0 || feather <= 0)
+		{
+			return;
+		}
+
+		int width = image.GetWidth();
+		int height = image.GetHeight();
+		if (width <= 1 || height <= 0)
+		{
+			return;
+		}
+
+		int seam = ((seamX % width) + width) % width;
+		int blendRadius = Mathf.Min(feather, Mathf.Max(1, width / 8));
+		for (int y = 0; y < height; y++)
+		{
+			for (int r = 0; r <= blendRadius; r++)
+			{
+				int leftX = (seam - 1 - r + width) % width;
+				int rightX = (seam + r) % width;
+				float t = (r + 1f) / (blendRadius + 1f);
+
+				Color left = image.GetPixel(leftX, y);
+				Color right = image.GetPixel(rightX, y);
+				Color mixed = left.Lerp(right, 0.5f);
+
+				image.SetPixel(leftX, y, left.Lerp(mixed, 1f - t));
+				image.SetPixel(rightX, y, right.Lerp(mixed, 1f - t));
+			}
+		}
 	}
 
 	private void ResolveEffectiveClimate(PlanetData planetData, out float oceanCoverage, out float temperature, out float atmosphere)
@@ -2139,183 +2266,63 @@ public class PlanetPreviewController
 		}
 	}
 
-	private static Color ResolveDrawJsBiomeColor(
-		float temperature,
-		float humidity,
-		float relief,
-		float latitude,
-		float desertRatio,
-		float mountainIntensity,
-		float polarCoverage,
-		float forestPreference,
-		float grassPreference)
+	private static bool IsFrozenBiomeForRiver(PlanetTerrainGenerator.PlanetBiomeType biome)
 	{
-		float mountainGate = Mathf.Lerp(0.62f, 0.46f, mountainIntensity);
-		if (relief > mountainGate)
-		{
-			float snowGate = Mathf.Lerp(0.52f, 0.34f, temperature) + latitude * 0.24f;
-			return relief > snowGate ? DrawJsSnowyMountain : DrawJsRockyMountain;
-		}
+		return biome == PlanetTerrainGenerator.PlanetBiomeType.Ice
+			|| biome == PlanetTerrainGenerator.PlanetBiomeType.SnowyMountain
+			|| biome == PlanetTerrainGenerator.PlanetBiomeType.Tundra;
+	}
 
-		float humidityAdjusted = Mathf.Clamp(
-			humidity + forestPreference * 0.18f - grassPreference * 0.12f - desertRatio * 0.18f,
-			0f,
-			1f);
-		float aridity = Mathf.Clamp(1f - humidityAdjusted + desertRatio * 0.28f + grassPreference * 0.16f, 0f, 1f);
-		float polarMask = Mathf.Clamp(
-			(latitude - Mathf.Lerp(0.82f, 0.56f, polarCoverage)) * 2.4f
-			+ (0.42f - temperature) * 1.05f,
-			0f,
-			1f);
-
-		if (polarMask > 0.78f)
+	private static Color ResolveDrawJsBiomeColor(PlanetTerrainGenerator.PlanetBiomeType biome)
+	{
+		switch (biome)
 		{
-			return DrawJsIce;
-		}
-
-		if (polarMask > 0.52f)
-		{
-			return DrawJsTundra;
-		}
-
-		if (temperature >= 0.72f)
-		{
-			if (aridity < 0.18f - forestPreference * 0.06f)
-			{
+			case PlanetTerrainGenerator.PlanetBiomeType.Ocean:
+				return DrawJsOceanDeep;
+			case PlanetTerrainGenerator.PlanetBiomeType.ShallowOcean:
+				return DrawJsOceanMid;
+			case PlanetTerrainGenerator.PlanetBiomeType.Coastland:
+				return DrawJsCoastland;
+			case PlanetTerrainGenerator.PlanetBiomeType.TropicalRainForest:
 				return DrawJsTropicalRainForest;
-			}
-
-			if (aridity < 0.32f)
-			{
+			case PlanetTerrainGenerator.PlanetBiomeType.TropicalSeasonalForest:
 				return DrawJsTropicalSeasonalForest;
-			}
-
-			if (aridity < 0.46f + grassPreference * 0.12f)
-			{
+			case PlanetTerrainGenerator.PlanetBiomeType.Shrubland:
+				return DrawJsShrubland;
+			case PlanetTerrainGenerator.PlanetBiomeType.Savannah:
 				return DrawJsSavannah;
-			}
-
-			if (aridity < 0.62f)
-			{
-				return DrawJsShrubland;
-			}
-
-			return DrawJsTropicalDesert;
-		}
-
-		if (temperature >= 0.54f)
-		{
-			if (aridity < 0.2f - forestPreference * 0.05f)
-			{
+			case PlanetTerrainGenerator.PlanetBiomeType.TropicalDesert:
+				return DrawJsTropicalDesert;
+			case PlanetTerrainGenerator.PlanetBiomeType.TemperateRainForest:
 				return DrawJsTemperateRainForest;
-			}
-
-			if (aridity < 0.34f)
-			{
+			case PlanetTerrainGenerator.PlanetBiomeType.TemperateSeasonalForest:
 				return DrawJsTemperateSeasonalForest;
-			}
-
-			if (aridity < 0.46f + grassPreference * 0.18f)
-			{
-				return DrawJsGrassland;
-			}
-
-			if (aridity < 0.62f + grassPreference * 0.1f)
-			{
-				return DrawJsShrubland;
-			}
-
-			if (aridity < 0.74f)
-			{
+			case PlanetTerrainGenerator.PlanetBiomeType.Chaparral:
 				return DrawJsChaparral;
-			}
-
-			return DrawJsTemperateDesert;
-		}
-
-		if (temperature >= 0.36f)
-		{
-			if (aridity < 0.24f - forestPreference * 0.04f)
-			{
-				return DrawJsBorealForest;
-			}
-
-			if (aridity < 0.42f)
-			{
-				return DrawJsTaiga;
-			}
-
-			if (aridity < 0.62f + grassPreference * 0.14f)
-			{
+			case PlanetTerrainGenerator.PlanetBiomeType.Grassland:
+				return DrawJsGrassland;
+			case PlanetTerrainGenerator.PlanetBiomeType.Steppe:
 				return DrawJsSteppe;
-			}
-
-			return DrawJsTemperateDesert;
-		}
-
-		return aridity < 0.48f ? DrawJsTundra : DrawJsIce;
-	}
-
-	private static void ApplyChunkMajorityFilter(bool[] mask, int width, int height, int passes)
-	{
-		if (mask == null || mask.Length != width * height || passes <= 0)
-		{
-			return;
-		}
-
-		for (int pass = 0; pass < passes; pass++)
-		{
-			bool[] next = new bool[mask.Length];
-			for (int y = 0; y < height; y++)
-			{
-				int y0 = Mathf.Max(0, y - 1);
-				int y2 = Mathf.Min(height - 1, y + 1);
-				for (int x = 0; x < width; x++)
-				{
-					int x0 = x <= 0 ? width - 1 : x - 1;
-					int x2 = x >= width - 1 ? 0 : x + 1;
-					int index = y * width + x;
-
-					int landVotes = 0;
-					landVotes += mask[y0 * width + x0] ? 1 : 0;
-					landVotes += mask[y0 * width + x] ? 1 : 0;
-					landVotes += mask[y0 * width + x2] ? 1 : 0;
-					landVotes += mask[y * width + x0] ? 1 : 0;
-					landVotes += mask[index] ? 1 : 0;
-					landVotes += mask[y * width + x2] ? 1 : 0;
-					landVotes += mask[y2 * width + x0] ? 1 : 0;
-					landVotes += mask[y2 * width + x] ? 1 : 0;
-					landVotes += mask[y2 * width + x2] ? 1 : 0;
-
-					next[index] = landVotes >= 5;
-				}
-			}
-			System.Array.Copy(next, mask, mask.Length);
+			case PlanetTerrainGenerator.PlanetBiomeType.TemperateDesert:
+				return DrawJsTemperateDesert;
+			case PlanetTerrainGenerator.PlanetBiomeType.BorealForest:
+				return DrawJsBorealForest;
+			case PlanetTerrainGenerator.PlanetBiomeType.Taiga:
+				return DrawJsTaiga;
+			case PlanetTerrainGenerator.PlanetBiomeType.Tundra:
+				return DrawJsTundra;
+			case PlanetTerrainGenerator.PlanetBiomeType.Ice:
+				return DrawJsIce;
+			case PlanetTerrainGenerator.PlanetBiomeType.RockyMountain:
+				return DrawJsRockyMountain;
+			case PlanetTerrainGenerator.PlanetBiomeType.SnowyMountain:
+				return DrawJsSnowyMountain;
+			default:
+				return DrawJsRockyMountain;
 		}
 	}
 
-	private static bool HasOceanNeighbor(bool[] landMask, int width, int height, int x, int y)
-	{
-		for (int offsetY = -1; offsetY <= 1; offsetY++)
-		{
-			for (int offsetX = -1; offsetX <= 1; offsetX++)
-			{
-				if (offsetX == 0 && offsetY == 0)
-				{
-					continue;
-				}
 
-				int sampleX = (x + offsetX + width) % width;
-				int sampleY = Mathf.Clamp(y + offsetY, 0, height - 1);
-				if (!landMask[sampleY * width + sampleX])
-				{
-					return true;
-				}
-			}
-		}
-
-		return false;
-	}
 
 	private Texture2D BuildPlanetCloudTexture(PlanetData planetData, int width, int height)
 	{
@@ -2354,18 +2361,11 @@ public class PlanetPreviewController
 
 	private void UpdatePlanetMaterial(PlanetData planetData)
 	{
-		bool usingExternalSurface = !ForceEcologicalProceduralSurface && !string.IsNullOrWhiteSpace(_selectedPlanetSurfaceTexturePath);
 		ResolveEffectiveClimate(planetData, out float ocean, out float _, out float atmosphere);
 
-		Color landColor;
-		Color oceanColor;
-		ResolveSurfacePalette(planetData.Element, out landColor, out oceanColor);
-
-		Color surface = landColor.Lerp(oceanColor, ocean * 0.42f);
-		surface = surface.Lightened(0.08f);
-		_planetMaterial.AlbedoColor = usingExternalSurface ? Colors.White : surface;
-		_planetMaterial.Emission = surface.Darkened(0.16f);
-		_planetMaterial.EmissionEnergyMultiplier = Mathf.Lerp(0.04f, 0.09f, atmosphere);
+		_planetMaterial.AlbedoColor = Colors.White;
+		_planetMaterial.Emission = new Color(0.03f, 0.04f, 0.05f, 1f);
+		_planetMaterial.EmissionEnergyMultiplier = Mathf.Lerp(0.012f, 0.03f, atmosphere);
 		_planetMaterial.Roughness = Mathf.Lerp(0.8f, 0.44f, 1f - ocean * 0.4f);
 
 		if (_cloudMaterial != null)
