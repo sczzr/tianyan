@@ -13,6 +13,7 @@ public class UniverseData
 	public HierarchyConfigData HierarchyConfig { get; set; } = HierarchyConfigData.CreateFromArchetype(HierarchyArchetype.Standard);
 	public PlanetData CurrentPlanet { get; set; } = new();
 	public CelestialSystemPhysicsConfig CelestialPhysics { get; set; } = CelestialSystemPhysicsConfig.CreateDefault();
+	public PlanetGenerationProfile PlanetGenerationProfile { get; set; } = PlanetGenerationProfile.Default;
 	public float[] PlanetTerrainHeightmap { get; set; }
 	public int PlanetTerrainWidth { get; set; }
 	public int PlanetTerrainHeight { get; set; }

@@ -2,6 +2,145 @@
 
 [ext_resource type="Script" uid="uid://clfoyp1odvvwn" path="res://Scripts/UI/Screens/Settings.cs" id="1_settings"]
 [ext_resource type="Theme" uid="uid://inkwashtheme" path="res://Themes/InkWashTheme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Textures/Paper/Paper005_1K-PNG_Color.png" id="3_paper"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_SettingsPanel"]
+content_margin_left = 20.0
+content_margin_top = 20.0
+content_margin_right = 20.0
+content_margin_bottom = 20.0
+bg_color = Color(0.91, 0.835, 0.71, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.545, 0.478, 0.388, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0, 0, 0, 0.094)
+shadow_size = 8
+shadow_offset = Vector2(3, 4)
+
+[sub_resource type="StyleBoxLine" id="StyleBoxLine_TitleSeparator"]
+color = Color(0, 0, 0, 0.094)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TabPanel"]
+content_margin_left = 28.0
+content_margin_top = 30.0
+content_margin_right = 28.0
+content_margin_bottom = 28.0
+bg_color = Color(0.545, 0.478, 0.388, 1)
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TabSelected"]
+content_margin_left = 24.0
+content_margin_top = 8.0
+content_margin_right = 24.0
+content_margin_bottom = 8.0
+bg_color = Color(0.604, 0.243, 0.2, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TabUnselected"]
+content_margin_left = 24.0
+content_margin_top = 8.0
+content_margin_right = 24.0
+content_margin_bottom = 8.0
+bg_color = Color(0.545, 0.478, 0.388, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TabHover"]
+content_margin_left = 24.0
+content_margin_top = 8.0
+content_margin_right = 24.0
+content_margin_bottom = 8.0
+bg_color = Color(0.545, 0.478, 0.388, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_SliderTrack"]
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 2.0
+bg_color = Color(0.961, 0.925, 0.843, 0.3)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_SliderFill"]
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 2.0
+bg_color = Color(0.961, 0.925, 0.843, 0.3)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_Selector"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.91, 0.835, 0.71, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.173, 0.122, 0.071, 0.25)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonNormal"]
+content_margin_left = 32.0
+content_margin_top = 10.0
+content_margin_right = 32.0
+content_margin_bottom = 10.0
+bg_color = Color(0.961, 0.925, 0.843, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonHover"]
+content_margin_left = 32.0
+content_margin_top = 10.0
+content_margin_right = 32.0
+content_margin_bottom = 10.0
+bg_color = Color(0.961, 0.925, 0.843, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.545, 0.478, 0.388, 1)
+shadow_color = Color(0.545, 0.478, 0.388, 1)
+shadow_size = 4
+shadow_offset = Vector2(3, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonPressed"]
+content_margin_left = 32.0
+content_margin_top = 10.0
+content_margin_right = 32.0
+content_margin_bottom = 10.0
+bg_color = Color(0.604, 0.243, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.169, 0.137, 1)
+shadow_color = Color(0, 0, 0, 0.188)
+shadow_size = 1
+shadow_offset = Vector2(1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonPrimary"]
+content_margin_left = 32.0
+content_margin_top = 10.0
+content_margin_right = 32.0
+content_margin_bottom = 10.0
+bg_color = Color(0.91, 0.835, 0.71, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.545, 0.478, 0.388, 1)
+shadow_color = Color(0.545, 0.478, 0.388, 1)
+shadow_size = 2
+shadow_offset = Vector2(2, 2)
 
 [node name="Settings" type="Control" unique_id=1507304935]
 layout_mode = 3
@@ -22,6 +161,28 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.961, 0.925, 0.843, 1)
 
+
+[node name="PaperTexture" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_paper")
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(1, 1, 1, 0.12)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.545, 0.478, 0.388, 1)
+shadow_color = Color(0.545, 0.478, 0.388, 1)
+shadow_size = 2
+shadow_offset = Vector2(2, 2)
+
 [node name="SettingsPanel" type="PanelContainer" parent="." unique_id=186918277]
 layout_mode = 1
 anchors_preset = 8
@@ -29,123 +190,214 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -280.0
-offset_top = -260.0
-offset_right = 280.0
-offset_bottom = 260.0
+offset_left = -321.0
+offset_top = -272.0
+offset_right = 321.0
+offset_bottom = 272.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_SettingsPanel")
 
 [node name="SettingsVBox" type="VBoxContainer" parent="SettingsPanel" unique_id=843019167]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 16
 
 [node name="TitleLabel" type="Label" parent="SettingsPanel/SettingsVBox" unique_id=1131341979]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
 theme_override_font_sizes/font_size = 28
-text = "设置"
+text = "设置面板"
 horizontal_alignment = 1
 
 [node name="Separator1" type="HSeparator" parent="SettingsPanel/SettingsVBox" unique_id=66722644]
 layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxLine_TitleSeparator")
 
 [node name="Tabs" type="TabContainer" parent="SettingsPanel/SettingsVBox" unique_id=944561221]
-custom_minimum_size = Vector2(0, 300)
+custom_minimum_size = Vector2(0, 360)
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_colors/font_disabled_color = Color(0.961, 0.925, 0.843, 0.5)
+theme_override_colors/font_hovered_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0)
+theme_override_colors/font_selected_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_colors/font_unselected_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/panel = SubResource("StyleBoxFlat_TabPanel")
+theme_override_styles/tab_disabled = SubResource("StyleBoxFlat_TabUnselected")
+theme_override_styles/tab_hovered = SubResource("StyleBoxFlat_TabHover")
+theme_override_styles/tab_selected = SubResource("StyleBoxFlat_TabSelected")
+theme_override_styles/tab_unselected = SubResource("StyleBoxFlat_TabUnselected")
 
 [node name="AudioPage" type="VBoxContainer" parent="SettingsPanel/SettingsVBox/Tabs" unique_id=732716521]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 20
 
 [node name="AudioGrid" type="GridContainer" parent="SettingsPanel/SettingsVBox/Tabs/AudioPage" unique_id=930182341]
 layout_mode = 2
-columns = 2
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 22
+columns = 3
 
 [node name="VolumeLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid" unique_id=570314579]
+custom_minimum_size = Vector2(104, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "音效音量"
 
 [node name="VolumeSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid" unique_id=733283513]
-custom_minimum_size = Vector2(220, 32)
+custom_minimum_size = Vector2(340, 32)
 layout_mode = 2
-value = 80.0
+max_value = 100.0
+step = 1.0
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_SliderFill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_SliderFill")
+theme_override_styles/slider = SubResource("StyleBoxFlat_SliderTrack")
+value = 35.0
+
+[node name="VolumeValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid" unique_id=1129456778]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 16
+text = "35%"
+horizontal_alignment = 2
 
 [node name="MusicLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid" unique_id=929314625]
+custom_minimum_size = Vector2(104, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "音乐音量"
 
 [node name="MusicSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid" unique_id=100401526]
-custom_minimum_size = Vector2(220, 32)
+custom_minimum_size = Vector2(340, 32)
 layout_mode = 2
+max_value = 100.0
+step = 1.0
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_SliderFill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_SliderFill")
+theme_override_styles/slider = SubResource("StyleBoxFlat_SliderTrack")
 value = 60.0
+
+[node name="MusicValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid" unique_id=320572676]
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 16
+text = "60%"
+horizontal_alignment = 2
 
 [node name="LanguagePage" type="VBoxContainer" parent="SettingsPanel/SettingsVBox/Tabs" unique_id=645927110]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 20
 
 [node name="LanguageGrid" type="GridContainer" parent="SettingsPanel/SettingsVBox/Tabs/LanguagePage" unique_id=285907132]
 layout_mode = 2
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 20
 columns = 2
 
 [node name="LanguageLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/LanguagePage/LanguageGrid" unique_id=1842463396]
+custom_minimum_size = Vector2(104, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "语言"
 
 [node name="LanguageSelector" type="OptionButton" parent="SettingsPanel/SettingsVBox/Tabs/LanguagePage/LanguageGrid" unique_id=990907306]
-custom_minimum_size = Vector2(220, 40)
+custom_minimum_size = Vector2(340, 42)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/hover = SubResource("StyleBoxFlat_Selector")
+theme_override_styles/normal = SubResource("StyleBoxFlat_Selector")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_Selector")
 
 [node name="DisplayPage" type="VBoxContainer" parent="SettingsPanel/SettingsVBox/Tabs" unique_id=912634556]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 20
 
 [node name="DisplayGrid" type="GridContainer" parent="SettingsPanel/SettingsVBox/Tabs/DisplayPage" unique_id=444953421]
 layout_mode = 2
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 20
 columns = 2
 
 [node name="ResolutionLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/DisplayPage/DisplayGrid" unique_id=2166542]
+custom_minimum_size = Vector2(104, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "分辨率"
 
 [node name="ResolutionSelector" type="OptionButton" parent="SettingsPanel/SettingsVBox/Tabs/DisplayPage/DisplayGrid" unique_id=1317152500]
-custom_minimum_size = Vector2(220, 40)
+custom_minimum_size = Vector2(340, 42)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/hover = SubResource("StyleBoxFlat_Selector")
+theme_override_styles/normal = SubResource("StyleBoxFlat_Selector")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_Selector")
 
 [node name="FullscreenLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/DisplayPage/DisplayGrid" unique_id=28312671]
+custom_minimum_size = Vector2(104, 0)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "全屏"
 
-[node name="FullscreenCheck" type="CheckButton" parent="SettingsPanel/SettingsVBox/Tabs/DisplayPage/DisplayGrid" unique_id=1398521510]
+[node name="FullscreenCheck" type="CheckBox" parent="SettingsPanel/SettingsVBox/Tabs/DisplayPage/DisplayGrid" unique_id=1398521510]
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
 button_pressed = true
 text = ""
 
 [node name="ControlsPage" type="VBoxContainer" parent="SettingsPanel/SettingsVBox/Tabs" unique_id=89214530]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 20
 
 [node name="ControlSettingsHint" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ControlsPage" unique_id=861264013]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 0.8)
+theme_override_font_sizes/font_size = 15
 text = "打开操作设置进行更细致的控制"
+horizontal_alignment = 1
 
 [node name="ControlSettingsButton" type="Button" parent="SettingsPanel/SettingsVBox/Tabs/ControlsPage" unique_id=1561373922]
-custom_minimum_size = Vector2(0, 44)
+custom_minimum_size = Vector2(220, 44)
 layout_mode = 2
+size_flags_horizontal = 4
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonHover")
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonNormal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonPressed")
 text = "操作设置"
 
 [node name="ButtonsHBox" type="HBoxContainer" parent="SettingsPanel/SettingsVBox" unique_id=590105884]
 layout_mode = 2
-alignment = 2
-theme_override_constants/separation = 10
+alignment = 1
+theme_override_constants/separation = 20
 
 [node name="SaveButton" type="Button" parent="SettingsPanel/SettingsVBox/ButtonsHBox" unique_id=1373794945]
-custom_minimum_size = Vector2(120, 44)
+custom_minimum_size = Vector2(146, 46)
 layout_mode = 2
-text = "保存"
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonHover")
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonPrimary")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonPressed")
+text = "保存设置"
 
 [node name="BackButton" type="Button" parent="SettingsPanel/SettingsVBox/ButtonsHBox" unique_id=1873583213]
-custom_minimum_size = Vector2(120, 44)
+custom_minimum_size = Vector2(116, 46)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonHover")
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonNormal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonPressed")
 text = "返回"

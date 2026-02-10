@@ -178,12 +178,7 @@ custom_minimum_size = Vector2(0, 110)
 layout_mode = 2
 
 [node name="MiniMapRoot" type="Control" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard" unique_id=1987654401]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 2
 
 [node name="MiniOcean" type="ColorRect" parent="MapSettingsPopup/PopupVBox/MapStylePreviewPanel/MapStylePreviewVBox/MapStyleMiniCard/MiniMapRoot" unique_id=1987654402]
 layout_mode = 1
@@ -371,7 +366,7 @@ theme_override_constants/separation = 8
 layout_mode = 2
 text = "多线程生成"
 
-[node name="MultithreadingCheck" type="CheckButton" parent="MapSettingsPopup/PopupVBox/MultithreadingHBox" unique_id=1987654332]
+[node name="MultithreadingCheck" type="CheckBox" parent="MapSettingsPopup/PopupVBox/MultithreadingHBox" unique_id=1987654332]
 layout_mode = 2
 button_pressed = true
 
@@ -493,7 +488,7 @@ theme_override_constants/separation = 8
 layout_mode = 2
 text = "点击进入下级地图"
 
-[node name="EnableDrilldownCheck" type="CheckButton" parent="MapSettingsPopup/PopupVBox/EnableDrilldownHBox" unique_id=1987654351]
+[node name="EnableDrilldownCheck" type="CheckBox" parent="MapSettingsPopup/PopupVBox/EnableDrilldownHBox" unique_id=1987654351]
 layout_mode = 2
 button_pressed = true
 

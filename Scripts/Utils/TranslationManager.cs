@@ -277,7 +277,24 @@ public partial class TranslationManager : Node
 			["preview_light_response"] = "光照响应: {0}%",
 			["preview_distance_au"] = "{0} 光年",
 			["preview_distance_million_km"] = "{0} 百万公里",
-			["preview_distance_km"] = "{0} 公里"
+			["preview_distance_km"] = "{0} 公里",
+			["genesis_profile_tectonic_plates_value"] = "板块数量：{0}",
+			["genesis_profile_wind_cells_value"] = "风场单元：{0}",
+			["genesis_profile_erosion_iterations_value"] = "侵蚀迭代：{0}",
+			["genesis_profile_erosion_strength_value"] = "侵蚀强度：{0}%",
+			["genesis_profile_heat_factor_value"] = "热量因子：{0}",
+			["genesis_profile_tectonic_plates_tip"] = "控制板块数量。更高值会增加板块边界与山脉分割，地形更破碎。",
+			["genesis_profile_wind_cells_tip"] = "控制全球风场环流单元数量。更高值会增强气候与降水分布变化。",
+			["genesis_profile_erosion_iterations_tip"] = "控制侵蚀循环次数。迭代越多，山体越圆滑、河谷越明显。",
+			["genesis_profile_erosion_strength_tip"] = "控制每轮侵蚀强度。更高值会更强削平高地并沉积低地。",
+			["genesis_profile_heat_factor_tip"] = "控制纬向热量衰减。低值更热（暖带更广），高值更冷（极地扩展）。",
+			["genesis_profile_preset_label"] = "地形预设",
+			["genesis_profile_preset_tip"] = "一键套用地形参数组合，可快速切换大陆、群岛、极寒或火山风格。",
+			["genesis_profile_preset_balanced"] = "平衡风格",
+			["genesis_profile_preset_continental"] = "大陆板块",
+			["genesis_profile_preset_archipelago"] = "群岛海洋",
+			["genesis_profile_preset_frozen"] = "极寒荒原",
+			["genesis_profile_preset_volcanic"] = "火山乱流"
 		};
 
 		_translations["en"] = new Dictionary<string, string>
@@ -492,7 +509,24 @@ public partial class TranslationManager : Node
 			["preview_light_response"] = "Light Response: {0}%",
 			["preview_distance_au"] = "{0} AU",
 			["preview_distance_million_km"] = "{0}M km",
-			["preview_distance_km"] = "{0} km"
+			["preview_distance_km"] = "{0} km",
+			["genesis_profile_tectonic_plates_value"] = "Tectonic Plates: {0}",
+			["genesis_profile_wind_cells_value"] = "Wind Cells: {0}",
+			["genesis_profile_erosion_iterations_value"] = "Erosion Iterations: {0}",
+			["genesis_profile_erosion_strength_value"] = "Erosion Strength: {0}%",
+			["genesis_profile_heat_factor_value"] = "Heat Factor: {0}",
+			["genesis_profile_tectonic_plates_tip"] = "Controls tectonic plate count. Higher values create more boundaries and fragmented mountain belts.",
+			["genesis_profile_wind_cells_tip"] = "Controls number of global circulation cells. Higher values increase climate and rainfall variation.",
+			["genesis_profile_erosion_iterations_tip"] = "Controls erosion pass count. More passes smooth mountains and deepen valley structure.",
+			["genesis_profile_erosion_strength_tip"] = "Controls erosion intensity per pass. Higher values erode highs and deposit lows more aggressively.",
+			["genesis_profile_heat_factor_tip"] = "Controls latitudinal heat falloff. Lower values are warmer; higher values expand colder zones.",
+			["genesis_profile_preset_label"] = "Terrain Preset",
+			["genesis_profile_preset_tip"] = "Applies a full terrain parameter bundle to quickly switch style archetypes.",
+			["genesis_profile_preset_balanced"] = "Balanced",
+			["genesis_profile_preset_continental"] = "Continental Plates",
+			["genesis_profile_preset_archipelago"] = "Archipelago Seas",
+			["genesis_profile_preset_frozen"] = "Frozen Wastes",
+			["genesis_profile_preset_volcanic"] = "Volcanic Chaos"
 		};
 	}
 

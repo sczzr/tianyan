@@ -692,12 +692,17 @@ public partial class MapView : Control
 	private float[] _genesisTerrainHeightmap;
 	private int _genesisTerrainWidth;
 	private int _genesisTerrainHeight;
+	private PlanetGenerationProfile _genesisTerrainProfile = PlanetGenerationProfile.Default;
 	private bool _useGenesisPlanetTint = false;
 	private Color _dynamicOceanColor = OceanLayerColor;
 	private Color _dynamicRiverColor = RiverColor;
 	private Color _dynamicTerrainLowColor = new Color(0.24f, 0.5f, 0.3f, 0.92f);
 	private Color _dynamicTerrainHighColor = new Color(0.75f, 0.82f, 0.62f, 0.96f);
 	private float _dynamicTerrainBlend = 0.45f;
+	private float _genesisAtmosphereInfluence = 0.62f;
+	private float _genesisDesertInfluence = 0.45f;
+	private float _genesisMountainInfluence = 0.55f;
+	private float _genesisPolarInfluence = 0.55f;
 	private int _countryCount = 12;
 	private int _minCountryCells = 3;
 	private float _countryBorderWidth = 2f;
@@ -872,6 +877,8 @@ public partial class MapView : Control
 	{
 		SetProcess(true);
 		SetProcessInput(true);
+		TextureFilter = CanvasItem.TextureFilterEnum.Linear;
+		TextureRepeat = CanvasItem.TextureRepeatEnum.Disabled;
 		LoadControlSettings();
 
 		bool suppressGenerateOnReady = _suppressGenerateOnReadyOnce;
@@ -1118,6 +1125,15 @@ public partial class MapView : Control
 		foreach (var layer in _layerOrder)
 		{
 			if (!IsLayerEnabled(layer))
+			{
+				continue;
+			}
+
+			bool useGenesisTerrainLock = _useGenesisPlanetTint || _visualStyleMode == MapVisualStyleSelection.Relief;
+			if (useGenesisTerrainLock
+				&& layer != MapLayer.Heightmap
+				&& layer != MapLayer.Rivers
+				&& layer != MapLayer.Vignette)
 			{
 				continue;
 			}
@@ -2345,6 +2361,7 @@ public partial class MapView : Control
 
 	public void ApplyLayerPreset(LayerPreset preset)
 	{
+		_layerPresetMode = preset;
 		SetAllLayers(false);
 		switch (preset)
 		{
@@ -2441,17 +2458,17 @@ public partial class MapView : Control
 				GenerationTemplateType = HeightmapTemplateType.Archipelago;
 				break;
 			case MapVisualStyleSelection.Relief:
-				TerrainStyleMode = TerrainStyle.Contour;
-				UseBiomeColors = true;
+				TerrainStyleMode = TerrainStyle.Heightmap;
+				UseBiomeColors = false;
 				ShowOceanLayers = true;
-				CountryFillAlpha = 0.74f;
-				CountryBorderWidth = 1.8f;
-				CountryBorderColor = new Color(0.24f, 0.18f, 0.08f, 0.85f);
-				_riverDensity = 1.15f;
-				GenerationWaterLevel = 0.33f;
+				CountryFillAlpha = 0.62f;
+				CountryBorderWidth = 1.55f;
+				CountryBorderColor = new Color(0.22f, 0.18f, 0.12f, 0.8f);
+				_riverDensity = 1.18f;
+				GenerationWaterLevel = 0.38f;
 				UseTemplateGeneration = true;
 				UseRandomTemplateGeneration = false;
-				GenerationTemplateType = HeightmapTemplateType.Peninsula;
+				GenerationTemplateType = HeightmapTemplateType.Continents;
 				break;
 			case MapVisualStyleSelection.Heatmap:
 				TerrainStyleMode = TerrainStyle.Heatmap;
@@ -2497,6 +2514,10 @@ public partial class MapView : Control
 		float atmosphere = Mathf.Clamp(planetData.AtmosphereDensity, 0f, 1f);
 		float oceanCoverage = Mathf.Clamp(planetData.OceanCoverage, 0f, 1f);
 		float lawFactor = Mathf.Clamp(lawAlignment / 100f, 0f, 1f);
+		_genesisAtmosphereInfluence = atmosphere;
+		_genesisDesertInfluence = Mathf.Clamp(planetData.DesertRatio, 0f, 1f);
+		_genesisMountainInfluence = Mathf.Clamp(planetData.MountainIntensity, 0f, 1f);
+		_genesisPolarInfluence = Mathf.Clamp(planetData.PolarCoverage, 0f, 1f);
 
 		Color landBase;
 		Color waterBase;
@@ -2533,11 +2554,24 @@ public partial class MapView : Control
 		_dynamicRiverColor = _dynamicOceanColor.Lightened(0.16f + atmosphere * 0.2f);
 		_dynamicTerrainBlend = Mathf.Lerp(0.2f, 0.64f, atmosphere * 0.55f + oceanCoverage * 0.45f);
 		_useGenesisPlanetTint = true;
+		ApplyGenesisInfluenceToGenerator();
+		InvalidateHighPrecisionWorldVectorCache();
 		QueueRedraw();
 	}
 
 	private Color GetTerrainColorFromHeightSample(float height, bool isLand)
 	{
+		if (_visualStyleMode == MapVisualStyleSelection.Relief || _useGenesisPlanetTint)
+		{
+			float waterLevel = Mathf.Clamp(_generationWaterLevel, 0.01f, 0.99f);
+			if (!isLand)
+			{
+				return ResolveCivilizationWaterColor(height, waterLevel);
+			}
+
+			return ResolveCivilizationLandColor(height, waterLevel, 0.5f);
+		}
+
 		if (!isLand)
 		{
 			return GetWaterColor(height);
@@ -2606,17 +2640,26 @@ public partial class MapView : Control
 		_dynamicTerrainLowColor = new Color(0.24f, 0.5f, 0.3f, 0.92f);
 		_dynamicTerrainHighColor = new Color(0.75f, 0.82f, 0.62f, 0.96f);
 		_dynamicTerrainBlend = 0.45f;
+		_genesisAtmosphereInfluence = 0.62f;
+		_genesisDesertInfluence = 0.45f;
+		_genesisMountainInfluence = 0.55f;
+		_genesisPolarInfluence = 0.55f;
+		ApplyGenesisInfluenceToGenerator();
+		InvalidateHighPrecisionWorldVectorCache();
 		QueueRedraw();
 	}
 
-	public void SetGenesisTerrainHeightmap(float[] heightmap, int width, int height)
+	public void SetGenesisTerrainHeightmap(float[] heightmap, int width, int height, PlanetGenerationProfile profile)
 	{
 		if (heightmap == null || width <= 1 || height <= 1)
 		{
 			_genesisTerrainHeightmap = null;
 			_genesisTerrainWidth = 0;
 			_genesisTerrainHeight = 0;
-			_mapGenerator?.ClearExternalHeightmap();
+			_genesisTerrainProfile = PlanetGenerationProfile.Default;
+			ApplyGenesisTerrainHeightmapToGenerator();
+			InvalidateHighPrecisionWorldVectorCache();
+			QueueRedraw();
 			return;
 		}
 
@@ -2626,7 +2669,10 @@ public partial class MapView : Control
 			_genesisTerrainHeightmap = null;
 			_genesisTerrainWidth = 0;
 			_genesisTerrainHeight = 0;
-			_mapGenerator?.ClearExternalHeightmap();
+			_genesisTerrainProfile = PlanetGenerationProfile.Default;
+			ApplyGenesisTerrainHeightmapToGenerator();
+			InvalidateHighPrecisionWorldVectorCache();
+			QueueRedraw();
 			return;
 		}
 
@@ -2634,8 +2680,25 @@ public partial class MapView : Control
 		Array.Copy(heightmap, _genesisTerrainHeightmap, expectedLength);
 		_genesisTerrainWidth = width;
 		_genesisTerrainHeight = height;
+		_genesisTerrainProfile = profile;
 
 		ApplyGenesisTerrainHeightmapToGenerator();
+		InvalidateHighPrecisionWorldVectorCache();
+		QueueRedraw();
+	}
+
+	private void ApplyGenesisInfluenceToGenerator()
+	{
+		if (_mapGenerator == null)
+		{
+			return;
+		}
+
+		_mapGenerator.ExternalMountainInfluence = Mathf.Clamp(_genesisMountainInfluence, 0f, 1f);
+		_mapGenerator.ExternalPolarInfluence = Mathf.Clamp(_genesisPolarInfluence, 0f, 1f);
+		_mapGenerator.ExternalDesertInfluence = Mathf.Clamp(_genesisDesertInfluence, 0f, 1f);
+		_mapGenerator.ExternalAtmosphereInfluence = Mathf.Clamp(_genesisAtmosphereInfluence, 0f, 1f);
+		_mapGenerator.ExternalTerrainProfile = _genesisTerrainProfile;
 	}
 
 	private void ApplyGenesisTerrainHeightmapToGenerator()
@@ -2644,6 +2707,8 @@ public partial class MapView : Control
 		{
 			return;
 		}
+
+		ApplyGenesisInfluenceToGenerator();
 
 		if (_genesisTerrainHeightmap == null || _genesisTerrainWidth <= 1 || _genesisTerrainHeight <= 1)
 		{
@@ -2805,12 +2870,29 @@ public partial class MapView : Control
 
 	private Color GetTerrainColor(Cell cell)
 	{
+		float height = Mathf.Clamp(cell.Height, 0f, 1f);
+		if (_visualStyleMode == MapVisualStyleSelection.Relief || _useGenesisPlanetTint)
+		{
+			float waterLevel = Mathf.Clamp(_generationWaterLevel, 0.01f, 0.99f);
+			float mapHeight = _mapGenerator?.Data?.MapSize.Y ?? _mapHeight;
+			float latitude01 = mapHeight > 1f
+				? Mathf.Clamp(cell.Position.Y / (mapHeight - 1f), 0f, 1f)
+				: 0.5f;
+
+			if (!cell.IsLand)
+			{
+				return ResolveCivilizationWaterColor(height, waterLevel);
+			}
+
+			int mapWidth = Mathf.Max(1, Mathf.RoundToInt(_mapGenerator?.Data?.MapSize.X ?? _mapWidth));
+			return ResolveCivilizationLandColor(height, waterLevel, latitude01, cell.Position.X, cell.Position.Y, mapWidth, Mathf.RoundToInt(mapHeight));
+		}
+
 		if (!cell.IsLand)
 		{
 			return GetWaterColor(cell.Height);
 		}
 
-		float height = Mathf.Clamp(cell.Height, 0f, 1f);
 		var baseHeightmapColor = cell.RenderColor;
 		if (_visualStyleMode == MapVisualStyleSelection.Parchment)
 		{
@@ -2862,6 +2944,12 @@ public partial class MapView : Control
 
 	private Color GetWaterColor(float cellHeight)
 	{
+		if (_visualStyleMode == MapVisualStyleSelection.Relief || _useGenesisPlanetTint)
+		{
+			float waterLevel = Mathf.Clamp(_generationWaterLevel, 0.01f, 0.99f);
+			return ResolveCivilizationWaterColor(cellHeight, waterLevel);
+		}
+
 		float depth = Mathf.Clamp(1f - Mathf.Max(0f, cellHeight), 0f, 1f);
 		return _visualStyleMode switch
 		{

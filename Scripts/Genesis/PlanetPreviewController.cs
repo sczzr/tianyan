@@ -98,10 +98,12 @@ public class PlanetPreviewController
 	private const float MoonOrbitVisibleMaxDistance = 520f;
 	private const float PlanetOrbitVisibleMinDistance = 150f;
 	private const float MaxFocusRadius = 2400f;
+	private const float OrbitCloseInspectionAltitudeFactor = 0.45f;
 
 	private float _moonOrbitAngle = 0f;
 	private int _currentLawAlignment = 50;
 	private PlanetData _cachedPlanetData = new PlanetData();
+	private PlanetGenerationProfile _generationProfile = PlanetGenerationProfile.Default;
 	private Texture2D _latestPlanetSnapshot;
 	private bool _showMoonOrbit = true;
 	private bool _showPlanetOrbit = true;
@@ -131,6 +133,33 @@ public class PlanetPreviewController
 	private const float AstronomicalUnitKm = 149597870.7f;
 	private const float OrbitTimeAcceleration = 86400f;
 	private const float SpinTimeAcceleration = 2200f;
+	private const float CivilizationOceanCoverage = 0.56f;
+	private const float CivilizationTemperature = 0.52f;
+	private const float CivilizationAtmosphereDensity = 0.62f;
+	private static readonly bool ForceEcologicalProceduralSurface = true;
+
+	private static readonly Color DrawJsOceanDeep = new Color(0.05f, 0.19f, 0.37f, 1f);
+	private static readonly Color DrawJsOceanMid = new Color(0.16f, 0.42f, 0.62f, 1f);
+	private static readonly Color DrawJsOceanShallow = new Color(0.32f, 0.61f, 0.75f, 1f);
+	private static readonly Color DrawJsCoastland = new Color(0.82f, 0.79f, 0.63f, 1f);
+	private static readonly Color DrawJsTropicalRainForest = new Color(0f, 0.28235f, 0f, 1f);
+	private static readonly Color DrawJsTropicalSeasonalForest = new Color(0.04706f, 0.55294f, 0.04706f, 1f);
+	private static readonly Color DrawJsShrubland = new Color(0.37647f, 0.47059f, 0.09412f, 1f);
+	private static readonly Color DrawJsSavannah = new Color(0.95686f, 0.95686f, 0.54510f, 1f);
+	private static readonly Color DrawJsTropicalDesert = new Color(0.65882f, 0.37647f, 0.28235f, 1f);
+	private static readonly Color DrawJsTemperateRainForest = new Color(0.39216f, 0.70588f, 0.39216f, 1f);
+	private static readonly Color DrawJsTemperateSeasonalForest = new Color(0.38431f, 0.56078f, 0.33725f, 1f);
+	private static readonly Color DrawJsChaparral = new Color(0.56078f, 0.51765f, 0.60392f, 1f);
+	private static readonly Color DrawJsGrassland = new Color(0.56471f, 0.84706f, 0.28235f, 1f);
+	private static readonly Color DrawJsSteppe = new Color(0.74902f, 0.74902f, 0.74902f, 1f);
+	private static readonly Color DrawJsTemperateDesert = new Color(0.84706f, 0.65882f, 0.47059f, 1f);
+	private static readonly Color DrawJsBorealForest = new Color(0f, 0.37647f, 0.28235f, 1f);
+	private static readonly Color DrawJsTaiga = new Color(0.28235f, 0.56471f, 0.56471f, 1f);
+	private static readonly Color DrawJsTundra = new Color(0.54902f, 0.8f, 0.74118f, 1f);
+	private static readonly Color DrawJsIce = new Color(0.70196f, 0.92549f, 1f, 1f);
+	private static readonly Color DrawJsRockyMountain = new Color(0.52f, 0.5f, 0.46f, 1f);
+	private static readonly Color DrawJsSnowyMountain = new Color(0.92f, 0.95f, 0.98f, 1f);
+	private static readonly Color DrawJsRiver = new Color(0.2f, 0.49f, 0.71f, 1f);
 
 	public string CameraDistanceText { get; private set; } = "20,000 km";
 	public string CameraDescriptionText { get; private set; } = "高轨观测点";
@@ -277,6 +306,25 @@ public class PlanetPreviewController
 	public bool SetPlanetSurfaceTexturePath(string texturePath)
 	{
 		_selectedPlanetSurfaceTexturePath = texturePath ?? string.Empty;
+
+		if (ForceEcologicalProceduralSurface)
+		{
+			_selectedPlanetSurfaceTexturePath = string.Empty;
+			if (_isThreeDActive && _planetMaterial != null)
+			{
+				Texture2D surfaceTexture = UpdatePlanetTextures(_cachedPlanetData, 1024, 512);
+				if (surfaceTexture != null)
+				{
+					_latestPlanetSnapshot = surfaceTexture;
+					if (_planetPhotoRealtimeUpdate)
+					{
+						_planetTextureView?.SetPlanetSnapshot(surfaceTexture);
+					}
+				}
+			}
+
+			return true;
+		}
 
 		if (string.IsNullOrWhiteSpace(_selectedPlanetSurfaceTexturePath))
 		{
@@ -522,6 +570,10 @@ public class PlanetPreviewController
 		}
 
 		_cachedPlanetData = ClonePlanetData(planetData);
+		ResolveEffectiveClimate(_cachedPlanetData, out float normalizedOcean, out float normalizedTemperature, out float normalizedAtmosphere);
+		_cachedPlanetData.OceanCoverage = normalizedOcean;
+		_cachedPlanetData.Temperature = normalizedTemperature;
+		_cachedPlanetData.AtmosphereDensity = normalizedAtmosphere;
 		_planetTextureView?.UpdatePreview(_cachedPlanetData, _currentLawAlignment);
 
 		if (_planetPhotoRealtimeUpdate)
@@ -531,8 +583,9 @@ public class PlanetPreviewController
 
 		if (_auraLayer != null)
 		{
-			Color auraColor = ResolveAuraColor(_cachedPlanetData.Element, _cachedPlanetData.Temperature);
-			float alpha = Mathf.Lerp(0.1f, 0.42f, Mathf.Clamp(_cachedPlanetData.AtmosphereDensity, 0f, 1f));
+			ResolveEffectiveClimate(_cachedPlanetData, out float _, out float climateTemperature, out float climateAtmosphere);
+			Color auraColor = ResolveAuraColor(_cachedPlanetData.Element, climateTemperature);
+			float alpha = Mathf.Lerp(0.1f, 0.42f, climateAtmosphere);
 			_auraLayer.Color = new Color(auraColor.R, auraColor.G, auraColor.B, alpha);
 		}
 
@@ -639,6 +692,11 @@ public class PlanetPreviewController
 		UpdatePlanetSnapshot(_cachedPlanetData, 1024, 512);
 	}
 
+	public void SetGenerationProfile(PlanetGenerationProfile profile)
+	{
+		_generationProfile = profile;
+	}
+
 	public float[] GeneratePlanetTerrainHeightmap(PlanetData planetData, int width, int height)
 	{
 		var sourcePlanet = planetData ?? _cachedPlanetData;
@@ -649,81 +707,8 @@ public class PlanetPreviewController
 
 		int targetWidth = Mathf.Max(64, width);
 		int targetHeight = Mathf.Max(32, height);
-		float[] heightmap = new float[targetWidth * targetHeight];
-
 		int seed = BuildTextureSeed(sourcePlanet, 137);
-		var continentalNoise = new FastNoiseLite
-		{
-			Seed = seed,
-			NoiseType = FastNoiseLite.NoiseTypeEnum.Simplex,
-			Frequency = 0.58f,
-			FractalOctaves = 3,
-			FractalLacunarity = 2f,
-			FractalGain = 0.56f
-		};
-
-		var tectonicNoise = new FastNoiseLite
-		{
-			Seed = seed + 97,
-			NoiseType = FastNoiseLite.NoiseTypeEnum.SimplexSmooth,
-			Frequency = 0.94f,
-			FractalOctaves = 3,
-			FractalGain = 0.58f
-		};
-
-		var terrainNoise = new FastNoiseLite
-		{
-			Seed = seed + 211,
-			NoiseType = FastNoiseLite.NoiseTypeEnum.Simplex,
-			Frequency = 2.6f,
-			FractalOctaves = 4,
-			FractalLacunarity = 2.2f,
-			FractalGain = 0.48f
-		};
-
-		var ridgeNoise = new FastNoiseLite
-		{
-			Seed = seed + 359,
-			NoiseType = FastNoiseLite.NoiseTypeEnum.Perlin,
-			Frequency = 5.8f,
-			FractalOctaves = 4,
-			FractalGain = 0.45f
-		};
-
-		for (int y = 0; y < targetHeight; y++)
-		{
-			float v = (float)y / (targetHeight - 1);
-			float lat = Mathf.Abs(v - 0.5f) * 2f;
-			for (int x = 0; x < targetWidth; x++)
-			{
-				float u = (float)x / (targetWidth - 1);
-				Vector3 direction = GetSphericalDirection(u, v);
-
-				float macro = NoiseToUnitRange(continentalNoise.GetNoise3D(
-					direction.X * 2.0f,
-					direction.Y * 2.0f,
-					direction.Z * 2.0f));
-				float tectonic = NoiseToUnitRange(tectonicNoise.GetNoise3D(
-					direction.X * 3.1f,
-					direction.Y * 3.1f,
-					direction.Z * 3.1f));
-				float regional = NoiseToUnitRange(terrainNoise.GetNoise3D(
-					direction.X * 8.0f,
-					direction.Y * 8.0f,
-					direction.Z * 8.0f));
-				float ridges = Mathf.Abs(ridgeNoise.GetNoise3D(
-					direction.X * 14.5f,
-					direction.Y * 14.5f,
-					direction.Z * 14.5f));
-
-				float continental = macro * 0.63f + tectonic * 0.27f + regional * 0.1f;
-				continental = Mathf.Pow(Mathf.Clamp(continental, 0f, 1f), 1.08f);
-				float elevation = continental + (regional - 0.5f) * 0.12f + ridges * 0.08f - lat * 0.06f;
-				heightmap[y * targetWidth + x] = Mathf.Clamp(elevation, 0f, 1f);
-			}
-		}
-
-		return heightmap;
+		return PlanetTerrainGenerator.GenerateHeightmap(sourcePlanet, _generationProfile, targetWidth, targetHeight, seed);
 	}
 
 	public void SetOrbitVisibility(bool showMoonOrbit, bool showPlanetOrbit)
@@ -949,30 +934,35 @@ public class PlanetPreviewController
 		}
 
 		float focusDistance = _camera.GlobalPosition.DistanceTo(_earthOrigin);
+		float altitudeFromSurface = focusDistance - _currentPlanetRadiusUnits;
+		bool closeInspection = altitudeFromSurface <= Mathf.Max(14f, _currentPlanetRadiusUnits * OrbitCloseInspectionAltitudeFactor);
+		float orbitDistanceScale = Mathf.Max(1f, _currentPlanetRadiusUnits / PlanetRadiusUnits);
+		float moonOrbitVisibleMaxDistance = MoonOrbitVisibleMaxDistance * orbitDistanceScale;
+		float planetOrbitVisibleMinDistance = PlanetOrbitVisibleMinDistance * orbitDistanceScale;
 
 		if (_moonOrbit != null)
 		{
-			_moonOrbit.Visible = _showMoonOrbit && focusDistance <= MoonOrbitVisibleMaxDistance;
+			_moonOrbit.Visible = _showMoonOrbit && !closeInspection && focusDistance <= moonOrbitVisibleMaxDistance;
 		}
 
 		for (int i = 0; i < _extraMoonOrbitLines.Count; i++)
 		{
 			if (_extraMoonOrbitLines[i] != null)
 			{
-				_extraMoonOrbitLines[i].Visible = _showMoonOrbit && focusDistance <= MoonOrbitVisibleMaxDistance;
+				_extraMoonOrbitLines[i].Visible = _showMoonOrbit && !closeInspection && focusDistance <= moonOrbitVisibleMaxDistance;
 			}
 		}
 
 		if (_planetOrbit != null)
 		{
-			_planetOrbit.Visible = _showPlanetOrbit && focusDistance >= PlanetOrbitVisibleMinDistance;
+			_planetOrbit.Visible = _showPlanetOrbit && !closeInspection && focusDistance >= planetOrbitVisibleMinDistance;
 		}
 
 		for (int i = 0; i < _extraPlanetOrbitLines.Count; i++)
 		{
 			if (_extraPlanetOrbitLines[i] != null)
 			{
-				_extraPlanetOrbitLines[i].Visible = _showPlanetOrbit && focusDistance >= PlanetOrbitVisibleMinDistance;
+				_extraPlanetOrbitLines[i].Visible = _showPlanetOrbit && !closeInspection && focusDistance >= planetOrbitVisibleMinDistance;
 			}
 		}
 	}
@@ -1223,7 +1213,7 @@ public class PlanetPreviewController
 			LightEnergy = 30.0f * _solarBrightness,
 			LightColor = new Color(1f, 0.92f, 0.82f),
 			OmniRange = 7200f,
-			ShadowEnabled = true
+			ShadowEnabled = false
 		};
 		_worldRoot.AddChild(_sunPointLight);
 
@@ -1270,6 +1260,7 @@ public class PlanetPreviewController
 		};
 		_cloudMaterial = BuildCloudMaterial();
 		_cloudLayer.MaterialOverride = _cloudMaterial;
+		_cloudLayer.CastShadow = GeometryInstance3D.ShadowCastingSetting.Off;
 		_earthGroup.AddChild(_cloudLayer);
 
 		_moonMesh = new MeshInstance3D
@@ -1755,16 +1746,14 @@ public class PlanetPreviewController
 		}
 
 		float response = Mathf.Clamp(_lightResponseStrength, 0f, 1f);
-		float temperature = Mathf.Clamp(planetData.Temperature, 0f, 1f);
-		float atmosphere = Mathf.Clamp(planetData.AtmosphereDensity, 0f, 1f);
-		float ocean = Mathf.Clamp(planetData.OceanCoverage, 0f, 1f);
+		ResolveEffectiveClimate(planetData, out float ocean, out float temperature, out float atmosphere);
 
 		if (_sunPointLight != null)
 		{
-			float baseEnergy = 30.0f * _solarBrightness;
-			float temperatureShift = Mathf.Lerp(-2.4f, 3.0f, temperature) * response;
-			float atmosphereShift = Mathf.Lerp(-0.8f, 1.4f, atmosphere) * response;
-			_sunPointLight.LightEnergy = Mathf.Max(2.5f, baseEnergy + temperatureShift + atmosphereShift);
+			float baseEnergy = 32.0f * _solarBrightness;
+			float temperatureShift = Mathf.Lerp(-2.0f, 3.8f, temperature) * response;
+			float atmosphereShift = Mathf.Lerp(-0.4f, 1.8f, atmosphere) * response;
+			_sunPointLight.LightEnergy = Mathf.Max(3.0f, baseEnergy + temperatureShift + atmosphereShift);
 
 			Color warm = new Color(1f, 0.92f, 0.82f);
 			Color cold = new Color(0.78f, 0.88f, 1f);
@@ -1777,14 +1766,14 @@ public class PlanetPreviewController
 
 		if (_sunDirectionalLight != null)
 		{
-			float baseDirectional = 0.36f * _solarBrightness;
-			float directionalShift = Mathf.Lerp(-0.4f, 0.9f, temperature) * response;
-			_sunDirectionalLight.LightEnergy = Mathf.Max(0.05f, baseDirectional + directionalShift * 0.35f);
+			float baseDirectional = 0.42f * _solarBrightness;
+			float directionalShift = Mathf.Lerp(-0.3f, 1.1f, temperature) * response;
+			_sunDirectionalLight.LightEnergy = Mathf.Max(0.08f, baseDirectional + directionalShift * 0.42f);
 		}
 
 		if (_nightFillLight != null)
 		{
-			_nightFillLight.LightEnergy = Mathf.Lerp(0.08f, 0.24f, atmosphere) * Mathf.Lerp(0.9f, 1.2f, response);
+			_nightFillLight.LightEnergy = Mathf.Lerp(0.11f, 0.3f, atmosphere) * Mathf.Lerp(0.92f, 1.22f, response);
 		}
 	}
 
@@ -1803,7 +1792,10 @@ public class PlanetPreviewController
 			Size = planetData.Size,
 			OceanCoverage = planetData.OceanCoverage,
 			Temperature = planetData.Temperature,
-			AtmosphereDensity = planetData.AtmosphereDensity
+			AtmosphereDensity = planetData.AtmosphereDensity,
+			MountainIntensity = planetData.MountainIntensity,
+			PolarCoverage = planetData.PolarCoverage,
+			DesertRatio = planetData.DesertRatio
 		};
 	}
 
@@ -1851,14 +1843,10 @@ public class PlanetPreviewController
 			return null;
 		}
 
-		Texture2D surfaceTexture;
-		if (!string.IsNullOrWhiteSpace(_selectedPlanetSurfaceTexturePath))
+		Texture2D surfaceTexture = BuildPlanetSurfaceTexture(planetData, width, height);
+		if (!ForceEcologicalProceduralSurface && !string.IsNullOrWhiteSpace(_selectedPlanetSurfaceTexturePath))
 		{
-			surfaceTexture = GD.Load<Texture2D>(_selectedPlanetSurfaceTexturePath) ?? BuildPlanetSurfaceTexture(planetData, width, height);
-		}
-		else
-		{
-			surfaceTexture = BuildPlanetSurfaceTexture(planetData, width, height);
+			surfaceTexture = GD.Load<Texture2D>(_selectedPlanetSurfaceTexturePath) ?? surfaceTexture;
 		}
 
 		Texture2D cloudTexture = BuildPlanetCloudTexture(planetData, width, height);
@@ -1871,117 +1859,221 @@ public class PlanetPreviewController
 	{
 		var image = Image.CreateEmpty(width, height, false, Image.Format.Rgba8);
 
+		ResolveEffectiveClimate(planetData, out float oceanCoverage, out float temperature, out float atmosphere);
 		int seed = BuildTextureSeed(planetData, 137);
-		var continentalNoise = new FastNoiseLite
+		float[] elevationMap = PlanetTerrainGenerator.GenerateHeightmap(
+			planetData,
+			_generationProfile,
+			width,
+			height,
+			seed);
+
+		if (elevationMap == null || elevationMap.Length != width * height)
 		{
-			Seed = seed,
-			NoiseType = FastNoiseLite.NoiseTypeEnum.Simplex,
-			Frequency = 0.58f,
+			return ImageTexture.CreateFromImage(image);
+		}
+
+		elevationMap = BlurScalarMap(elevationMap, width, height, 1);
+
+		float windScale = Mathf.Clamp((_generationProfile.WindCellCount - 1f) / 23f, 0f, 1f);
+		float tectonicScale = Mathf.Clamp((_generationProfile.TectonicPlateCount - 1f) / 63f, 0f, 1f);
+		float erosionScale = Mathf.Clamp(_generationProfile.ErosionStrength * (_generationProfile.ErosionIterations / 16f), 0f, 1f);
+		float heatNormalized = Mathf.Clamp((1000f - _generationProfile.HeatFactor) / 999f, 0f, 1f);
+		float moistureTransport = Mathf.Clamp(_generationProfile.MoistureTransport, 0f, 1f);
+		float desertStrength = Mathf.Clamp(planetData.DesertRatio, 0f, 1f);
+		float mountainStrength = Mathf.Clamp(planetData.MountainIntensity, 0f, 1f);
+		float polarStrength = Mathf.Clamp(planetData.PolarCoverage, 0f, 1f);
+
+		var moistureNoise = new FastNoiseLite
+		{
+			Seed = seed + 503,
+			NoiseType = FastNoiseLite.NoiseTypeEnum.SimplexSmooth,
+			Frequency = Mathf.Lerp(0.9f, 2.4f, windScale),
 			FractalOctaves = 3,
-			FractalLacunarity = 2f,
 			FractalGain = 0.56f
 		};
 
-		var tectonicNoise = new FastNoiseLite
+		var riverNoise = new FastNoiseLite
 		{
-			Seed = seed + 97,
-			NoiseType = FastNoiseLite.NoiseTypeEnum.SimplexSmooth,
-			Frequency = 0.94f,
-			FractalOctaves = 3,
-			FractalGain = 0.58f
-		};
-
-		var terrainNoise = new FastNoiseLite
-		{
-			Seed = seed + 211,
-			NoiseType = FastNoiseLite.NoiseTypeEnum.Simplex,
-			Frequency = 2.6f,
-			FractalOctaves = 4,
-			FractalLacunarity = 2.2f,
-			FractalGain = 0.48f
-		};
-
-		var ridgeNoise = new FastNoiseLite
-		{
-			Seed = seed + 359,
+			Seed = seed + 809,
 			NoiseType = FastNoiseLite.NoiseTypeEnum.Perlin,
-			Frequency = 5.8f,
-			FractalOctaves = 4,
-			FractalGain = 0.45f
+			Frequency = Mathf.Lerp(9.6f, 14.2f, erosionScale),
+			FractalOctaves = 2,
+			FractalGain = 0.5f
 		};
 
-		Color landBase;
-		Color oceanBase;
-		ResolveSurfacePalette(planetData.Element, out landBase, out oceanBase);
-		float oceanCoverage = Mathf.Clamp(planetData.OceanCoverage, 0f, 1f);
-		float temperature = Mathf.Clamp(planetData.Temperature, 0f, 1f);
+		int pixelCount = width * height;
+		float[] humidityMap = new float[pixelCount];
+		float[] temperatureMap = new float[pixelCount];
+		float[] reliefMap = new float[pixelCount];
+		float[] latitudeMap = new float[pixelCount];
+		float[] waterMask = new float[pixelCount];
+		bool[] landMask = new bool[pixelCount];
 
-		Color coldTint = new(0.82f, 0.9f, 1.1f, 1f);
-		Color hotTint = new(1.15f, 0.95f, 0.82f, 1f);
-		Color tempTint = coldTint.Lerp(hotTint, temperature);
-		landBase = MultiplyColor(landBase, tempTint);
-		oceanBase = MultiplyColor(oceanBase, tempTint.Lerp(Colors.White, 0.2f));
+		float seaLevel = Mathf.Clamp(
+			Mathf.Lerp(0.46f, 0.68f, oceanCoverage)
+			+ (0.62f - _generationProfile.ContinentalFrequency) * 0.08f,
+			0.24f,
+			0.78f);
 
-		float waterThreshold = Mathf.Lerp(0.3f, 0.74f, oceanCoverage);
-		float coastBand = 0.055f;
+		int climateCellsX = Mathf.RoundToInt(Mathf.Lerp(6f, 30f, windScale * 0.72f + tectonicScale * 0.28f));
+		int climateCellsY = Mathf.RoundToInt(Mathf.Lerp(4f, 14f, windScale));
+		climateCellsX = Mathf.Clamp(climateCellsX, 4, 36);
+		climateCellsY = Mathf.Clamp(climateCellsY, 3, 18);
 
 		for (int y = 0; y < height; y++)
 		{
-			float v = (float)y / (height - 1);
-			float lat = Mathf.Abs(v - 0.5f) * 2f;
+			float v = y / (float)(height - 1);
+			float lat01 = Mathf.Abs(v - 0.5f) * 2f;
+			float latHeat = 1f - Mathf.Pow(lat01, Mathf.Lerp(1.9f, 0.66f, heatNormalized));
+
 			for (int x = 0; x < width; x++)
 			{
-				float u = (float)x / (width - 1);
+				int index = y * width + x;
+				float u = x / (float)(width - 1);
 				Vector3 direction = GetSphericalDirection(u, v);
 
-				float macro = NoiseToUnitRange(continentalNoise.GetNoise3D(
-					direction.X * 2.0f,
-					direction.Y * 2.0f,
-					direction.Z * 2.0f));
-				float tectonic = NoiseToUnitRange(tectonicNoise.GetNoise3D(
-					direction.X * 3.1f,
-					direction.Y * 3.1f,
-					direction.Z * 3.1f));
-				float regional = NoiseToUnitRange(terrainNoise.GetNoise3D(
-					direction.X * 8.0f,
-					direction.Y * 8.0f,
-					direction.Z * 8.0f));
-				float ridges = Mathf.Abs(ridgeNoise.GetNoise3D(
-					direction.X * 14.5f,
-					direction.Y * 14.5f,
-					direction.Z * 14.5f));
+				float elevation = Mathf.Clamp(elevationMap[index], 0f, 1f);
+				float relief = Mathf.Clamp((elevation - seaLevel) / Mathf.Max(0.0001f, 1f - seaLevel), 0f, 1f);
 
-				float continental = macro * 0.63f + tectonic * 0.27f + regional * 0.1f;
-				continental = Mathf.Pow(Mathf.Clamp(continental, 0f, 1f), 1.08f);
-				float elevation = continental + (regional - 0.5f) * 0.12f + ridges * 0.08f - lat * 0.06f;
-				elevation = Mathf.Clamp(elevation, 0f, 1f);
+				float chunkU = (Mathf.Floor(u * climateCellsX) + 0.5f) / climateCellsX;
+				float chunkV = (Mathf.Floor(v * climateCellsY) + 0.5f) / climateCellsY;
+				Vector3 climateDirection = GetSphericalDirection(chunkU, chunkV);
+				float climateChunk = NoiseToUnitRange(moistureNoise.GetNoise3D(
+					climateDirection.X * 3.4f,
+					climateDirection.Y * 3.4f,
+					climateDirection.Z * 3.4f));
+				float localMoisture = NoiseToUnitRange(moistureNoise.GetNoise3D(
+					direction.X * 6.1f,
+					direction.Y * 6.1f,
+					direction.Z * 6.1f));
 
-				float coastMix = Mathf.SmoothStep(waterThreshold - coastBand, waterThreshold + coastBand, elevation);
-				bool isLand = coastMix >= 0.5f;
+				float temperature01 = Mathf.Clamp(
+					latHeat * 0.66f
+					+ temperature * 0.34f
+					- relief * 0.31f
+					+ (climateChunk - 0.5f) * 0.08f * windScale,
+					0f,
+					1f);
+
+				float humidity01 = Mathf.Clamp(
+					climateChunk * (0.66f + moistureTransport * 0.34f)
+					+ localMoisture * 0.14f
+					+ oceanCoverage * 0.22f
+					+ (1f - lat01) * 0.12f
+					- relief * 0.18f
+					- desertStrength * 0.08f,
+					0f,
+					1f);
+
+				temperatureMap[index] = temperature01;
+				humidityMap[index] = humidity01;
+				reliefMap[index] = relief;
+				latitudeMap[index] = lat01;
+				landMask[index] = elevation >= seaLevel;
+				waterMask[index] = landMask[index] ? 0f : 1f;
+			}
+		}
+
+		int humidityBlurPasses = 1 + Mathf.RoundToInt(erosionScale);
+		humidityMap = BlurScalarMap(humidityMap, width, height, humidityBlurPasses);
+		temperatureMap = BlurScalarMap(temperatureMap, width, height, 1);
+		reliefMap = BlurScalarMap(reliefMap, width, height, 1);
+
+		ApplyChunkMajorityFilter(landMask, width, height, Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(3f, 1f, tectonicScale)), 1, 4));
+		for (int i = 0; i < landMask.Length; i++)
+		{
+			waterMask[i] = landMask[i] ? 0f : 1f;
+			if (landMask[i])
+			{
+				elevationMap[i] = Mathf.Max(elevationMap[i], seaLevel + 0.03f);
+			}
+			else
+			{
+				elevationMap[i] = Mathf.Min(elevationMap[i], seaLevel - 0.028f);
+			}
+
+			reliefMap[i] = Mathf.Clamp((elevationMap[i] - seaLevel) / Mathf.Max(0.0001f, 1f - seaLevel), 0f, 1f);
+		}
+
+		float[] waterInfluence = BlurScalarMap(waterMask, width, height, 2 + Mathf.RoundToInt(erosionScale));
+
+		ResolveSurfacePalette(planetData.Element, out Color elementLandColor, out Color elementOceanColor);
+		bool isTerra = planetData.Element == PlanetElement.Terra;
+		float forestPreference = Mathf.Clamp(
+			atmosphere * 0.52f + windScale * 0.36f + moistureTransport * 0.22f - desertStrength * 0.28f,
+			0f,
+			1f);
+		float grassPreference = Mathf.Clamp(
+			desertStrength * 0.58f + (1f - forestPreference) * 0.42f + erosionScale * 0.15f,
+			0f,
+			1f);
+
+		for (int y = 0; y < height; y++)
+		{
+			for (int x = 0; x < width; x++)
+			{
+				int index = y * width + x;
+				float elevation = elevationMap[index];
+				bool isLand = landMask[index];
+				float lat01 = latitudeMap[index];
+				float humidity01 = Mathf.Clamp(humidityMap[index] + waterInfluence[index] * 0.3f, 0f, 1f);
+				float temperature01 = temperatureMap[index];
+				float relief = reliefMap[index];
 
 				Color color;
-				if (isLand)
+				if (!isLand)
 				{
-					float relief = Mathf.Clamp((elevation - waterThreshold) / Mathf.Max(0.0001f, 1f - waterThreshold), 0f, 1f);
-					float iceFactor = Mathf.Clamp((lat - 0.68f) * 3.2f + Mathf.Lerp(0.2f, -0.2f, temperature), 0f, 1f);
-					float mountainMask = Mathf.Clamp((ridges - 0.58f) * 2.3f, 0f, 1f) * relief;
-					color = landBase.Darkened(0.2f).Lerp(landBase.Lightened(0.2f), relief);
-					color = color.Lerp(new Color(0.52f, 0.45f, 0.38f, 1f), mountainMask * 0.45f);
-					if (iceFactor > 0f)
+					if (elevation < seaLevel * 0.5714f)
 					{
-						color = color.Lerp(new Color(0.9f, 0.95f, 1f, 1f), iceFactor * 0.75f);
+						color = DrawJsOceanDeep;
 					}
+					else if (elevation < seaLevel * 0.8f)
+					{
+						color = DrawJsOceanMid;
+					}
+					else
+					{
+						color = DrawJsOceanShallow;
+					}
+
+					float depth = Mathf.Clamp((seaLevel - elevation) / Mathf.Max(0.0001f, seaLevel), 0f, 1f);
+					color = color.Lerp(DrawJsIce, Mathf.Clamp((lat01 - 0.82f) * 3.6f + (0.38f - temperature01) * 0.6f, 0f, 1f) * 0.18f);
+					color = color.Lerp(color.Darkened(0.18f), depth * 0.18f);
 				}
 				else
 				{
-					float depth = Mathf.Clamp((waterThreshold - elevation) / Mathf.Max(0.0001f, waterThreshold), 0f, 1f);
-					color = oceanBase.Lightened(0.12f).Lerp(oceanBase.Darkened(0.25f), depth);
+					bool nearOcean = HasOceanNeighbor(landMask, width, height, x, y);
+					color = ResolveDrawJsBiomeColor(
+						temperature01,
+						humidity01,
+						relief,
+						lat01,
+						desertStrength,
+						mountainStrength,
+						polarStrength,
+						forestPreference,
+						grassPreference);
+
+					if (nearOcean)
+					{
+						color = DrawJsCoastland.Lerp(color, 0.44f);
+					}
+
+					float riverSignal = NoiseToUnitRange(riverNoise.GetNoise2D(x * 0.92f, y * 0.92f));
+					bool hasRiver = relief > 0.06f && relief < 0.56f
+						&& humidity01 > Mathf.Lerp(0.74f, 0.62f, forestPreference)
+						&& Mathf.Abs(riverSignal - 0.5f) < Mathf.Lerp(0.02f, 0.032f, erosionScale);
+					if (hasRiver)
+					{
+						color = color.Lerp(DrawJsRiver, 0.62f);
+					}
 				}
 
-				if (coastMix > 0f && coastMix < 1f)
+				if (!isTerra)
 				{
-					Color beachColor = landBase.Lerp(new Color(0.84f, 0.78f, 0.62f, 1f), 0.52f);
-					color = color.Lerp(beachColor, Mathf.Clamp(1f - Mathf.Abs(coastMix - 0.5f) * 2f, 0f, 1f) * 0.26f);
+					Color elementBase = isLand ? elementLandColor : elementOceanColor;
+					color = color.Lerp(elementBase, isLand ? 0.08f : 0.12f);
 				}
 
 				image.SetPixel(x, y, color);
@@ -1991,10 +2083,244 @@ public class PlanetPreviewController
 		return ImageTexture.CreateFromImage(image);
 	}
 
+	private void ResolveEffectiveClimate(PlanetData planetData, out float oceanCoverage, out float temperature, out float atmosphere)
+	{
+		if (planetData == null)
+		{
+			oceanCoverage = CivilizationOceanCoverage;
+			temperature = CivilizationTemperature;
+			atmosphere = CivilizationAtmosphereDensity;
+			return;
+		}
+
+		ResolveElementClimateBaseline(planetData.Element, out float baseOcean, out float baseTemperature, out float baseAtmosphere);
+
+		float storedOcean = Mathf.Clamp(planetData.OceanCoverage, 0f, 1f);
+		float storedTemperature = Mathf.Clamp(planetData.Temperature, 0f, 1f);
+		float storedAtmosphere = Mathf.Clamp(planetData.AtmosphereDensity, 0f, 1f);
+
+		float profileOcean = Mathf.Clamp(
+			0.56f + (0.62f - _generationProfile.ContinentalFrequency) * 0.18f,
+			0.14f,
+			0.84f);
+		float profileTemperature = Mathf.Clamp((1000f - _generationProfile.HeatFactor) / 999f, 0.05f, 0.95f);
+		float profileAtmosphere = Mathf.Clamp(0.34f + _generationProfile.MoistureTransport * 0.58f, 0.12f, 0.96f);
+
+		oceanCoverage = Mathf.Clamp(baseOcean * 0.5f + profileOcean * 0.35f + storedOcean * 0.15f, 0f, 1f);
+		temperature = Mathf.Clamp(baseTemperature * 0.45f + profileTemperature * 0.42f + storedTemperature * 0.13f, 0f, 1f);
+		atmosphere = Mathf.Clamp(baseAtmosphere * 0.52f + profileAtmosphere * 0.33f + storedAtmosphere * 0.15f, 0f, 1f);
+	}
+
+	private static void ResolveElementClimateBaseline(PlanetElement element, out float oceanCoverage, out float temperature, out float atmosphere)
+	{
+		switch (element)
+		{
+			case PlanetElement.Pyro:
+				oceanCoverage = 0.24f;
+				temperature = 0.84f;
+				atmosphere = 0.68f;
+				break;
+			case PlanetElement.Cryo:
+				oceanCoverage = 0.6f;
+				temperature = 0.18f;
+				atmosphere = 0.54f;
+				break;
+			case PlanetElement.Aero:
+				oceanCoverage = 0.66f;
+				temperature = 0.44f;
+				atmosphere = 0.76f;
+				break;
+			case PlanetElement.Terra:
+			default:
+				oceanCoverage = CivilizationOceanCoverage;
+				temperature = CivilizationTemperature;
+				atmosphere = CivilizationAtmosphereDensity;
+				break;
+		}
+	}
+
+	private static Color ResolveDrawJsBiomeColor(
+		float temperature,
+		float humidity,
+		float relief,
+		float latitude,
+		float desertRatio,
+		float mountainIntensity,
+		float polarCoverage,
+		float forestPreference,
+		float grassPreference)
+	{
+		float mountainGate = Mathf.Lerp(0.62f, 0.46f, mountainIntensity);
+		if (relief > mountainGate)
+		{
+			float snowGate = Mathf.Lerp(0.52f, 0.34f, temperature) + latitude * 0.24f;
+			return relief > snowGate ? DrawJsSnowyMountain : DrawJsRockyMountain;
+		}
+
+		float humidityAdjusted = Mathf.Clamp(
+			humidity + forestPreference * 0.18f - grassPreference * 0.12f - desertRatio * 0.18f,
+			0f,
+			1f);
+		float aridity = Mathf.Clamp(1f - humidityAdjusted + desertRatio * 0.28f + grassPreference * 0.16f, 0f, 1f);
+		float polarMask = Mathf.Clamp(
+			(latitude - Mathf.Lerp(0.82f, 0.56f, polarCoverage)) * 2.4f
+			+ (0.42f - temperature) * 1.05f,
+			0f,
+			1f);
+
+		if (polarMask > 0.78f)
+		{
+			return DrawJsIce;
+		}
+
+		if (polarMask > 0.52f)
+		{
+			return DrawJsTundra;
+		}
+
+		if (temperature >= 0.72f)
+		{
+			if (aridity < 0.18f - forestPreference * 0.06f)
+			{
+				return DrawJsTropicalRainForest;
+			}
+
+			if (aridity < 0.32f)
+			{
+				return DrawJsTropicalSeasonalForest;
+			}
+
+			if (aridity < 0.46f + grassPreference * 0.12f)
+			{
+				return DrawJsSavannah;
+			}
+
+			if (aridity < 0.62f)
+			{
+				return DrawJsShrubland;
+			}
+
+			return DrawJsTropicalDesert;
+		}
+
+		if (temperature >= 0.54f)
+		{
+			if (aridity < 0.2f - forestPreference * 0.05f)
+			{
+				return DrawJsTemperateRainForest;
+			}
+
+			if (aridity < 0.34f)
+			{
+				return DrawJsTemperateSeasonalForest;
+			}
+
+			if (aridity < 0.46f + grassPreference * 0.18f)
+			{
+				return DrawJsGrassland;
+			}
+
+			if (aridity < 0.62f + grassPreference * 0.1f)
+			{
+				return DrawJsShrubland;
+			}
+
+			if (aridity < 0.74f)
+			{
+				return DrawJsChaparral;
+			}
+
+			return DrawJsTemperateDesert;
+		}
+
+		if (temperature >= 0.36f)
+		{
+			if (aridity < 0.24f - forestPreference * 0.04f)
+			{
+				return DrawJsBorealForest;
+			}
+
+			if (aridity < 0.42f)
+			{
+				return DrawJsTaiga;
+			}
+
+			if (aridity < 0.62f + grassPreference * 0.14f)
+			{
+				return DrawJsSteppe;
+			}
+
+			return DrawJsTemperateDesert;
+		}
+
+		return aridity < 0.48f ? DrawJsTundra : DrawJsIce;
+	}
+
+	private static void ApplyChunkMajorityFilter(bool[] mask, int width, int height, int passes)
+	{
+		if (mask == null || mask.Length != width * height || passes <= 0)
+		{
+			return;
+		}
+
+		for (int pass = 0; pass < passes; pass++)
+		{
+			bool[] next = new bool[mask.Length];
+			for (int y = 0; y < height; y++)
+			{
+				int y0 = Mathf.Max(0, y - 1);
+				int y2 = Mathf.Min(height - 1, y + 1);
+				for (int x = 0; x < width; x++)
+				{
+					int x0 = x <= 0 ? width - 1 : x - 1;
+					int x2 = x >= width - 1 ? 0 : x + 1;
+					int index = y * width + x;
+
+					int landVotes = 0;
+					landVotes += mask[y0 * width + x0] ? 1 : 0;
+					landVotes += mask[y0 * width + x] ? 1 : 0;
+					landVotes += mask[y0 * width + x2] ? 1 : 0;
+					landVotes += mask[y * width + x0] ? 1 : 0;
+					landVotes += mask[index] ? 1 : 0;
+					landVotes += mask[y * width + x2] ? 1 : 0;
+					landVotes += mask[y2 * width + x0] ? 1 : 0;
+					landVotes += mask[y2 * width + x] ? 1 : 0;
+					landVotes += mask[y2 * width + x2] ? 1 : 0;
+
+					next[index] = landVotes >= 5;
+				}
+			}
+			System.Array.Copy(next, mask, mask.Length);
+		}
+	}
+
+	private static bool HasOceanNeighbor(bool[] landMask, int width, int height, int x, int y)
+	{
+		for (int offsetY = -1; offsetY <= 1; offsetY++)
+		{
+			for (int offsetX = -1; offsetX <= 1; offsetX++)
+			{
+				if (offsetX == 0 && offsetY == 0)
+				{
+					continue;
+				}
+
+				int sampleX = (x + offsetX + width) % width;
+				int sampleY = Mathf.Clamp(y + offsetY, 0, height - 1);
+				if (!landMask[sampleY * width + sampleX])
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
 	private Texture2D BuildPlanetCloudTexture(PlanetData planetData, int width, int height)
 	{
 		var image = Image.CreateEmpty(width, height, false, Image.Format.Rgba8);
-		float atmosphere = Mathf.Clamp(planetData.AtmosphereDensity, 0f, 1f);
+		ResolveEffectiveClimate(planetData, out float _, out float _, out float atmosphere);
 		if (atmosphere <= 0.01f)
 		{
 			return ImageTexture.CreateFromImage(image);
@@ -2028,26 +2354,26 @@ public class PlanetPreviewController
 
 	private void UpdatePlanetMaterial(PlanetData planetData)
 	{
-		bool usingExternalSurface = !string.IsNullOrWhiteSpace(_selectedPlanetSurfaceTexturePath);
-		float ocean = Mathf.Clamp(planetData.OceanCoverage, 0f, 1f);
-		float atmosphere = Mathf.Clamp(planetData.AtmosphereDensity, 0f, 1f);
+		bool usingExternalSurface = !ForceEcologicalProceduralSurface && !string.IsNullOrWhiteSpace(_selectedPlanetSurfaceTexturePath);
+		ResolveEffectiveClimate(planetData, out float ocean, out float _, out float atmosphere);
 
 		Color landColor;
 		Color oceanColor;
 		ResolveSurfacePalette(planetData.Element, out landColor, out oceanColor);
 
 		Color surface = landColor.Lerp(oceanColor, ocean * 0.42f);
+		surface = surface.Lightened(0.08f);
 		_planetMaterial.AlbedoColor = usingExternalSurface ? Colors.White : surface;
-		_planetMaterial.Emission = surface.Darkened(0.22f);
-		_planetMaterial.EmissionEnergyMultiplier = Mathf.Lerp(0.02f, 0.06f, atmosphere);
-		_planetMaterial.Roughness = Mathf.Lerp(0.88f, 0.52f, 1f - ocean * 0.4f);
+		_planetMaterial.Emission = surface.Darkened(0.16f);
+		_planetMaterial.EmissionEnergyMultiplier = Mathf.Lerp(0.04f, 0.09f, atmosphere);
+		_planetMaterial.Roughness = Mathf.Lerp(0.8f, 0.44f, 1f - ocean * 0.4f);
 
 		if (_cloudMaterial != null)
 		{
-			float alpha = Mathf.Lerp(0.03f, 0.44f, atmosphere);
-			_cloudMaterial.AlbedoColor = new Color(0.88f, 0.92f, 0.96f, alpha);
-			_cloudMaterial.Emission = new Color(0.06f, 0.08f, 0.12f, 1f);
-			_cloudMaterial.EmissionEnergyMultiplier = Mathf.Lerp(0.01f, 0.04f, atmosphere);
+			float alpha = Mathf.Lerp(0.04f, 0.5f, atmosphere);
+			_cloudMaterial.AlbedoColor = new Color(0.9f, 0.94f, 0.98f, alpha);
+			_cloudMaterial.Emission = new Color(0.08f, 0.11f, 0.16f, 1f);
+			_cloudMaterial.EmissionEnergyMultiplier = Mathf.Lerp(0.02f, 0.06f, atmosphere);
 		}
 	}
 
@@ -2072,6 +2398,10 @@ public class PlanetPreviewController
 
 		_earthGroup.Scale = new Vector3(finalScale, finalScale, finalScale);
 		_currentPlanetRadiusUnits = PlanetRadiusUnits * finalScale;
+
+		float minDistanceFromScale = Mathf.Max(MinDistance, _currentPlanetRadiusUnits * 1.12f);
+		_targetDistance = Mathf.Max(_targetDistance, minDistanceFromScale);
+		_currentDistance = Mathf.Max(_currentDistance, minDistanceFromScale);
 	}
 
 	private void UpdateStarfieldByElement(PlanetElement element)
@@ -2192,12 +2522,68 @@ public class PlanetPreviewController
 		return (noiseValue + 1f) * 0.5f;
 	}
 
-	private static int BuildTextureSeed(PlanetData planetData, int salt)
+	private static float[] BlurScalarMap(float[] source, int width, int height, int passes)
 	{
-		int ocean = Mathf.RoundToInt(Mathf.Clamp(planetData.OceanCoverage, 0f, 1f) * 1000f);
-		int temp = Mathf.RoundToInt(Mathf.Clamp(planetData.Temperature, 0f, 1f) * 1000f);
-		int atmosphere = Mathf.RoundToInt(Mathf.Clamp(planetData.AtmosphereDensity, 0f, 1f) * 1000f);
-		return ((int)planetData.Element + 1) * 92821 + ocean * 131 + temp * 337 + atmosphere * 719 + salt;
+		if (source == null || source.Length != width * height || passes <= 0)
+		{
+			return source;
+		}
+
+		float[] read = source;
+		float[] write = new float[source.Length];
+
+		for (int pass = 0; pass < passes; pass++)
+		{
+			for (int y = 0; y < height; y++)
+			{
+				int y0 = Mathf.Max(0, y - 1);
+				int y1 = y;
+				int y2 = Mathf.Min(height - 1, y + 1);
+
+				for (int x = 0; x < width; x++)
+				{
+					int x0 = Mathf.Max(0, x - 1);
+					int x1 = x;
+					int x2 = Mathf.Min(width - 1, x + 1);
+
+					float weightedSum =
+						read[y0 * width + x0] * 1f + read[y0 * width + x1] * 2f + read[y0 * width + x2] * 1f +
+						read[y1 * width + x0] * 2f + read[y1 * width + x1] * 4f + read[y1 * width + x2] * 2f +
+						read[y2 * width + x0] * 1f + read[y2 * width + x1] * 2f + read[y2 * width + x2] * 1f;
+
+					write[y * width + x] = weightedSum / 16f;
+				}
+			}
+
+		(read, write) = (write, read);
+		}
+
+		return read;
+	}
+
+	private int BuildTextureSeed(PlanetData planetData, int salt)
+	{
+		int mountains = Mathf.RoundToInt(Mathf.Clamp(planetData.MountainIntensity, 0f, 1f) * 1000f);
+		int polar = Mathf.RoundToInt(Mathf.Clamp(planetData.PolarCoverage, 0f, 1f) * 1000f);
+		int desert = Mathf.RoundToInt(Mathf.Clamp(planetData.DesertRatio, 0f, 1f) * 1000f);
+		int tectonic = _generationProfile.TectonicPlateCount;
+		int windCells = _generationProfile.WindCellCount;
+		int erosionIterations = _generationProfile.ErosionIterations;
+		int erosionStrength = Mathf.RoundToInt(_generationProfile.ErosionStrength * 1000f);
+		int heatFactor = Mathf.RoundToInt(_generationProfile.HeatFactor);
+		int continental = Mathf.RoundToInt(_generationProfile.ContinentalFrequency * 1000f);
+
+		return ((int)planetData.Element + 1) * 92821
+			+ mountains * 911
+			+ polar * 1013
+			+ desert * 1231
+			+ tectonic * 53
+			+ windCells * 79
+			+ erosionIterations * 97
+			+ erosionStrength * 13
+			+ heatFactor * 7
+			+ continental * 19
+			+ salt;
 	}
 
 	private static void ResolveSurfacePalette(PlanetElement element, out Color landColor, out Color oceanColor)
@@ -2218,15 +2604,10 @@ public class PlanetPreviewController
 				break;
 			case PlanetElement.Terra:
 			default:
-				landColor = new Color(0.23f, 0.58f, 0.36f, 1f);
-				oceanColor = new Color(0.1f, 0.31f, 0.52f, 1f);
+				landColor = new Color(0.3f, 0.52f, 0.31f, 1f);
+				oceanColor = new Color(0.08f, 0.26f, 0.56f, 1f);
 				break;
 		}
-	}
-
-	private static Color MultiplyColor(Color lhs, Color rhs)
-	{
-		return new Color(lhs.R * rhs.R, lhs.G * rhs.G, lhs.B * rhs.B, lhs.A * rhs.A);
 	}
 
 	private static Color ResolveAuraColor(PlanetElement element, float temperature)
@@ -2248,9 +2629,9 @@ public class PlanetPreviewController
 		{
 			ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel,
 			EmissionEnabled = true,
-			Emission = new Color(0.03f, 0.05f, 0.08f),
-			EmissionEnergyMultiplier = 0.05f,
-			Roughness = 0.72f,
+			Emission = new Color(0.04f, 0.06f, 0.1f),
+			EmissionEnergyMultiplier = 0.07f,
+			Roughness = 0.64f,
 			Metallic = 0.02f
 		};
 	}
@@ -2262,9 +2643,9 @@ public class PlanetPreviewController
 			ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel,
 			Transparency = BaseMaterial3D.TransparencyEnum.Alpha,
 			EmissionEnabled = true,
-			Emission = new Color(0.08f, 0.1f, 0.14f),
-			EmissionEnergyMultiplier = 0.03f,
-			Roughness = 0.16f,
+			Emission = new Color(0.09f, 0.12f, 0.17f),
+			EmissionEnergyMultiplier = 0.04f,
+			Roughness = 0.14f,
 			CullMode = BaseMaterial3D.CullModeEnum.Disabled
 		};
 	}

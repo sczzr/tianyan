@@ -11,6 +11,8 @@ public partial class Settings : Control
 	private Label _titleLabel;
 	private Label _volumeLabel;
 	private Label _musicLabel;
+	private Label _volumeValueLabel;
+	private Label _musicValueLabel;
 	private Label _languageLabel;
 	private Label _resolutionLabel;
 	private Label _fullscreenLabel;
@@ -20,7 +22,7 @@ public partial class Settings : Control
 	private HSlider _volumeSlider;
 	private HSlider _musicSlider;
 	private OptionButton _resolutionSelector;
-	private CheckButton _fullscreenCheck;
+	private CheckBox _fullscreenCheck;
 	private Button _backButton;
 	private Button _saveButton;
 	private Button _controlSettingsButton;
@@ -43,6 +45,8 @@ public partial class Settings : Control
 		_tabs = GetNode<TabContainer>("SettingsPanel/SettingsVBox/Tabs");
 		_volumeLabel = GetNode<Label>("SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid/VolumeLabel");
 		_musicLabel = GetNode<Label>("SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid/MusicLabel");
+		_volumeValueLabel = GetNode<Label>("SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid/VolumeValueLabel");
+		_musicValueLabel = GetNode<Label>("SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid/MusicValueLabel");
 		_volumeSlider = GetNode<HSlider>("SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid/VolumeSlider");
 		_musicSlider = GetNode<HSlider>("SettingsPanel/SettingsVBox/Tabs/AudioPage/AudioGrid/MusicSlider");
 		_languageLabel = GetNode<Label>("SettingsPanel/SettingsVBox/Tabs/LanguagePage/LanguageGrid/LanguageLabel");
@@ -50,11 +54,12 @@ public partial class Settings : Control
 		_resolutionLabel = GetNode<Label>("SettingsPanel/SettingsVBox/Tabs/DisplayPage/DisplayGrid/ResolutionLabel");
 		_resolutionSelector = GetNode<OptionButton>("SettingsPanel/SettingsVBox/Tabs/DisplayPage/DisplayGrid/ResolutionSelector");
 		_fullscreenLabel = GetNode<Label>("SettingsPanel/SettingsVBox/Tabs/DisplayPage/DisplayGrid/FullscreenLabel");
-		_fullscreenCheck = GetNode<CheckButton>("SettingsPanel/SettingsVBox/Tabs/DisplayPage/DisplayGrid/FullscreenCheck");
+		_fullscreenCheck = GetNode<CheckBox>("SettingsPanel/SettingsVBox/Tabs/DisplayPage/DisplayGrid/FullscreenCheck");
 		_controlSettingsHint = GetNode<Label>("SettingsPanel/SettingsVBox/Tabs/ControlsPage/ControlSettingsHint");
 		_controlSettingsButton = GetNode<Button>("SettingsPanel/SettingsVBox/Tabs/ControlsPage/ControlSettingsButton");
 		_saveButton = GetNode<Button>("SettingsPanel/SettingsVBox/ButtonsHBox/SaveButton");
 		_backButton = GetNode<Button>("SettingsPanel/SettingsVBox/ButtonsHBox/BackButton");
+
 
 		_translationManager = TranslationManager.Instance;
 		_translationManager.LanguageChanged += OnLanguageChanged;
@@ -84,6 +89,16 @@ public partial class Settings : Control
 		{
 			_resolutionSelector.ItemSelected += OnResolutionSelected;
 			SetupResolutionOptions();
+		}
+		if (_volumeSlider != null)
+		{
+			_volumeSlider.ValueChanged += OnVolumeChanged;
+			OnVolumeChanged(_volumeSlider.Value);
+		}
+		if (_musicSlider != null)
+		{
+			_musicSlider.ValueChanged += OnMusicChanged;
+			OnMusicChanged(_musicSlider.Value);
 		}
 
 		UpdateUIText();
@@ -130,7 +145,14 @@ public partial class Settings : Control
 		var tm = TranslationManager.Instance;
 		if (_titleLabel != null)
 		{
-			_titleLabel.Text = tm.Tr("settings");
+			if (tm.CurrentLanguage == "zh-CN")
+			{
+				_titleLabel.Text = $"{tm.Tr("settings")}面板";
+			}
+			else
+			{
+				_titleLabel.Text = $"{tm.Tr("settings")} Panel";
+			}
 		}
 		if (_volumeLabel != null)
 		{
@@ -142,7 +164,7 @@ public partial class Settings : Control
 		}
 		if (_fullscreenCheck != null)
 		{
-			_fullscreenCheck.Text = tm.Tr("fullscreen");
+			_fullscreenCheck.Text = string.Empty;
 		}
 		if (_backButton != null)
 		{
@@ -178,6 +200,31 @@ public partial class Settings : Control
 			_tabs.SetTabTitle(1, tm.Tr("settings_tab_language"));
 			_tabs.SetTabTitle(2, tm.Tr("settings_tab_display"));
 			_tabs.SetTabTitle(3, tm.Tr("settings_tab_controls"));
+		}
+
+		if (_volumeSlider != null)
+		{
+			OnVolumeChanged(_volumeSlider.Value);
+		}
+		if (_musicSlider != null)
+		{
+			OnMusicChanged(_musicSlider.Value);
+		}
+	}
+
+	private void OnVolumeChanged(double value)
+	{
+		if (_volumeValueLabel != null)
+		{
+			_volumeValueLabel.Text = $"{Mathf.RoundToInt((float)value)}%";
+		}
+	}
+
+	private void OnMusicChanged(double value)
+	{
+		if (_musicValueLabel != null)
+		{
+			_musicValueLabel.Text = $"{Mathf.RoundToInt((float)value)}%";
 		}
 	}
 	

@@ -41,9 +41,9 @@ public partial class ControlSettings : Control
 	private Label _enableKeyboardPanLabel;
 	private Label _scaleMoveSpeedLabel;
 
-	private CheckButton _zoomSmoothingCheck;
-	private CheckButton _enableKeyboardPanCheck;
-	private CheckButton _scaleMoveSpeedCheck;
+	private CheckBox _zoomSmoothingCheck;
+	private CheckBox _enableKeyboardPanCheck;
+	private CheckBox _scaleMoveSpeedCheck;
 
 	private HSlider _zoomSpeedSlider;
 	private HSlider _zoomImpulseSlider;
@@ -88,12 +88,12 @@ public partial class ControlSettings : Control
 		_moveAccelerationLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid/MoveAccelerationLabel");
 		_moveDampingLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid/MoveDampingLabel");
 
-		_enableKeyboardPanCheck = GetNodeOrNull<CheckButton>("SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid/EnableKeyboardPanCheck");
-		_scaleMoveSpeedCheck = GetNodeOrNull<CheckButton>("SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid/ScaleMoveSpeedCheck");
+		_enableKeyboardPanCheck = GetNodeOrNull<CheckBox>("SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid/EnableKeyboardPanCheck");
+		_scaleMoveSpeedCheck = GetNodeOrNull<CheckBox>("SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid/ScaleMoveSpeedCheck");
 		_zoomSmoothingLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid/ZoomSmoothingLabel");
 		_enableKeyboardPanLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid/EnableKeyboardPanLabel");
 		_scaleMoveSpeedLabel = GetNodeOrNull<Label>("SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid/ScaleMoveSpeedLabel");
-		_zoomSmoothingCheck = GetNodeOrNull<CheckButton>("SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid/ZoomSmoothingCheck");
+		_zoomSmoothingCheck = GetNodeOrNull<CheckBox>("SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid/ZoomSmoothingCheck");
 
 		_zoomSpeedSlider = GetNodeOrNull<HSlider>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/ZoomSpeedSlider");
 		_zoomImpulseSlider = GetNodeOrNull<HSlider>("SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid/ZoomImpulseSlider");
@@ -120,6 +120,7 @@ public partial class ControlSettings : Control
 		_saveButton = GetNodeOrNull<Button>("SettingsPanel/SettingsVBox/ButtonsHBox/SaveButton");
 		_resetButton = GetNodeOrNull<Button>("SettingsPanel/SettingsVBox/ButtonsHBox/ResetButton");
 		_backButton = GetNodeOrNull<Button>("SettingsPanel/SettingsVBox/ButtonsHBox/BackButton");
+
 
 		_translationManager = TranslationManager.Instance;
 		_translationManager.LanguageChanged += OnLanguageChanged;
@@ -270,7 +271,7 @@ public partial class ControlSettings : Control
 		slider.Value = value;
 	}
 
-	private void SetCheckValue(CheckButton checkButton, bool value)
+	private void SetCheckValue(CheckBox checkButton, bool value)
 	{
 		if (checkButton == null)
 		{

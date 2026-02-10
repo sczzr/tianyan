@@ -26,8 +26,7 @@ public partial class MapView
 	private bool _preferHybridHighPrecision = true;
 	private bool IsHighPrecisionWorldModeEnabled()
 	{
-		return _activeContextLevel == MapLevel.World
-			&& _mapGenerator?.Data?.Heightmap != null;
+		return _mapGenerator?.Data?.Heightmap != null;
 	}
 
 	private void InvalidateHighPrecisionWorldVectorCache()
@@ -181,33 +180,92 @@ public partial class MapView
 
 		var image = Image.CreateEmpty(renderWidth, renderHeight, false, Image.Format.Rgba8);
 		float waterLevel = Mathf.Clamp(_generationWaterLevel, 0.01f, 0.99f);
-		const float coastBlendBand = 0.016f;
-		const float shorelineBand = 0.008f;
+		const float coastBlendBand = 0.02f;
+		const float shorelineBand = 0.011f;
+		bool useCivilizationReliefShading = _visualStyleMode == MapVisualStyleSelection.Relief || _useGenesisPlanetTint;
+		float sampleStepX = width > 1 ? (width - 1f) / Mathf.Max(1f, renderWidth - 1f) : 1f;
+		float sampleStepY = height > 1 ? (height - 1f) / Mathf.Max(1f, renderHeight - 1f) : 1f;
 
 		for (int y = 0; y < renderHeight; y++)
 		{
 			float srcY = renderHeight > 1 ? y * (height - 1f) / (renderHeight - 1f) : 0f;
+			float latitude01 = renderHeight > 1 ? y / (float)(renderHeight - 1) : 0.5f;
 			for (int x = 0; x < renderWidth; x++)
 			{
 				float srcX = renderWidth > 1 ? x * (width - 1f) / (renderWidth - 1f) : 0f;
 				float mapHeight = Mathf.Clamp(SampleHeightmapBilinear(heightmap, width, height, new Vector2(srcX, srcY)), 0f, 1f);
-				Color landColor = GetTerrainColorFromHeightSample(mapHeight, true);
-				Color waterColor = GetWaterColor(mapHeight);
-				float coastMix = Mathf.SmoothStep(waterLevel - coastBlendBand, waterLevel + coastBlendBand, mapHeight);
-				Color pixelColor = waterColor.Lerp(landColor, coastMix);
+				Color pixelColor;
+
+				if (useCivilizationReliefShading)
+				{
+					float left = Mathf.Clamp(SampleHeightmapBilinear(heightmap, width, height, new Vector2(srcX - sampleStepX, srcY)), 0f, 1f);
+					float right = Mathf.Clamp(SampleHeightmapBilinear(heightmap, width, height, new Vector2(srcX + sampleStepX, srcY)), 0f, 1f);
+					float down = Mathf.Clamp(SampleHeightmapBilinear(heightmap, width, height, new Vector2(srcX, srcY - sampleStepY)), 0f, 1f);
+					float up = Mathf.Clamp(SampleHeightmapBilinear(heightmap, width, height, new Vector2(srcX, srcY + sampleStepY)), 0f, 1f);
+
+					Color landColor = ResolveCivilizationLandColor(mapHeight, waterLevel, latitude01, srcX, srcY, width, height);
+					Color waterColor = ResolveCivilizationWaterColor(mapHeight, waterLevel);
+					float coastMix = Mathf.SmoothStep(waterLevel - coastBlendBand, waterLevel + coastBlendBand, mapHeight);
+					pixelColor = waterColor.Lerp(landColor, coastMix);
+
+					Vector3 normal = new Vector3(
+						-(right - left) * 3.6f,
+						-(up - down) * 3.6f,
+						1f).Normalized();
+					Vector3 lightDirection = new Vector3(-0.58f, -0.33f, 0.74f).Normalized();
+					float diffuse = Mathf.Clamp(normal.Dot(lightDirection), -1f, 1f);
+					float shading = mapHeight > waterLevel
+						? 0.72f + diffuse * 0.34f
+						: 0.9f + diffuse * 0.08f;
+					pixelColor = ApplyReliefLighting(pixelColor, shading);
+
+					if (mapHeight > waterLevel)
+					{
+						float curvature = mapHeight * 4f - (left + right + up + down);
+						float ridgeAmount = Mathf.Clamp(curvature * 4.2f, -1f, 1f);
+						if (ridgeAmount > 0f)
+						{
+							pixelColor = pixelColor.Lightened(ridgeAmount * 0.08f);
+						}
+						else if (ridgeAmount < 0f)
+						{
+							pixelColor = pixelColor.Darkened(-ridgeAmount * 0.06f);
+						}
+
+						float elevation01 = Mathf.Clamp(Mathf.InverseLerp(waterLevel, 1f, mapHeight), 0f, 1f);
+						float polarFactor = Mathf.Abs(latitude01 * 2f - 1f);
+						float snowFromLatitude = Mathf.SmoothStep(0.9f, 0.985f, polarFactor);
+						float snowFromElevation = Mathf.SmoothStep(0.94f, 1f, elevation01);
+						float snowAmount = Mathf.Clamp(
+							Mathf.Max(snowFromLatitude * Mathf.SmoothStep(0.22f, 1f, elevation01), snowFromElevation),
+							0f,
+							1f);
+						if (snowAmount > 0f)
+						{
+							pixelColor = pixelColor.Lerp(new Color(0.95f, 0.97f, 0.99f, 1f), snowAmount * 0.28f);
+						}
+					}
+				}
+				else
+				{
+					Color landColor = GetTerrainColorFromHeightSample(mapHeight, true);
+					Color waterColor = GetWaterColor(mapHeight);
+					float coastMix = Mathf.SmoothStep(waterLevel - coastBlendBand, waterLevel + coastBlendBand, mapHeight);
+					pixelColor = waterColor.Lerp(landColor, coastMix);
+				}
 
 				float shoreDistance = Mathf.Abs(mapHeight - waterLevel);
 				float shoreAlpha = 1f - Mathf.Clamp(shoreDistance / shorelineBand, 0f, 1f);
 				int sx = Mathf.Clamp(Mathf.RoundToInt(srcX), 0, width - 1);
 				int sy = Mathf.Clamp(Mathf.RoundToInt(srcY), 0, height - 1);
 				float shoreEdge = CalculateShoreEdgeFactor(heightmap, width, height, sx, sy, waterLevel, shorelineBand);
-				shoreAlpha = Mathf.Max(shoreAlpha, shoreEdge * 0.86f);
+				shoreAlpha = Mathf.Max(shoreAlpha, shoreEdge * 0.82f);
 				if (shoreAlpha > 0f)
 				{
 					Color shoreColor = _visualStyleMode == MapVisualStyleSelection.Parchment
 						? new Color(0.95f, 0.88f, 0.7f, 1f)
-						: new Color(0.92f, 0.96f, 1f, 1f);
-					pixelColor = pixelColor.Lerp(shoreColor, shoreAlpha * 0.42f);
+						: new Color(0.86f, 0.84f, 0.78f, 1f);
+					pixelColor = pixelColor.Lerp(shoreColor, shoreAlpha * 0.32f);
 				}
 
 				image.SetPixel(x, y, pixelColor);
@@ -215,6 +273,171 @@ public partial class MapView
 		}
 
 		return ImageTexture.CreateFromImage(image);
+	}
+
+	private Color ResolveCivilizationLandColor(float mapHeight, float waterLevel, float latitude01)
+	{
+		return ResolveCivilizationLandColor(mapHeight, waterLevel, latitude01, 0.5f, latitude01, 1, 1);
+	}
+
+	private Color ResolveCivilizationLandColor(float mapHeight, float waterLevel, float latitude01, float sampleX, float sampleY, int width, int height)
+	{
+		float elevation01 = Mathf.Clamp(Mathf.InverseLerp(waterLevel, 1f, mapHeight), 0f, 1f);
+		if (elevation01 <= 0f)
+		{
+			return new Color(0.58f, 0.66f, 0.49f, 0.96f);
+		}
+
+		float normalizedX = width > 1 ? Mathf.Clamp(sampleX / (width - 1f), 0f, 1f) : 0.5f;
+		float normalizedY = height > 1 ? Mathf.Clamp(sampleY / (height - 1f), 0f, 1f) : latitude01;
+
+		float tectonicScale = Mathf.Clamp((_genesisTerrainProfile.TectonicPlateCount - 1f) / 63f, 0f, 1f);
+		float windScale = Mathf.Clamp((_genesisTerrainProfile.WindCellCount - 1f) / 23f, 0f, 1f);
+		float erosionScale = Mathf.Clamp(_genesisTerrainProfile.ErosionStrength * (_genesisTerrainProfile.ErosionIterations / 16f), 0f, 1f);
+		float heatNormalized = Mathf.Clamp((1000f - _genesisTerrainProfile.HeatFactor) / 999f, 0f, 1f);
+
+		int macroCellsX = Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(5f, 22f, tectonicScale)), 4, 30);
+		int macroCellsY = Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(3f, 12f, tectonicScale)), 3, 18);
+		int biomeCellsX = Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(7f, 30f, windScale * 0.75f + tectonicScale * 0.25f)), 5, 40);
+		int biomeCellsY = Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(4f, 14f, windScale)), 3, 20);
+
+		int macroX = Mathf.Clamp(Mathf.FloorToInt(normalizedX * macroCellsX), 0, macroCellsX - 1);
+		int macroY = Mathf.Clamp(Mathf.FloorToInt(normalizedY * macroCellsY), 0, macroCellsY - 1);
+		int biomeX = Mathf.Clamp(Mathf.FloorToInt(normalizedX * biomeCellsX), 0, biomeCellsX - 1);
+		int biomeY = Mathf.Clamp(Mathf.FloorToInt(normalizedY * biomeCellsY), 0, biomeCellsY - 1);
+
+		float macroNoise = HashSigned01(macroX * 92821 + macroY * 68917 + 941, 17);
+		float mesoNoise = HashSigned01(biomeX * 31337 + biomeY * 19997 + 577, 31);
+		int sx = Mathf.RoundToInt(normalizedX * 4096f);
+		int sy = Mathf.RoundToInt(normalizedY * 4096f);
+		float microNoise = HashSigned01(sx * 12011 + sy * 7001 + 163, 13) * 0.08f;
+
+		float absLat = Mathf.Abs(latitude01 * 2f - 1f);
+		float equatorFactor = 1f - absLat;
+		float subtropicBand = Mathf.SmoothStep(0.18f, 0.42f, equatorFactor) * (1f - Mathf.SmoothStep(0.58f, 0.84f, equatorFactor));
+		float coastProximity = 1f - Mathf.Clamp(Mathf.Abs(mapHeight - waterLevel) / 0.085f, 0f, 1f);
+
+		float forestPreference = Mathf.Clamp(
+			_genesisAtmosphereInfluence * 0.52f
+			+ _genesisTerrainProfile.MoistureTransport * 0.28f
+			+ windScale * 0.34f
+			- _genesisDesertInfluence * 0.26f,
+			0f,
+			1f);
+		float grassPreference = Mathf.Clamp(
+			_genesisDesertInfluence * 0.58f
+			+ (1f - forestPreference) * 0.36f
+			+ erosionScale * 0.16f,
+			0f,
+			1f);
+
+		float moisture01 = 0.44f
+			+ macroNoise * 0.24f
+			+ mesoNoise * 0.16f
+			+ microNoise
+			+ coastProximity * 0.14f
+			+ windScale * 0.08f;
+		moisture01 -= subtropicBand * (0.16f + _genesisDesertInfluence * 0.14f);
+		moisture01 -= elevation01 * 0.12f;
+		moisture01 += forestPreference * 0.16f - grassPreference * 0.1f;
+		moisture01 = Mathf.Clamp(moisture01, 0f, 1f);
+
+		float coldness01 = Mathf.Clamp(
+			absLat * Mathf.Lerp(0.72f, 0.94f, _genesisPolarInfluence)
+			+ elevation01 * Mathf.Lerp(0.48f, 0.74f, _genesisMountainInfluence)
+			+ (0.5f - heatNormalized) * 0.14f,
+			0f,
+			1f);
+		int temperatureBand = Mathf.Clamp(Mathf.RoundToInt(coldness01 * 25f), 0, 25);
+		int moistureBand = Mathf.Clamp(Mathf.RoundToInt(moisture01 * 4f), 0, 4);
+
+		BiomeType biome = BiomeData.GetBiome(moistureBand, temperatureBand);
+		if (biome == BiomeType.Grassland && forestPreference > 0.72f && moisture01 > 0.64f)
+		{
+			biome = BiomeType.TemperateDeciduousForest;
+		}
+		else if ((biome == BiomeType.TemperateRainforest || biome == BiomeType.TropicalRainforest || biome == BiomeType.TemperateDeciduousForest)
+			&& grassPreference > 0.68f && moisture01 < 0.56f)
+		{
+			biome = BiomeType.Grassland;
+		}
+		else if (biome == BiomeType.Savanna && grassPreference > 0.66f)
+		{
+			biome = BiomeType.Grassland;
+		}
+
+		if (elevation01 > Mathf.Lerp(0.91f, 0.82f, _genesisMountainInfluence))
+		{
+			biome = temperatureBand >= 18 ? BiomeType.Glacier : BiomeType.Tundra;
+		}
+		else if (temperatureBand >= Mathf.RoundToInt(Mathf.Lerp(21f, 16f, _genesisPolarInfluence)) && elevation01 > 0.72f)
+		{
+			biome = BiomeType.Tundra;
+		}
+
+		Color biomeColor = BiomeData.GetColor((int)biome);
+		Color color = new Color(biomeColor.R, biomeColor.G, biomeColor.B, 0.97f);
+		float saturation = Mathf.Lerp(0.5f, 0.64f, forestPreference * 0.65f + grassPreference * 0.35f);
+		color = AdjustColorSaturation(color, saturation);
+
+		float rockyMix = Mathf.SmoothStep(0.72f, 0.95f, elevation01);
+		color = color.Lerp(new Color(0.62f, 0.62f, 0.6f, 1f), rockyMix * 0.5f);
+
+		return color;
+	}
+
+	private Color ResolveCivilizationWaterColor(float mapHeight, float waterLevel)
+	{
+		float depth01 = Mathf.Clamp(Mathf.InverseLerp(waterLevel, 0f, mapHeight), 0f, 1f);
+		float tectonicScale = Mathf.Clamp((_genesisTerrainProfile.TectonicPlateCount - 1f) / 63f, 0f, 1f);
+		float erosionScale = Mathf.Clamp(_genesisTerrainProfile.ErosionStrength * (_genesisTerrainProfile.ErosionIterations / 16f), 0f, 1f);
+		int depthBands = Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(3f, 7f, tectonicScale * 0.65f + erosionScale * 0.35f)), 3, 8);
+		float depthBand = Mathf.Floor(depth01 * depthBands) / depthBands;
+
+		Color shallow = new Color(0.35f, 0.62f, 0.76f, 1f);
+		Color mid = new Color(0.19f, 0.44f, 0.63f, 1f);
+		Color deep = new Color(0.07f, 0.2f, 0.37f, 1f);
+
+		Color color;
+		if (depthBand < 0.34f)
+		{
+			color = shallow;
+		}
+		else if (depthBand < 0.68f)
+		{
+			color = mid;
+		}
+		else
+		{
+			color = deep;
+		}
+
+		float coastalGlow = 1f - Mathf.Clamp(depthBand / 0.26f, 0f, 1f);
+		color = color.Lerp(shallow.Lightened(0.08f), coastalGlow * 0.28f);
+		color = AdjustColorSaturation(color, 0.58f);
+		return new Color(color.R, color.G, color.B, 0.92f);
+	}
+
+	private static Color AdjustColorSaturation(Color color, float saturation)
+	{
+		float clampedSaturation = Mathf.Clamp(saturation, 0f, 1.2f);
+		float luma = color.R * 0.299f + color.G * 0.587f + color.B * 0.114f;
+		return new Color(
+			Mathf.Lerp(luma, color.R, clampedSaturation),
+			Mathf.Lerp(luma, color.G, clampedSaturation),
+			Mathf.Lerp(luma, color.B, clampedSaturation),
+			color.A);
+	}
+
+	private static Color ApplyReliefLighting(Color color, float lightingFactor)
+	{
+		float clamped = Mathf.Clamp(lightingFactor, 0.45f, 1.22f);
+		if (clamped >= 1f)
+		{
+			return color.Lerp(new Color(1f, 1f, 1f, color.A), (clamped - 1f) * 0.55f);
+		}
+
+		return color.Darkened((1f - clamped) * 0.88f);
 	}
 
 	private void DrawHighPrecisionWorldRivers(Rect2 baseRect)
@@ -396,6 +619,15 @@ public partial class MapView
 			hash = hash * 31 + (int)_terrainStyleMode;
 			hash = hash * 31 + (_useGenesisPlanetTint ? 1 : 0);
 			hash = hash * 31 + Mathf.RoundToInt(_dynamicTerrainBlend * 1000f);
+			hash = hash * 31 + Mathf.RoundToInt(_genesisMountainInfluence * 1000f);
+			hash = hash * 31 + Mathf.RoundToInt(_genesisPolarInfluence * 1000f);
+			hash = hash * 31 + Mathf.RoundToInt(_genesisDesertInfluence * 1000f);
+			hash = hash * 31 + Mathf.RoundToInt(_genesisAtmosphereInfluence * 1000f);
+			hash = hash * 31 + _genesisTerrainProfile.TectonicPlateCount;
+			hash = hash * 31 + _genesisTerrainProfile.WindCellCount;
+			hash = hash * 31 + _genesisTerrainProfile.ErosionIterations;
+			hash = hash * 31 + Mathf.RoundToInt(_genesisTerrainProfile.ErosionStrength * 1000f);
+			hash = hash * 31 + Mathf.RoundToInt(_genesisTerrainProfile.HeatFactor);
 			hash = hash * 31 + QuantizeColor(_dynamicTerrainLowColor);
 			hash = hash * 31 + QuantizeColor(_dynamicTerrainHighColor);
 			hash = hash * 31 + QuantizeColor(_dynamicOceanColor);

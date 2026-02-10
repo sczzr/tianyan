@@ -1,7 +1,134 @@
-[gd_scene format=3 uid="uid://controlsettings"]
+[gd_scene format=3 uid="uid://dmfliwwgw3ys5"]
 
 [ext_resource type="Script" uid="uid://dvfssf8dvl2j" path="res://Scripts/UI/Screens/ControlSettings.cs" id="1_controlsettings"]
 [ext_resource type="Theme" uid="uid://inkwashtheme" path="res://Themes/InkWashTheme.tres" id="2_theme"]
+[ext_resource type="Texture2D" uid="uid://cpajuena3us3n" path="res://Assets/UI/Textures/Paper/Paper005_1K-PNG_Color.png" id="3_paper"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_SettingsPanel"]
+content_margin_left = 20.0
+content_margin_top = 20.0
+content_margin_right = 20.0
+content_margin_bottom = 20.0
+bg_color = Color(0.91, 0.835, 0.71, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.545, 0.478, 0.388, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0, 0, 0, 0.094)
+shadow_size = 8
+shadow_offset = Vector2(3, 4)
+
+[sub_resource type="StyleBoxLine" id="StyleBoxLine_TitleSeparator"]
+color = Color(0, 0, 0, 0.094)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TabPanel"]
+content_margin_left = 24.0
+content_margin_top = 24.0
+content_margin_right = 24.0
+content_margin_bottom = 24.0
+bg_color = Color(0.545, 0.478, 0.388, 1)
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TabUnselected"]
+content_margin_left = 24.0
+content_margin_top = 8.0
+content_margin_right = 24.0
+content_margin_bottom = 8.0
+bg_color = Color(0.545, 0.478, 0.388, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TabHover"]
+content_margin_left = 24.0
+content_margin_top = 8.0
+content_margin_right = 24.0
+content_margin_bottom = 8.0
+bg_color = Color(0.545, 0.478, 0.388, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_TabSelected"]
+content_margin_left = 24.0
+content_margin_top = 8.0
+content_margin_right = 24.0
+content_margin_bottom = 8.0
+bg_color = Color(0.604, 0.243, 0.2, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_SliderTrack"]
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 2.0
+bg_color = Color(0.961, 0.925, 0.843, 0.3)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_SliderFill"]
+content_margin_left = 2.0
+content_margin_top = 2.0
+content_margin_right = 2.0
+content_margin_bottom = 2.0
+bg_color = Color(0.961, 0.925, 0.843, 0.3)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonPrimary"]
+content_margin_left = 28.0
+content_margin_top = 10.0
+content_margin_right = 28.0
+content_margin_bottom = 10.0
+bg_color = Color(0.91, 0.835, 0.71, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.545, 0.478, 0.388, 1)
+shadow_color = Color(0.545, 0.478, 0.388, 1)
+shadow_size = 2
+shadow_offset = Vector2(2, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonPressed"]
+content_margin_left = 28.0
+content_margin_top = 10.0
+content_margin_right = 28.0
+content_margin_bottom = 10.0
+bg_color = Color(0.604, 0.243, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.169, 0.137, 1)
+shadow_color = Color(0, 0, 0, 0.188)
+shadow_size = 1
+shadow_offset = Vector2(1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonHover"]
+content_margin_left = 28.0
+content_margin_top = 10.0
+content_margin_right = 28.0
+content_margin_bottom = 10.0
+bg_color = Color(0.961, 0.925, 0.843, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.545, 0.478, 0.388, 1)
+shadow_color = Color(0.545, 0.478, 0.388, 1)
+shadow_size = 4
+shadow_offset = Vector2(3, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonNormal"]
+content_margin_left = 28.0
+content_margin_top = 10.0
+content_margin_right = 28.0
+content_margin_bottom = 10.0
+bg_color = Color(0.961, 0.925, 0.843, 1)
 
 [node name="ControlSettings" type="Control" unique_id=1665487301]
 layout_mode = 3
@@ -22,6 +149,19 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.961, 0.925, 0.843, 1)
 
+[node name="PaperTexture" type="TextureRect" parent="." unique_id=299770932]
+modulate = Color(1, 1, 1, 0.12)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_paper")
+expand_mode = 1
+stretch_mode = 6
+
 [node name="SettingsPanel" type="PanelContainer" parent="." unique_id=1915765381]
 layout_mode = 1
 anchors_preset = 8
@@ -29,226 +169,342 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -320.0
-offset_top = -260.0
-offset_right = 320.0
-offset_bottom = 260.0
+offset_left = -360.0
+offset_top = -310.0
+offset_right = 360.0
+offset_bottom = 310.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_SettingsPanel")
 
 [node name="SettingsVBox" type="VBoxContainer" parent="SettingsPanel" unique_id=1099283264]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 16
 
 [node name="TitleLabel" type="Label" parent="SettingsPanel/SettingsVBox" unique_id=2013306929]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 28
 text = "操作设置"
 horizontal_alignment = 1
 
 [node name="Separator1" type="HSeparator" parent="SettingsPanel/SettingsVBox" unique_id=1290620289]
 layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxLine_TitleSeparator")
 
 [node name="Tabs" type="TabContainer" parent="SettingsPanel/SettingsVBox" unique_id=1259957071]
-custom_minimum_size = Vector2(0, 320)
+custom_minimum_size = Vector2(0, 420)
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_colors/font_selected_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_colors/font_hovered_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_colors/font_unselected_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_colors/font_disabled_color = Color(0.961, 0.925, 0.843, 0.5)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/panel = SubResource("StyleBoxFlat_TabPanel")
+theme_override_styles/tab_unselected = SubResource("StyleBoxFlat_TabUnselected")
+theme_override_styles/tab_hovered = SubResource("StyleBoxFlat_TabHover")
+theme_override_styles/tab_selected = SubResource("StyleBoxFlat_TabSelected")
+theme_override_styles/tab_disabled = SubResource("StyleBoxFlat_TabUnselected")
+current_tab = 0
 
 [node name="ZoomPage" type="VBoxContainer" parent="SettingsPanel/SettingsVBox/Tabs" unique_id=1643516034]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 16
+metadata/_tab_index = 0
 
 [node name="ZoomGrid" type="GridContainer" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage" unique_id=1092388940]
 layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 14
 columns = 3
 
 [node name="ZoomSpeedLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1757473165]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "缩放速度"
 
 [node name="ZoomSpeedSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1406753933]
 custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
+theme_override_styles/slider = SubResource("StyleBoxFlat_SliderTrack")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_SliderFill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_SliderFill")
 
 [node name="ZoomSpeedValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1121698947]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "10.0"
 horizontal_alignment = 2
 
 [node name="ZoomImpulseLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1498474272]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "缩放惯性力度"
 
 [node name="ZoomImpulseSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1711834771]
 custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
+theme_override_styles/slider = SubResource("StyleBoxFlat_SliderTrack")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_SliderFill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_SliderFill")
 
 [node name="ZoomImpulseValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1216708231]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "6.0"
 horizontal_alignment = 2
 
 [node name="ZoomDampingLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=2044851822]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "缩放惯性阻尼"
 
 [node name="ZoomDampingSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=2023821147]
 custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
+theme_override_styles/slider = SubResource("StyleBoxFlat_SliderTrack")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_SliderFill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_SliderFill")
 
 [node name="ZoomDampingValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1765686216]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "12.0"
 horizontal_alignment = 2
 
 [node name="MaxZoomVelocityLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1793847281]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "缩放最大速度"
 
 [node name="MaxZoomVelocitySlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1959808976]
 custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
+theme_override_styles/slider = SubResource("StyleBoxFlat_SliderTrack")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_SliderFill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_SliderFill")
 
 [node name="MaxZoomVelocityValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1992690660]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "3.00"
 horizontal_alignment = 2
 
 [node name="ZoomStepLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1672023031]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "缩放步进"
 
 [node name="ZoomStepSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1784348188]
 custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
+theme_override_styles/slider = SubResource("StyleBoxFlat_SliderTrack")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_SliderFill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_SliderFill")
 
 [node name="ZoomStepValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1466991726]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "0.050"
 horizontal_alignment = 2
 
 [node name="FineZoomStepLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1088960567]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "细调步进 (Ctrl)"
 
 [node name="FineZoomStepSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1908340897]
 custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
+theme_override_styles/slider = SubResource("StyleBoxFlat_SliderTrack")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_SliderFill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_SliderFill")
 
 [node name="FineZoomStepValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=2076157784]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "0.010"
 horizontal_alignment = 2
 
 [node name="CoarseZoomStepLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1662391043]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "粗调步进 (Shift)"
 
 [node name="CoarseZoomStepSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=2059250720]
 custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
+theme_override_styles/slider = SubResource("StyleBoxFlat_SliderTrack")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_SliderFill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_SliderFill")
 
 [node name="CoarseZoomStepValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/ZoomPage/ZoomGrid" unique_id=1674285822]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "0.100"
 horizontal_alignment = 2
 
 [node name="MovePage" type="VBoxContainer" parent="SettingsPanel/SettingsVBox/Tabs" unique_id=2090481637]
+visible = false
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 16
+metadata/_tab_index = 1
 
 [node name="MoveGrid" type="GridContainer" parent="SettingsPanel/SettingsVBox/Tabs/MovePage" unique_id=1260409398]
 layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 14
 columns = 3
 
 [node name="MoveSpeedLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=2000019440]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "移动速度"
 
 [node name="MoveSpeedSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1964180148]
 custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
+theme_override_styles/slider = SubResource("StyleBoxFlat_SliderTrack")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_SliderFill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_SliderFill")
 
 [node name="MoveSpeedValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1331386371]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "240"
 horizontal_alignment = 2
 
 [node name="MoveAccelerationLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1872964114]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "移动加速度"
 
 [node name="MoveAccelerationSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1541042212]
 custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
+theme_override_styles/slider = SubResource("StyleBoxFlat_SliderTrack")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_SliderFill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_SliderFill")
 
 [node name="MoveAccelerationValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1421125742]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "1200"
 horizontal_alignment = 2
 
 [node name="MoveDampingLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1260409397]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "移动阻尼"
 
 [node name="MoveDampingSlider" type="HSlider" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1974575890]
 custom_minimum_size = Vector2(220, 28)
 layout_mode = 2
+theme_override_styles/slider = SubResource("StyleBoxFlat_SliderTrack")
+theme_override_styles/grabber_area = SubResource("StyleBoxFlat_SliderFill")
+theme_override_styles/grabber_area_highlight = SubResource("StyleBoxFlat_SliderFill")
 
 [node name="MoveDampingValueLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/MovePage/MoveGrid" unique_id=1092388939]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "1600"
 horizontal_alignment = 2
 
 [node name="AdvancedPage" type="VBoxContainer" parent="SettingsPanel/SettingsVBox/Tabs" unique_id=1841230073]
+visible = false
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 16
+metadata/_tab_index = 2
 
 [node name="AdvancedGrid" type="GridContainer" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage" unique_id=2140934512]
 layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 14
 columns = 2
 
 [node name="ZoomSmoothingLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=100492104]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "平滑缩放"
 
-[node name="ZoomSmoothingCheck" type="CheckButton" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1990104265]
+[node name="ZoomSmoothingCheck" type="CheckBox" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1990104265]
 layout_mode = 2
-text = ""
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
 
 [node name="EnableKeyboardPanLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1662391044]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "启用键盘移动"
 
-[node name="EnableKeyboardPanCheck" type="CheckButton" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1641230953]
+[node name="EnableKeyboardPanCheck" type="CheckBox" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1641230953]
 layout_mode = 2
-text = ""
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
 
 [node name="ScaleMoveSpeedLabel" type="Label" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1662391045]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
+theme_override_font_sizes/font_size = 15
 text = "移动速度随缩放调整"
 
-[node name="ScaleMoveSpeedCheck" type="CheckButton" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1688324234]
+[node name="ScaleMoveSpeedCheck" type="CheckBox" parent="SettingsPanel/SettingsVBox/Tabs/AdvancedPage/AdvancedGrid" unique_id=1688324234]
 layout_mode = 2
-text = ""
+theme_override_colors/font_color = Color(0.961, 0.925, 0.843, 1)
 
 [node name="ButtonsHBox" type="HBoxContainer" parent="SettingsPanel/SettingsVBox" unique_id=1884378584]
 layout_mode = 2
-alignment = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 18
+alignment = 1
 
 [node name="SaveButton" type="Button" parent="SettingsPanel/SettingsVBox/ButtonsHBox" unique_id=1747002744]
 custom_minimum_size = Vector2(120, 44)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonPrimary")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonPressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonHover")
 text = "保存"
 
 [node name="ResetButton" type="Button" parent="SettingsPanel/SettingsVBox/ButtonsHBox" unique_id=2016210020]
 custom_minimum_size = Vector2(120, 44)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonNormal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonPressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonHover")
 text = "恢复默认"
 
 [node name="BackButton" type="Button" parent="SettingsPanel/SettingsVBox/ButtonsHBox" unique_id=1433253290]
 custom_minimum_size = Vector2(120, 44)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonNormal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonPressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonHover")
 text = "返回"

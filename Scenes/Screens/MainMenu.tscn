@@ -2,6 +2,81 @@
 
 [ext_resource type="Script" uid="uid://bs483nvvpuvwt" path="res://Scripts/UI/Screens/MainMenu.cs" id="1_mainmenu"]
 [ext_resource type="Theme" uid="uid://inkwashtheme" path="res://Themes/InkWashTheme.tres" id="2_theme"]
+[ext_resource type="Texture2D" uid="uid://cpajuena3us3n" path="res://Assets/UI/Textures/Paper/Paper005_1K-PNG_Color.png" id="3_paper"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ScreenPanel"]
+content_margin_left = 22.0
+content_margin_top = 22.0
+content_margin_right = 22.0
+content_margin_bottom = 22.0
+bg_color = Color(0.91, 0.835, 0.71, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.545, 0.478, 0.388, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0, 0, 0, 0.094)
+shadow_size = 8
+shadow_offset = Vector2(3, 4)
+
+[sub_resource type="StyleBoxLine" id="StyleBoxLine_Separator"]
+color = Color(0, 0, 0, 0.094)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonPrimary"]
+content_margin_left = 28.0
+content_margin_top = 10.0
+content_margin_right = 28.0
+content_margin_bottom = 10.0
+bg_color = Color(0.91, 0.835, 0.71, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.545, 0.478, 0.388, 1)
+shadow_color = Color(0.545, 0.478, 0.388, 1)
+shadow_size = 2
+shadow_offset = Vector2(2, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonPressed"]
+content_margin_left = 28.0
+content_margin_top = 10.0
+content_margin_right = 28.0
+content_margin_bottom = 10.0
+bg_color = Color(0.604, 0.243, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.169, 0.137, 1)
+shadow_color = Color(0, 0, 0, 0.188)
+shadow_size = 1
+shadow_offset = Vector2(1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonHover"]
+content_margin_left = 28.0
+content_margin_top = 10.0
+content_margin_right = 28.0
+content_margin_bottom = 10.0
+bg_color = Color(0.961, 0.925, 0.843, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.545, 0.478, 0.388, 1)
+shadow_color = Color(0.545, 0.478, 0.388, 1)
+shadow_size = 4
+shadow_offset = Vector2(3, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonNormal"]
+content_margin_left = 28.0
+content_margin_top = 10.0
+content_margin_right = 28.0
+content_margin_bottom = 10.0
+bg_color = Color(0.961, 0.925, 0.843, 1)
 
 [node name="MainMenu" type="Control" unique_id=1679371143]
 layout_mode = 3
@@ -22,6 +97,19 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.961, 0.925, 0.843, 1)
 
+[node name="PaperTexture" type="TextureRect" parent="." unique_id=1864789917]
+modulate = Color(1, 1, 1, 0.12)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_paper")
+expand_mode = 1
+stretch_mode = 6
+
 [node name="menuPanel" type="PanelContainer" parent="." unique_id=891737741]
 layout_mode = 1
 anchors_preset = 8
@@ -29,21 +117,22 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -160.0
-offset_top = -280.0
-offset_right = 160.0
-offset_bottom = 280.0
+offset_left = -220.0
+offset_top = -296.0
+offset_right = 220.0
+offset_bottom = 296.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ScreenPanel")
 
 [node name="menuVBox" type="VBoxContainer" parent="menuPanel" unique_id=1014631128]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 14
 
 [node name="titleLabel" type="Label" parent="menuPanel/menuVBox" unique_id=2041093407]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
-theme_override_font_sizes/font_size = 36
+theme_override_font_sizes/font_size = 34
 text = "奇幻地图生成器"
 horizontal_alignment = 1
 
@@ -53,6 +142,7 @@ layout_mode = 2
 
 [node name="Separator" type="HSeparator" parent="menuPanel/menuVBox" unique_id=1547255922]
 layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxLine_Separator")
 
 [node name="ButtonSpacer" type="Control" parent="menuPanel/menuVBox" unique_id=1029493541]
 custom_minimum_size = Vector2(0, 16)
@@ -61,26 +151,51 @@ layout_mode = 2
 [node name="newGameButton" type="Button" parent="menuPanel/menuVBox" unique_id=1337551613]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonPrimary")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonPressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonHover")
 text = "新游戏"
 
 [node name="loadGameButton" type="Button" parent="menuPanel/menuVBox" unique_id=962754335]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonNormal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonPressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonHover")
 text = "加载游戏"
 
 [node name="modManagerButton" type="Button" parent="menuPanel/menuVBox" unique_id=1234187625]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonNormal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonPressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonHover")
 text = "模组管理"
 
 [node name="settingsButton" type="Button" parent="menuPanel/menuVBox" unique_id=918563739]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonNormal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonPressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonHover")
 text = "设置"
 
 [node name="quitButton" type="Button" parent="menuPanel/menuVBox" unique_id=154658479]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonNormal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonPressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonHover")
 text = "退出游戏"
 
 [node name="BottomSpacer" type="Control" parent="menuPanel/menuVBox" unique_id=1904650929]
@@ -89,10 +204,11 @@ layout_mode = 2
 
 [node name="Separator2" type="HSeparator" parent="menuPanel/menuVBox" unique_id=1981255024]
 layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxLine_Separator")
 
 [node name="versionLabel" type="Label" parent="menuPanel/menuVBox" unique_id=1906896448]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.545, 0.478, 0.388, 1)
 theme_override_font_sizes/font_size = 14
-text = "v1.0.0"
+text = "v1.1.3"
 horizontal_alignment = 1

@@ -10,7 +10,8 @@ public partial class ModManager : Control
 {
 	private Label _titleLabel;
 	private Label _sampleModLabel;
-	private CheckButton _sampleModCheck;
+	private Label _sampleModTextLabel;
+	private CheckBox _sampleModCheck;
 	private Button _backButton;
 	private VBoxContainer _modList;
 
@@ -22,7 +23,8 @@ public partial class ModManager : Control
 		_backButton = GetNode<Button>("MainPanel/MainVBox/BackButton");
 		_modList = GetNode<VBoxContainer>("MainPanel/MainVBox/ScrollContainer/ModList");
 		_sampleModLabel = GetNode<Label>("MainPanel/MainVBox/ScrollContainer/ModList/SampleModLabel");
-		_sampleModCheck = GetNode<CheckButton>("MainPanel/MainVBox/ScrollContainer/ModList/SampleModCheck");
+		_sampleModTextLabel = GetNode<Label>("MainPanel/MainVBox/ScrollContainer/ModList/SampleModRow/SampleModTextLabel");
+		_sampleModCheck = GetNode<CheckBox>("MainPanel/MainVBox/ScrollContainer/ModList/SampleModRow/SampleModCheck");
 
 		_translationManager = TranslationManager.Instance;
 		_translationManager.LanguageChanged += OnLanguageChanged;
@@ -53,7 +55,11 @@ public partial class ModManager : Control
 		}
 		if (_sampleModCheck != null)
 		{
-			_sampleModCheck.Text = tm.Tr("sample_mod");
+			_sampleModCheck.Text = string.Empty;
+		}
+		if (_sampleModTextLabel != null)
+		{
+			_sampleModTextLabel.Text = tm.Tr("sample_mod");
 		}
 		if (_backButton != null)
 		{

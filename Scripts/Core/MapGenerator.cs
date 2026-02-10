@@ -36,6 +36,12 @@ public class MapGenerator
     public bool UseTemplate { get; set; } = true;
     public HeightmapTemplateType TemplateType { get; set; } = HeightmapTemplateType.HighIsland;
     public bool RandomTemplate { get; set; } = true;
+    public PlanetGenerationProfile ExternalTerrainProfile { get; set; } = PlanetGenerationProfile.Default;
+    public float ExternalMountainInfluence { get; set; } = 0.55f;
+    public float ExternalPolarInfluence { get; set; } = 0.55f;
+    public float ExternalDesertInfluence { get; set; } = 0.45f;
+    public float ExternalAtmosphereInfluence { get; set; } = 0.62f;
+    public bool UseProcGenesisExternalRefinement { get; set; } = true;
     public bool HasExternalHeightmap => _externalHeightmap != null && _externalHeightmapWidth > 1 && _externalHeightmapHeight > 1;
 
     private float[] _externalHeightmap;
@@ -105,6 +111,10 @@ public class MapGenerator
         if (HasExternalHeightmap)
         {
             heightmap = BuildHeightmapFromExternalSource(width, height);
+            if (UseProcGenesisExternalRefinement)
+            {
+                heightmap = RefineExternalHeightmap(heightmap, width, height, ExternalTerrainProfile);
+            }
             _heightmapProcessor.ApplyToCells(cells, heightmap, width, height, UseMultithreading);
         }
         else if (UseTemplate)
@@ -262,6 +272,12 @@ public class MapGenerator
         float[] heightmap = HasExternalHeightmap
             ? BuildHeightmapFromExternalSource(width, height)
             : _heightmapProcessor.GenerateHeightmap(width, height);
+
+        if (HasExternalHeightmap && UseProcGenesisExternalRefinement)
+        {
+            heightmap = RefineExternalHeightmap(heightmap, width, height, ExternalTerrainProfile);
+        }
+
         _heightmapProcessor.ApplyToCells(cells, heightmap, width, height, UseMultithreading);
         ForceBorderLand(cells, width, height);
         _heightmapProcessor.AssignColors(cells, UseMultithreading);
@@ -419,10 +435,32 @@ public class MapGenerator
     private void CalculatePrecipitation(Cell[] cells, int width, int height, Action<float> progressCallback = null)
     {
         progressCallback?.Invoke(0f);
-        var noise = new FastNoiseLite();
-        noise.Seed = PRNG.NextInt();
-        noise.Frequency = 0.02f;
-        noise.FractalType = FastNoiseLite.FractalTypeEnum.Fbm;
+
+        PlanetGenerationProfile profile = HasExternalHeightmap ? ExternalTerrainProfile : PlanetGenerationProfile.Default;
+        float windCells = Mathf.Clamp(profile.WindCellCount / 20f, 0f, 1f);
+        float mountainInfluence = HasExternalHeightmap ? Mathf.Clamp(ExternalMountainInfluence, 0f, 1f) : 0.55f;
+        float polarInfluence = HasExternalHeightmap ? Mathf.Clamp(ExternalPolarInfluence, 0f, 1f) : 0.55f;
+        float desertInfluence = HasExternalHeightmap ? Mathf.Clamp(ExternalDesertInfluence, 0f, 1f) : 0.45f;
+        float atmosphereInfluence = HasExternalHeightmap ? Mathf.Clamp(ExternalAtmosphereInfluence, 0f, 1f) : 0.62f;
+        float moistureTransport = Mathf.Lerp(0.34f, 1f, profile.MoistureTransport * 0.72f + atmosphereInfluence * 0.28f);
+
+        var windNoise = new FastNoiseLite
+        {
+            Seed = PRNG.NextInt(),
+            NoiseType = FastNoiseLite.NoiseTypeEnum.SimplexSmooth,
+            Frequency = Mathf.Lerp(0.0055f, 0.028f, windCells),
+            FractalType = FastNoiseLite.FractalTypeEnum.Fbm,
+            FractalOctaves = 2
+        };
+
+        var moistureNoise = new FastNoiseLite
+        {
+            Seed = PRNG.NextInt(),
+            NoiseType = FastNoiseLite.NoiseTypeEnum.Simplex,
+            Frequency = 0.012f,
+            FractalType = FastNoiseLite.FractalTypeEnum.Fbm,
+            FractalOctaves = 3
+        };
 
         int total = Math.Max(1, cells.Length);
         int progressStep = Math.Max(1, total / 200);
@@ -430,16 +468,45 @@ public class MapGenerator
         {
             var cell = cells[i];
 
-            // 基础降水噪音
-            float noiseVal = noise.GetNoise2D(cell.Position.X, cell.Position.Y);
-            // 归一化到 0-1
-            float precipitation = (noiseVal + 1) / 2f;
-            
-            // 简单模拟: 高度越高/靠近水源 降水可能不同 (此处简化)
-            // 调整强度
-            precipitation *= 255;
-            
-            cell.Precipitation = (byte)Mathf.Clamp(precipitation, 0, 255);
+            float ny = height > 1 ? cell.Position.Y / (height - 1f) : 0f;
+            float latitude = Mathf.Abs(ny - 0.5f) * 2f;
+            float heatBand = ComputeLatitudinalHeat01(latitude, profile.HeatFactor);
+
+            float equatorialRain = Mathf.Exp(-Mathf.Pow(latitude / Mathf.Lerp(0.3f, 0.42f, atmosphereInfluence), 2f));
+            float subtropicDry = Mathf.Exp(-Mathf.Pow((latitude - 0.33f) / 0.13f, 2f));
+            float polarDry = Mathf.Exp(-Mathf.Pow((latitude - Mathf.Lerp(0.86f, 0.72f, polarInfluence)) / 0.12f, 2f));
+            float latitudinalRain = Mathf.Clamp(
+                0.24f
+                + equatorialRain * Mathf.Lerp(0.5f, 0.68f, atmosphereInfluence)
+                - subtropicDry * Mathf.Lerp(0.24f, 0.46f, desertInfluence)
+                - polarDry * Mathf.Lerp(0.16f, 0.3f, polarInfluence),
+                0f,
+                1f);
+
+            float wind = (windNoise.GetNoise2D(cell.Position.X, cell.Position.Y) + 1f) * 0.5f;
+            float moisture = (moistureNoise.GetNoise2D(cell.Position.X, cell.Position.Y) + 1f) * 0.5f;
+
+            float altitude01 = Mathf.Clamp((cell.Height - WaterLevel) / Mathf.Max(0.0001f, 1f - WaterLevel), 0f, 1f);
+            float coastal = Mathf.Clamp(1f - Mathf.Abs(cell.Height - WaterLevel) * 3.1f, 0f, 1f);
+            float orographic = altitude01 * wind * (0.12f + profile.ReliefStrength * 0.3f + mountainInfluence * 0.24f);
+
+            float precipitation01 = latitudinalRain * moistureTransport
+                + moisture * 0.2f
+                + wind * 0.14f
+                + coastal * 0.22f
+                + orographic
+                - altitude01 * (0.1f + desertInfluence * 0.12f)
+                - desertInfluence * 0.1f;
+            precipitation01 = Mathf.Clamp(precipitation01, 0f, 1f);
+
+            float heatNormalized = Mathf.Clamp((1000f - profile.HeatFactor) / 999f, 0f, 1f);
+            float baseTemperature = Mathf.Lerp(-18f, 34f, heatBand) + Mathf.Lerp(-11f, 11f, heatNormalized) - polarInfluence * 3.6f;
+            float altitudeCooling = altitude01 * Mathf.Lerp(8f, 26f, profile.ReliefStrength * 0.62f + mountainInfluence * 0.38f);
+            float moistureCooling = precipitation01 * Mathf.Lerp(3.4f, 5.2f, atmosphereInfluence);
+            float temperature = baseTemperature - altitudeCooling - moistureCooling;
+            cell.Temperature = (sbyte)Mathf.Clamp(Mathf.RoundToInt(temperature), -40, 50);
+
+            cell.Precipitation = (byte)Mathf.Clamp(Mathf.RoundToInt(precipitation01 * 255f), 0, 255);
 
             if (i == cells.Length - 1 || i % progressStep == 0)
             {
@@ -448,6 +515,238 @@ public class MapGenerator
         }
 
         progressCallback?.Invoke(1f);
+    }
+
+    private float[] RefineExternalHeightmap(float[] source, int width, int height, PlanetGenerationProfile profile)
+    {
+        if (source == null || source.Length != width * height)
+        {
+            return source;
+        }
+
+        float mountainInfluence = HasExternalHeightmap ? Mathf.Clamp(ExternalMountainInfluence, 0f, 1f) : 0.55f;
+        float polarInfluence = HasExternalHeightmap ? Mathf.Clamp(ExternalPolarInfluence, 0f, 1f) : 0.55f;
+        float desertInfluence = HasExternalHeightmap ? Mathf.Clamp(ExternalDesertInfluence, 0f, 1f) : 0.45f;
+        float atmosphereInfluence = HasExternalHeightmap ? Mathf.Clamp(ExternalAtmosphereInfluence, 0f, 1f) : 0.62f;
+
+        var refined = new float[source.Length];
+        Array.Copy(source, refined, source.Length);
+
+        float[] moistureMap = new float[source.Length];
+        float[] boundaryMap = new float[source.Length];
+
+        float tectonicScale = Mathf.Clamp((profile.TectonicPlateCount - 1f) / 63f, 0f, 1f);
+        float windScale = Mathf.Clamp(profile.WindCellCount / 20f, 0f, 1f);
+        float erosionScale = Mathf.Clamp(profile.ErosionStrength * (profile.ErosionIterations / 16f), 0f, 1f);
+        float heatNormalized = Mathf.Clamp((1000f - profile.HeatFactor) / 999f, 0f, 1f);
+
+        var plateNoise = new FastNoiseLite
+        {
+            Seed = PRNG.NextInt(),
+            NoiseType = FastNoiseLite.NoiseTypeEnum.Cellular,
+            Frequency = Mathf.Lerp(0.32f, 2.1f, tectonicScale)
+        };
+
+        var mountainNoise = new FastNoiseLite
+        {
+            Seed = PRNG.NextInt(),
+            NoiseType = FastNoiseLite.NoiseTypeEnum.Perlin,
+            Frequency = Mathf.Lerp(1.8f, 5.6f, profile.ReliefStrength),
+            FractalType = FastNoiseLite.FractalTypeEnum.Fbm,
+            FractalOctaves = 3
+        };
+
+        var windNoise = new FastNoiseLite
+        {
+            Seed = PRNG.NextInt(),
+            NoiseType = FastNoiseLite.NoiseTypeEnum.SimplexSmooth,
+            Frequency = Mathf.Lerp(1.2f, 4.1f, windScale),
+            FractalType = FastNoiseLite.FractalTypeEnum.Fbm,
+            FractalOctaves = 2
+        };
+
+        for (int y = 0; y < height; y++)
+        {
+            float v = height > 1 ? y / (float)(height - 1) : 0f;
+            float lat = Mathf.Abs(v - 0.5f) * 2f;
+            float heatBand = ComputeLatitudinalHeat01(lat, profile.HeatFactor);
+
+            for (int x = 0; x < width; x++)
+            {
+                int index = y * width + x;
+
+                float px = width > 1 ? x / (float)(width - 1) : 0f;
+                float py = v;
+
+                float plateRaw = Mathf.Abs(plateNoise.GetNoise2D(px * 32f, py * 16f));
+                float boundary = Mathf.Pow(Mathf.Clamp(1f - plateRaw, 0f, 1f), 1.4f);
+                boundaryMap[index] = boundary;
+
+                float ridge = Mathf.Abs(mountainNoise.GetNoise2D(px * 24f, py * 12f));
+                float uplift = boundary * profile.ReliefStrength * (0.1f + mountainInfluence * 0.18f) + ridge * profile.ReliefStrength * (0.05f + mountainInfluence * 0.08f);
+
+                float windNoiseField = (windNoise.GetNoise2D(px * 12f, py * 12f) + 1f) * 0.5f;
+                float zonalField = 0.5f + 0.5f * Mathf.Sin(py * Mathf.Tau * Mathf.Lerp(2.2f, 7.8f, windScale) + px * Mathf.Tau * 0.37f + windNoiseField * 1.8f);
+                float windField = Mathf.Clamp(windNoiseField * 0.52f + zonalField * 0.48f, 0f, 1f);
+                moistureMap[index] = Mathf.Clamp(
+                    (0.32f + windField * 0.42f + (1f - lat) * 0.22f + atmosphereInfluence * 0.14f - desertInfluence * 0.11f)
+                    * (0.66f + profile.MoistureTransport * 0.62f),
+                    0f,
+                    1f);
+
+                float thermalShift = (heatBand - 0.5f) * (0.04f + (1f - polarInfluence) * 0.05f) - desertInfluence * 0.015f;
+                refined[index] = Mathf.Clamp(refined[index] + uplift + thermalShift, 0f, 1f);
+            }
+        }
+
+        float erosionStrength = profile.ErosionStrength * Mathf.Lerp(0.58f, 1.36f, profile.ReliefStrength * 0.7f + mountainInfluence * 0.3f);
+        for (int i = 0; i < profile.ErosionIterations; i++)
+        {
+            ApplyScalarErosion(refined, moistureMap, width, height, erosionStrength);
+        }
+
+        float targetSeaLevel = Mathf.Clamp(
+            WaterLevel
+            + (profile.ContinentalFrequency - 0.62f) * 0.16f
+            + (desertInfluence - 0.45f) * 0.05f
+            - (atmosphereInfluence - 0.62f) * 0.04f
+            + (heatNormalized - 0.5f) * 0.03f,
+            0.18f,
+            0.78f);
+
+        int chunkPasses = Mathf.Clamp(
+            Mathf.RoundToInt(Mathf.Lerp(4f, 1.5f, tectonicScale) + Mathf.Lerp(0f, 1.2f, erosionScale)),
+            1,
+            6);
+        float coastlineHardness = Mathf.Clamp(
+            0.45f + tectonicScale * 0.45f - profile.ErosionStrength * 0.18f + desertInfluence * 0.08f,
+            0.2f,
+            0.95f);
+        ApplyExternalLandOceanChunking(refined, width, height, targetSeaLevel, chunkPasses, coastlineHardness);
+
+        for (int i = 0; i < refined.Length; i++)
+        {
+            float reinforced = refined[i] + boundaryMap[i] * profile.ReliefStrength * (0.03f + mountainInfluence * 0.05f);
+            float desertCarve = (0.5f - moistureMap[i]) * desertInfluence * 0.06f;
+            float polarCarve = polarInfluence * 0.04f;
+            float aeolianCarve = (0.5f - moistureMap[i]) * windScale * (0.01f + desertInfluence * 0.03f);
+            float blended = Mathf.Lerp(source[i], reinforced - desertCarve - polarCarve - aeolianCarve, 0.7f);
+            refined[i] = Mathf.Clamp(blended, 0f, 1f);
+        }
+
+        int finalChunkPasses = Mathf.Clamp(Mathf.RoundToInt(1f + (1f - erosionScale) * 2f), 1, 3);
+        ApplyExternalLandOceanChunking(refined, width, height, targetSeaLevel, finalChunkPasses, coastlineHardness);
+
+        return refined;
+    }
+
+    private static void ApplyExternalLandOceanChunking(float[] elevation, int width, int height, float seaLevel, int passes, float coastlineHardness)
+    {
+        if (elevation == null || elevation.Length != width * height)
+        {
+            return;
+        }
+
+        bool[] landMask = new bool[elevation.Length];
+        for (int i = 0; i < elevation.Length; i++)
+        {
+            landMask[i] = elevation[i] >= seaLevel;
+        }
+
+        int voteThreshold = coastlineHardness >= 0.65f ? 6 : 5;
+        for (int pass = 0; pass < passes; pass++)
+        {
+            bool[] next = new bool[landMask.Length];
+            for (int y = 0; y < height; y++)
+            {
+                int y0 = Mathf.Max(0, y - 1);
+                int y2 = Mathf.Min(height - 1, y + 1);
+                for (int x = 0; x < width; x++)
+                {
+                    int x0 = x <= 0 ? width - 1 : x - 1;
+                    int x2 = x >= width - 1 ? 0 : x + 1;
+                    int index = y * width + x;
+
+                    int landVotes = 0;
+                    landVotes += landMask[y0 * width + x0] ? 1 : 0;
+                    landVotes += landMask[y0 * width + x] ? 1 : 0;
+                    landVotes += landMask[y0 * width + x2] ? 1 : 0;
+                    landVotes += landMask[y * width + x0] ? 1 : 0;
+                    landVotes += landMask[index] ? 1 : 0;
+                    landVotes += landMask[y * width + x2] ? 1 : 0;
+                    landVotes += landMask[y2 * width + x0] ? 1 : 0;
+                    landVotes += landMask[y2 * width + x] ? 1 : 0;
+                    landVotes += landMask[y2 * width + x2] ? 1 : 0;
+
+                    next[index] = landVotes >= voteThreshold;
+                }
+            }
+
+            landMask = next;
+        }
+
+        float landClamp = seaLevel + Mathf.Lerp(0.018f, 0.046f, coastlineHardness);
+        float oceanClamp = seaLevel - Mathf.Lerp(0.015f, 0.04f, coastlineHardness);
+        for (int i = 0; i < elevation.Length; i++)
+        {
+            if (landMask[i])
+            {
+                elevation[i] = Mathf.Max(elevation[i], landClamp);
+            }
+            else
+            {
+                elevation[i] = Mathf.Min(elevation[i], oceanClamp);
+            }
+        }
+    }
+
+    private static void ApplyScalarErosion(float[] elevation, float[] moisture, int width, int height, float strength)
+    {
+        if (strength <= 0.0001f)
+        {
+            return;
+        }
+
+        float[] next = new float[elevation.Length];
+
+        for (int y = 0; y < height; y++)
+        {
+            int y0 = Mathf.Max(0, y - 1);
+            int y1 = y;
+            int y2 = Mathf.Min(height - 1, y + 1);
+
+            for (int x = 0; x < width; x++)
+            {
+                int x0 = Mathf.Max(0, x - 1);
+                int x1 = x;
+                int x2 = Mathf.Min(width - 1, x + 1);
+
+                int index = y * width + x;
+                float center = elevation[index];
+
+                float avg = (
+                    elevation[y0 * width + x0] + elevation[y0 * width + x1] + elevation[y0 * width + x2] +
+                    elevation[y1 * width + x0] + elevation[y1 * width + x1] + elevation[y1 * width + x2] +
+                    elevation[y2 * width + x0] + elevation[y2 * width + x1] + elevation[y2 * width + x2]) / 9f;
+
+                float slope = center - avg;
+                float wetness = moisture[index];
+                float erosion = Mathf.Max(0f, slope) * strength * (0.35f + wetness * 0.65f);
+                float deposition = Mathf.Max(0f, -slope) * strength * 0.24f;
+
+                next[index] = Mathf.Clamp(center - erosion + deposition, 0f, 1f);
+            }
+        }
+
+        Array.Copy(next, elevation, elevation.Length);
+    }
+
+    private static float ComputeLatitudinalHeat01(float latitude01, float heatFactor)
+    {
+        float heatNormalized = Mathf.Clamp((1000f - heatFactor) / 999f, 0f, 1f);
+        float exponent = Mathf.Lerp(1.65f, 0.72f, heatNormalized);
+        float latFalloff = Mathf.Pow(Mathf.Clamp(latitude01, 0f, 1f), exponent);
+        return Mathf.Clamp(1f - latFalloff, 0f, 1f);
     }
 
     private Vector2[] GenerateRandomPoints(int count, int width, int height)

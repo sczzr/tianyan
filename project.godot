@@ -29,6 +29,10 @@ window/stretch/aspect="ignore"
 
 project/assembly_name="Fantasy Map Generator"
 
+[filesystem]
+
+import/blender/enabled=false
+
 [rendering]
 
 renderer/rendering_method="gl_compatibility"

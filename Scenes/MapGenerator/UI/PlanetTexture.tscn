@@ -66,15 +66,15 @@ anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 18.0
-offset_top = -142.0
-offset_right = 338.0
+offset_top = -700.0
+offset_right = 382.0
 offset_bottom = -18.0
 grow_vertical = 0
 theme_override_styles/panel = SubResource("HudPanelStyle")
 
 [node name="OrbitSectionVBox" type="VBoxContainer" parent="OrbitSection" unique_id=1748635521]
 layout_mode = 2
-theme_override_constants/separation = 5
+theme_override_constants/separation = 6
 
 [node name="OrbitSectionTitle" type="Label" parent="OrbitSection/OrbitSectionVBox" unique_id=854264347]
 layout_mode = 2
@@ -82,15 +82,268 @@ theme_override_colors/font_color = Color(0.78, 0.66, 0.42, 1)
 theme_override_font_sizes/font_size = 15
 text = "[肆] 轨道显示"
 
-[node name="ShowMoonOrbitToggle" type="CheckButton" parent="OrbitSection/OrbitSectionVBox" unique_id=2006948062]
+[node name="ModeTierHintLabel" type="Label" parent="OrbitSection/OrbitSectionVBox" unique_id=641155995]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.72, 0.74, 0.78, 0.92)
+theme_override_font_sizes/font_size = 11
+text = "探索模式: 入门参数 | 上帝模式: 全量参数"
+autowrap_mode = 3
+
+[node name="ShowMoonOrbitRow" type="HBoxContainer" parent="OrbitSection/OrbitSectionVBox" unique_id=2006248622]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ShowMoonOrbitToggle" type="CheckBox" parent="OrbitSection/OrbitSectionVBox/ShowMoonOrbitRow" unique_id=2006948062]
 layout_mode = 2
 button_pressed = true
+
+[node name="ShowMoonOrbitLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/ShowMoonOrbitRow" unique_id=423595144]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
 text = "显示卫星轨道"
 
-[node name="ShowPlanetOrbitToggle" type="CheckButton" parent="OrbitSection/OrbitSectionVBox" unique_id=963980053]
+[node name="ShowPlanetOrbitRow" type="HBoxContainer" parent="OrbitSection/OrbitSectionVBox" unique_id=1579288268]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ShowPlanetOrbitToggle" type="CheckBox" parent="OrbitSection/OrbitSectionVBox/ShowPlanetOrbitRow" unique_id=963980053]
 layout_mode = 2
 button_pressed = true
+
+[node name="ShowPlanetOrbitLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/ShowPlanetOrbitRow" unique_id=81222848]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
 text = "显示行星轨道"
+
+[node name="StarMassLabel" type="Label" parent="OrbitSection/OrbitSectionVBox" unique_id=2042457414]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "恒星质量: 1.00 M☉"
+
+[node name="StarMassSlider" type="HSlider" parent="OrbitSection/OrbitSectionVBox" unique_id=756441399]
+layout_mode = 2
+min_value = 0.08
+max_value = 8.0
+step = 0.01
+value = 1.0
+
+[node name="PlanetRadiusLabel" type="Label" parent="OrbitSection/OrbitSectionVBox" unique_id=78312375]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "行星半径: 1.00 R⊕"
+
+[node name="PlanetRadiusSlider" type="HSlider" parent="OrbitSection/OrbitSectionVBox" unique_id=2041508047]
+layout_mode = 2
+min_value = 0.1
+max_value = 20.0
+step = 0.01
+value = 1.0
+
+[node name="PlanetOrbitDistanceLabel" type="Label" parent="OrbitSection/OrbitSectionVBox" unique_id=1688380718]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "行星轨道: 1.000 AU"
+
+[node name="PlanetOrbitDistanceSlider" type="HSlider" parent="OrbitSection/OrbitSectionVBox" unique_id=1930458456]
+layout_mode = 2
+min_value = 0.03
+max_value = 20.0
+step = 0.001
+value = 1.0
+
+[node name="OrbitAdvancedToggleButton" type="Button" parent="OrbitSection/OrbitSectionVBox" unique_id=905956849]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.78, 0.66, 0.42, 1)
+text = "▶ 高级轨道参数"
+
+[node name="OrbitAdvancedContainer" type="VBoxContainer" parent="OrbitSection/OrbitSectionVBox" unique_id=2045242741]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="PlanetMassLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=1762499792]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "行星质量: 1.00 M⊕"
+
+[node name="PlanetMassSlider" type="HSlider" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=258803807]
+layout_mode = 2
+min_value = 0.01
+max_value = 500.0
+step = 0.01
+value = 1.0
+
+[node name="AutoPlanetRevolutionRow" type="HBoxContainer" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=2082678505]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AutoPlanetRevolutionToggle" type="CheckBox" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/AutoPlanetRevolutionRow" unique_id=1807279928]
+layout_mode = 2
+button_pressed = true
+
+[node name="AutoPlanetRevolutionLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/AutoPlanetRevolutionRow" unique_id=1728930818]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "行星公转周期自动求解"
+
+[node name="PlanetRotationLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=35628437]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "行星自转: 23.9 小时"
+
+[node name="PlanetRotationSlider" type="HSlider" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=429765644]
+layout_mode = 2
+min_value = 2.0
+max_value = 5000.0
+step = 0.1
+value = 23.9
+
+[node name="PlanetRevolutionLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=880464664]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "行星公转: 365.3 天"
+
+[node name="PlanetRevolutionSlider" type="HSlider" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=807474577]
+layout_mode = 2
+min_value = 0.2
+max_value = 500000.0
+step = 0.1
+value = 365.3
+
+[node name="MoonOrbitDistanceLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=1173776597]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "卫星轨道: 60.3 Rplanet"
+
+[node name="MoonOrbitDistanceSlider" type="HSlider" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=1225825976]
+layout_mode = 2
+min_value = 2.0
+max_value = 500.0
+step = 0.1
+value = 60.3
+
+[node name="AutoMoonRevolutionRow" type="HBoxContainer" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=152364895]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AutoMoonRevolutionToggle" type="CheckBox" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/AutoMoonRevolutionRow" unique_id=1864586490]
+layout_mode = 2
+button_pressed = true
+
+[node name="AutoMoonRevolutionLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/AutoMoonRevolutionRow" unique_id=375359904]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "卫星公转周期自动求解"
+
+[node name="MoonRotationLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=509790343]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "卫星自转: 655.7 小时"
+
+[node name="MoonRotationSlider" type="HSlider" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=1612416581]
+layout_mode = 2
+min_value = 1.0
+max_value = 5000.0
+step = 0.1
+value = 655.7
+
+[node name="MoonRevolutionLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=1104540600]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "卫星公转: 27.3 天"
+
+[node name="MoonRevolutionSlider" type="HSlider" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=1538777548]
+layout_mode = 2
+min_value = 0.1
+max_value = 100000.0
+step = 0.1
+value = 27.3
+
+[node name="ExtraPlanetsCountLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=638341799]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "额外行星: 0"
+
+[node name="ExtraPlanetsCountSlider" type="HSlider" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=1698729736]
+layout_mode = 2
+max_value = 6.0
+
+[node name="ExtraPlanetFirstOrbitLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=2070185587]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "额外行星起始轨道: 1.60 AU"
+
+[node name="ExtraPlanetFirstOrbitSlider" type="HSlider" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=1317823496]
+layout_mode = 2
+min_value = 0.1
+max_value = 30.0
+step = 0.01
+value = 1.6
+
+[node name="ExtraPlanetOrbitStepLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=1298196978]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "额外行星轨道间隔: 0.80 AU"
+
+[node name="ExtraPlanetOrbitStepSlider" type="HSlider" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=1588308915]
+layout_mode = 2
+min_value = 0.1
+max_value = 10.0
+step = 0.01
+value = 0.7999999999999999
+
+[node name="ExtraMoonsCountLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=173984087]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "额外卫星: 0"
+
+[node name="ExtraMoonsCountSlider" type="HSlider" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=704065613]
+layout_mode = 2
+max_value = 6.0
+
+[node name="ExtraMoonFirstOrbitLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=1829956537]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "额外卫星起始轨道: 86.0 Rplanet"
+
+[node name="ExtraMoonFirstOrbitSlider" type="HSlider" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=38367423]
+layout_mode = 2
+min_value = 2.0
+max_value = 500.0
+step = 0.1
+value = 86.0
+
+[node name="ExtraMoonOrbitStepLabel" type="Label" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=1119632979]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "额外卫星轨道间隔: 24.0 Rplanet"
+
+[node name="ExtraMoonOrbitStepSlider" type="HSlider" parent="OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer" unique_id=1397852224]
+layout_mode = 2
+min_value = 1.0
+max_value = 150.0
+step = 0.1
+value = 24.0
 
 [node name="BuildPanel" type="PanelContainer" parent="." unique_id=844524379]
 visible = false
@@ -150,8 +403,8 @@ horizontal_alignment = 1
 layout_mode = 1
 offset_left = 18.0
 offset_top = 18.0
-offset_right = 338.0
-offset_bottom = 206.0
+offset_right = 382.0
+offset_bottom = 214.0
 mouse_filter = 2
 theme_override_styles/panel = SubResource("HudPanelStyle")
 
@@ -221,19 +474,22 @@ horizontal_alignment = 2
 
 [node name="PlanetPhotoPanel" type="PanelContainer" parent="." unique_id=686915203]
 layout_mode = 1
-anchors_preset = 1
+anchors_preset = 3
 anchor_left = 1.0
+anchor_top = 1.0
 anchor_right = 1.0
-offset_left = -348.0
+anchor_bottom = 1.0
+offset_left = -368.0
 offset_top = 18.0
 offset_right = -18.0
-offset_bottom = 448.0
+offset_bottom = -18.0
 grow_horizontal = 0
+grow_vertical = 0
 theme_override_styles/panel = SubResource("HudPanelStyle")
 
 [node name="PlanetPhotoVBox" type="VBoxContainer" parent="PlanetPhotoPanel" unique_id=1963887342]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 8
 
 [node name="PlanetPhotoTitle" type="Label" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=1595236320]
 layout_mode = 2
@@ -250,20 +506,78 @@ text = "NASA 星空贴图"
 [node name="SkyTextureSelector" type="OptionButton" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=835975760]
 layout_mode = 2
 
+[node name="SunTextureLabel" type="Label" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=358693949]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "恒星贴图"
+
+[node name="SunTextureSelector" type="OptionButton" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=1759042974]
+layout_mode = 2
+
+[node name="PlanetSurfaceTextureLabel" type="Label" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=1618054469]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "行星贴图"
+
+[node name="PlanetSurfaceTextureSelector" type="OptionButton" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=1014382500]
+layout_mode = 2
+
+[node name="MoonTextureLabel" type="Label" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=1248327536]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "卫星贴图"
+
+[node name="MoonTextureSelector" type="OptionButton" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=1335971697]
+layout_mode = 2
+
+[node name="SolarBrightnessLabel" type="Label" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=1137947337]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "太阳亮度: 100%"
+
+[node name="SolarBrightnessSlider" type="HSlider" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=308364409]
+layout_mode = 2
+min_value = 0.5
+max_value = 2.5
+step = 0.01
+value = 1.0
+
 [node name="PlanetPhotoTexture" type="TextureRect" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=611271493]
-custom_minimum_size = Vector2(0, 220)
+custom_minimum_size = Vector2(0, 188)
 layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="LivePhotoToggle" type="CheckButton" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=179472693]
+[node name="LivePhotoRow" type="HBoxContainer" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=866382050]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LivePhotoToggle" type="CheckBox" parent="PlanetPhotoPanel/PlanetPhotoVBox/LivePhotoRow" unique_id=179472693]
 layout_mode = 2
 button_pressed = true
+
+[node name="LivePhotoLabel" type="Label" parent="PlanetPhotoPanel/PlanetPhotoVBox/LivePhotoRow" unique_id=1971163197]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
 text = "实时更新行星照片"
 
-[node name="LightFollowToggle" type="CheckButton" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=1442300745]
+[node name="LightFollowRow" type="HBoxContainer" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=1614368489]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LightFollowToggle" type="CheckBox" parent="PlanetPhotoPanel/PlanetPhotoVBox/LightFollowRow" unique_id=1442300745]
 layout_mode = 2
 button_pressed = true
+
+[node name="LightFollowLabel" type="Label" parent="PlanetPhotoPanel/PlanetPhotoVBox/LightFollowRow" unique_id=1717533073]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
 text = "光照跟随参数变化"
 
 [node name="LightResponseLabel" type="Label" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=102990136]
@@ -281,6 +595,19 @@ value = 0.75
 [node name="RefreshPhotoButton" type="Button" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=1619456830]
 layout_mode = 2
 text = "刷新照片"
+
+[node name="DownloadedOnlyRow" type="HBoxContainer" parent="PlanetPhotoPanel/PlanetPhotoVBox" unique_id=1824293]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DownloadedOnlyToggle" type="CheckBox" parent="PlanetPhotoPanel/PlanetPhotoVBox/DownloadedOnlyRow" unique_id=924542642]
+layout_mode = 2
+
+[node name="DownloadedOnlyLabel" type="Label" parent="PlanetPhotoPanel/PlanetPhotoVBox/DownloadedOnlyRow" unique_id=731730131]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.82, 0.95)
+theme_override_font_sizes/font_size = 12
+text = "仅显示已下载资源"
 
 [node name="PhotoViewerOverlay" type="Control" parent="." unique_id=1388122004]
 visible = false

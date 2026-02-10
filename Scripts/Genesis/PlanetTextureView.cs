@@ -62,8 +62,10 @@ public partial class PlanetTextureView : TextureRect
 	private Control _photoViewerOverlay;
 	private TextureRect _photoViewerTexture;
 	private Button _photoViewerCloseButton;
-	private CheckButton _livePhotoToggle;
-	private CheckButton _lightFollowToggle;
+	private CheckBox _livePhotoToggle;
+	private Label _livePhotoLabel;
+	private CheckBox _lightFollowToggle;
+	private Label _lightFollowLabel;
 	private Label _lightResponseLabel;
 	private HSlider _lightResponseSlider;
 	private Label _solarBrightnessLabel;
@@ -73,10 +75,16 @@ public partial class PlanetTextureView : TextureRect
 	private OptionButton _planetSurfaceTextureSelector;
 	private OptionButton _moonTextureSelector;
 	private OptionButton _sunTextureSelector;
-	private CheckButton _downloadedOnlyToggle;
-	private CheckButton _showMoonOrbitToggle;
-	private CheckButton _showPlanetOrbitToggle;
+	private CheckBox _downloadedOnlyToggle;
+	private Label _downloadedOnlyLabel;
+	private CheckBox _showMoonOrbitToggle;
+	private Label _showMoonOrbitLabel;
+	private CheckBox _showPlanetOrbitToggle;
+	private Label _showPlanetOrbitLabel;
+	private Button _orbitAdvancedToggleButton;
+	private VBoxContainer _orbitAdvancedContainer;
 	private Label _orbitSectionTitle;
+	private Label _modeTierHintLabel;
 	private Label _starMassLabel;
 	private HSlider _starMassSlider;
 	private Label _planetRadiusLabel;
@@ -85,14 +93,16 @@ public partial class PlanetTextureView : TextureRect
 	private HSlider _planetMassSlider;
 	private Label _planetOrbitDistanceLabel;
 	private HSlider _planetOrbitDistanceSlider;
-	private CheckButton _autoPlanetRevolutionToggle;
+	private CheckBox _autoPlanetRevolutionToggle;
+	private Label _autoPlanetRevolutionLabel;
 	private Label _planetRotationLabel;
 	private HSlider _planetRotationSlider;
 	private Label _planetRevolutionLabel;
 	private HSlider _planetRevolutionSlider;
 	private Label _moonOrbitDistanceLabel;
 	private HSlider _moonOrbitDistanceSlider;
-	private CheckButton _autoMoonRevolutionToggle;
+	private CheckBox _autoMoonRevolutionToggle;
+	private Label _autoMoonRevolutionLabel;
 	private Label _moonRotationLabel;
 	private HSlider _moonRotationSlider;
 	private Label _moonRevolutionLabel;
@@ -112,16 +122,21 @@ public partial class PlanetTextureView : TextureRect
 	private bool _isApplyingCelestialUi;
 	private TranslationManager _translationManager;
 	private bool _isHardcoreMode;
+	private bool _isOrbitAdvancedExpanded;
 	private bool _isInspectingStar = true;
 	private bool _isAnimationStyle;
 
 	private int _lawAlignment = 50;
+	private PlanetGenerationProfile _generationProfile = PlanetGenerationProfile.Default;
 	private PlanetData _planetData = new PlanetData
 	{
 		Element = PlanetElement.Terra,
-		OceanCoverage = 0.35f,
-		Temperature = 0.5f,
-		AtmosphereDensity = 0.55f
+		OceanCoverage = 0.56f,
+		Temperature = 0.52f,
+		AtmosphereDensity = 0.62f,
+		MountainIntensity = 0.55f,
+		PolarCoverage = 0.55f,
+		DesertRatio = 0.45f
 	};
 	private bool _useStaticPreview = true;
 	private readonly Dictionary<int, string> _skyTexturePathById = new();
@@ -224,8 +239,17 @@ public partial class PlanetTextureView : TextureRect
 		_orbitHudHint = GetNodeOrNull<Label>("OrbitHudTopLeft/OrbitHudTopVBox/OrbitHudHint");
 		_orbitSection = GetNodeOrNull<Control>("OrbitSection");
 		_orbitSectionTitle = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/OrbitSectionTitle");
-		_showMoonOrbitToggle = GetNodeOrNull<CheckButton>("OrbitSection/OrbitSectionVBox/ShowMoonOrbitToggle");
-		_showPlanetOrbitToggle = GetNodeOrNull<CheckButton>("OrbitSection/OrbitSectionVBox/ShowPlanetOrbitToggle");
+		_modeTierHintLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/ModeTierHintLabel");
+		_showMoonOrbitToggle = GetNodeOrNull<CheckBox>("OrbitSection/OrbitSectionVBox/ShowMoonOrbitRow/ShowMoonOrbitToggle")
+			?? GetNodeOrNull<CheckBox>("OrbitSection/OrbitSectionVBox/ShowMoonOrbitToggle");
+		_showMoonOrbitLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/ShowMoonOrbitRow/ShowMoonOrbitLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/ShowMoonOrbitLabel");
+		_showPlanetOrbitToggle = GetNodeOrNull<CheckBox>("OrbitSection/OrbitSectionVBox/ShowPlanetOrbitRow/ShowPlanetOrbitToggle")
+			?? GetNodeOrNull<CheckBox>("OrbitSection/OrbitSectionVBox/ShowPlanetOrbitToggle");
+		_showPlanetOrbitLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/ShowPlanetOrbitRow/ShowPlanetOrbitLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/ShowPlanetOrbitLabel");
+		_orbitAdvancedToggleButton = GetNodeOrNull<Button>("OrbitSection/OrbitSectionVBox/OrbitAdvancedToggleButton");
+		_orbitAdvancedContainer = GetNodeOrNull<VBoxContainer>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer");
 		_planetPhotoPanel = GetNodeOrNull<Control>("PlanetPhotoPanel");
 		_planetPhotoTitle = GetNodeOrNull<Label>("PlanetPhotoPanel/PlanetPhotoVBox/PlanetPhotoTitle");
 		_skyTextureLabel = GetNodeOrNull<Label>("PlanetPhotoPanel/PlanetPhotoVBox/SkyTextureLabel");
@@ -233,8 +257,14 @@ public partial class PlanetTextureView : TextureRect
 		_photoViewerOverlay = GetNodeOrNull<Control>("PhotoViewerOverlay");
 		_photoViewerTexture = GetNodeOrNull<TextureRect>("PhotoViewerOverlay/PhotoViewerTexture");
 		_photoViewerCloseButton = GetNodeOrNull<Button>("PhotoViewerOverlay/PhotoViewerCloseButton");
-		_livePhotoToggle = GetNodeOrNull<CheckButton>("PlanetPhotoPanel/PlanetPhotoVBox/LivePhotoToggle");
-		_lightFollowToggle = GetNodeOrNull<CheckButton>("PlanetPhotoPanel/PlanetPhotoVBox/LightFollowToggle");
+		_livePhotoToggle = GetNodeOrNull<CheckBox>("PlanetPhotoPanel/PlanetPhotoVBox/LivePhotoRow/LivePhotoToggle")
+			?? GetNodeOrNull<CheckBox>("PlanetPhotoPanel/PlanetPhotoVBox/LivePhotoToggle");
+		_livePhotoLabel = GetNodeOrNull<Label>("PlanetPhotoPanel/PlanetPhotoVBox/LivePhotoRow/LivePhotoLabel")
+			?? GetNodeOrNull<Label>("PlanetPhotoPanel/PlanetPhotoVBox/LivePhotoLabel");
+		_lightFollowToggle = GetNodeOrNull<CheckBox>("PlanetPhotoPanel/PlanetPhotoVBox/LightFollowRow/LightFollowToggle")
+			?? GetNodeOrNull<CheckBox>("PlanetPhotoPanel/PlanetPhotoVBox/LightFollowToggle");
+		_lightFollowLabel = GetNodeOrNull<Label>("PlanetPhotoPanel/PlanetPhotoVBox/LightFollowRow/LightFollowLabel")
+			?? GetNodeOrNull<Label>("PlanetPhotoPanel/PlanetPhotoVBox/LightFollowLabel");
 		_lightResponseLabel = GetNodeOrNull<Label>("PlanetPhotoPanel/PlanetPhotoVBox/LightResponseLabel");
 		_lightResponseSlider = GetNodeOrNull<HSlider>("PlanetPhotoPanel/PlanetPhotoVBox/LightResponseSlider");
 		_solarBrightnessLabel = GetNodeOrNull<Label>("PlanetPhotoPanel/PlanetPhotoVBox/SolarBrightnessLabel");
@@ -244,7 +274,10 @@ public partial class PlanetTextureView : TextureRect
 		_planetSurfaceTextureSelector = GetNodeOrNull<OptionButton>("PlanetPhotoPanel/PlanetPhotoVBox/PlanetSurfaceTextureSelector");
 		_moonTextureSelector = GetNodeOrNull<OptionButton>("PlanetPhotoPanel/PlanetPhotoVBox/MoonTextureSelector");
 		_sunTextureSelector = GetNodeOrNull<OptionButton>("PlanetPhotoPanel/PlanetPhotoVBox/SunTextureSelector");
-		_downloadedOnlyToggle = GetNodeOrNull<CheckButton>("PlanetPhotoPanel/PlanetPhotoVBox/DownloadedOnlyToggle");
+		_downloadedOnlyToggle = GetNodeOrNull<CheckBox>("PlanetPhotoPanel/PlanetPhotoVBox/DownloadedOnlyRow/DownloadedOnlyToggle")
+			?? GetNodeOrNull<CheckBox>("PlanetPhotoPanel/PlanetPhotoVBox/DownloadedOnlyToggle");
+		_downloadedOnlyLabel = GetNodeOrNull<Label>("PlanetPhotoPanel/PlanetPhotoVBox/DownloadedOnlyRow/DownloadedOnlyLabel")
+			?? GetNodeOrNull<Label>("PlanetPhotoPanel/PlanetPhotoVBox/DownloadedOnlyLabel");
 
 		EnsureTextureSelectorNodes();
 		EnsureCelestialPhysicsNodes();
@@ -308,6 +341,11 @@ public partial class PlanetTextureView : TextureRect
 			_downloadedOnlyToggle.Toggled += OnDownloadedOnlyToggleChanged;
 		}
 
+		if (_orbitAdvancedToggleButton != null)
+		{
+			_orbitAdvancedToggleButton.Pressed += OnOrbitAdvancedTogglePressed;
+		}
+
 		SetBuildState(false, 0f, true);
 		SetEditingPaused(false);
 		EnterStaticMode();
@@ -325,6 +363,10 @@ public partial class PlanetTextureView : TextureRect
 		}
 
 		_isHardcoreMode = hardcore;
+		if (!_isHardcoreMode)
+		{
+			_isOrbitAdvancedExpanded = false;
+		}
 		ApplyInspectorVisibility();
 		ApplyVisualLabels();
 	}
@@ -433,12 +475,37 @@ public partial class PlanetTextureView : TextureRect
 			return;
 		}
 
+		float solarBrightness = SolarBrightness;
+		float terrainVisualWeight = Mathf.Clamp(_planetData.MountainIntensity * 0.65f + _planetData.DesertRatio * 0.35f, 0f, 1f);
+		float exposure = Mathf.Clamp(0.68f + solarBrightness * 0.28f, 0.78f, 1.18f);
+		float contrast = Mathf.Lerp(0.98f, 1.04f, terrainVisualWeight);
+		float saturation = Mathf.Lerp(0.88f, 0.98f, terrainVisualWeight);
+		float rimStrength = Mathf.Lerp(0.24f, 0.52f, Mathf.Clamp(_planetData.AtmosphereDensity, 0f, 1f));
+
 		_previewMaterial.SetShaderParameter("element_type", ResolveElementType(_planetData.Element));
 		_previewMaterial.SetShaderParameter("ocean_level", Mathf.Lerp(0.2f, 0.78f, Mathf.Clamp(_planetData.OceanCoverage, 0f, 1f)));
 		_previewMaterial.SetShaderParameter("temperature", Mathf.Clamp(_planetData.Temperature, 0f, 1f));
 		_previewMaterial.SetShaderParameter("atmosphere_density", Mathf.Clamp(_planetData.AtmosphereDensity, 0f, 1f));
+		_previewMaterial.SetShaderParameter("mountain_intensity", Mathf.Clamp(_planetData.MountainIntensity, 0f, 1f));
+		_previewMaterial.SetShaderParameter("polar_coverage", Mathf.Clamp(_planetData.PolarCoverage, 0f, 1f));
+		_previewMaterial.SetShaderParameter("desert_ratio", Mathf.Clamp(_planetData.DesertRatio, 0f, 1f));
+		_previewMaterial.SetShaderParameter("preview_exposure", exposure);
+		_previewMaterial.SetShaderParameter("preview_contrast", contrast);
+		_previewMaterial.SetShaderParameter("preview_saturation", saturation);
+		_previewMaterial.SetShaderParameter("rim_strength", rimStrength);
+		_previewMaterial.SetShaderParameter("plate_count", _generationProfile.TectonicPlateCount);
+		_previewMaterial.SetShaderParameter("wind_cells", _generationProfile.WindCellCount);
+		_previewMaterial.SetShaderParameter("erosion_iterations", _generationProfile.ErosionIterations);
+		_previewMaterial.SetShaderParameter("erosion_strength", _generationProfile.ErosionStrength);
+		_previewMaterial.SetShaderParameter("heat_factor", _generationProfile.HeatFactor);
 		_previewMaterial.SetShaderParameter("cloud_speed", Mathf.Lerp(0.08f, 0.34f, _lawAlignment / 100f));
 		_previewMaterial.SetShaderParameter("time_sec", (float)Time.GetTicksMsec() / 1000f);
+	}
+
+	public void SetGenerationProfile(PlanetGenerationProfile profile)
+	{
+		_generationProfile = profile;
+		UpdatePreview(_planetData, _lawAlignment);
 	}
 
 	public void SetLawAlignment(int lawAlignment)
@@ -763,197 +830,70 @@ public partial class PlanetTextureView : TextureRect
 			_orbitSection.OffsetTop = -700.0f;
 		}
 
-		if (_starMassLabel == null)
-		{
-			_starMassLabel = CreateCompactSelectorLabel("StarMassLabel", "恒星质量: 1.00 M☉");
-			orbitVBox.AddChild(_starMassLabel);
-		}
+		_orbitAdvancedContainer = GetNodeOrNull<VBoxContainer>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer");
+		_starMassLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/StarMassLabel");
+		_starMassSlider = GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/StarMassSlider");
+		_planetRadiusLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/PlanetRadiusLabel");
+		_planetRadiusSlider = GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/PlanetRadiusSlider");
+		_planetOrbitDistanceLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/PlanetOrbitDistanceLabel");
+		_planetOrbitDistanceSlider = GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/PlanetOrbitDistanceSlider");
 
-		if (_starMassSlider == null)
-		{
-			_starMassSlider = new HSlider { Name = "StarMassSlider", MinValue = 0.08, MaxValue = 8.0, Step = 0.01, Value = 1.0 };
-			orbitVBox.AddChild(_starMassSlider);
-		}
-
-		if (_planetRadiusLabel == null)
-		{
-			_planetRadiusLabel = CreateCompactSelectorLabel("PlanetRadiusLabel", "行星半径: 1.00 R⊕");
-			orbitVBox.AddChild(_planetRadiusLabel);
-		}
-
-		if (_planetRadiusSlider == null)
-		{
-			_planetRadiusSlider = new HSlider { Name = "PlanetRadiusSlider", MinValue = 0.1, MaxValue = 20.0, Step = 0.01, Value = 1.0 };
-			orbitVBox.AddChild(_planetRadiusSlider);
-		}
-
-		if (_planetMassLabel == null)
-		{
-			_planetMassLabel = CreateCompactSelectorLabel("PlanetMassLabel", "行星质量: 1.00 M⊕");
-			orbitVBox.AddChild(_planetMassLabel);
-		}
-
-		if (_planetMassSlider == null)
-		{
-			_planetMassSlider = new HSlider { Name = "PlanetMassSlider", MinValue = 0.01, MaxValue = 500.0, Step = 0.01, Value = 1.0 };
-			orbitVBox.AddChild(_planetMassSlider);
-		}
-
-		if (_planetOrbitDistanceLabel == null)
-		{
-			_planetOrbitDistanceLabel = CreateCompactSelectorLabel("PlanetOrbitDistanceLabel", "行星轨道: 1.000 AU");
-			orbitVBox.AddChild(_planetOrbitDistanceLabel);
-		}
-
-		if (_planetOrbitDistanceSlider == null)
-		{
-			_planetOrbitDistanceSlider = new HSlider { Name = "PlanetOrbitDistanceSlider", MinValue = 0.03, MaxValue = 20.0, Step = 0.001, Value = 1.0 };
-			orbitVBox.AddChild(_planetOrbitDistanceSlider);
-		}
-
-		if (_autoPlanetRevolutionToggle == null)
-		{
-			_autoPlanetRevolutionToggle = new CheckButton { Name = "AutoPlanetRevolutionToggle", Text = "行星公转周期自动求解", ButtonPressed = true };
-			orbitVBox.AddChild(_autoPlanetRevolutionToggle);
-		}
-
-		if (_planetRotationLabel == null)
-		{
-			_planetRotationLabel = CreateCompactSelectorLabel("PlanetRotationLabel", "行星自转: 23.9 小时");
-			orbitVBox.AddChild(_planetRotationLabel);
-		}
-
-		if (_planetRotationSlider == null)
-		{
-			_planetRotationSlider = new HSlider { Name = "PlanetRotationSlider", MinValue = 2.0, MaxValue = 5000.0, Step = 0.1, Value = 23.934 };
-			orbitVBox.AddChild(_planetRotationSlider);
-		}
-
-		if (_planetRevolutionLabel == null)
-		{
-			_planetRevolutionLabel = CreateCompactSelectorLabel("PlanetRevolutionLabel", "行星公转: 365.3 天");
-			orbitVBox.AddChild(_planetRevolutionLabel);
-		}
-
-		if (_planetRevolutionSlider == null)
-		{
-			_planetRevolutionSlider = new HSlider { Name = "PlanetRevolutionSlider", MinValue = 0.2, MaxValue = 500000.0, Step = 0.1, Value = 365.256 };
-			orbitVBox.AddChild(_planetRevolutionSlider);
-		}
-
-		if (_moonOrbitDistanceLabel == null)
-		{
-			_moonOrbitDistanceLabel = CreateCompactSelectorLabel("MoonOrbitDistanceLabel", "卫星轨道: 60.3 Rplanet");
-			orbitVBox.AddChild(_moonOrbitDistanceLabel);
-		}
-
-		if (_moonOrbitDistanceSlider == null)
-		{
-			_moonOrbitDistanceSlider = new HSlider { Name = "MoonOrbitDistanceSlider", MinValue = 2.0, MaxValue = 500.0, Step = 0.1, Value = 60.3 };
-			orbitVBox.AddChild(_moonOrbitDistanceSlider);
-		}
-
-		if (_autoMoonRevolutionToggle == null)
-		{
-			_autoMoonRevolutionToggle = new CheckButton { Name = "AutoMoonRevolutionToggle", Text = "卫星公转周期自动求解", ButtonPressed = true };
-			orbitVBox.AddChild(_autoMoonRevolutionToggle);
-		}
-
-		if (_moonRotationLabel == null)
-		{
-			_moonRotationLabel = CreateCompactSelectorLabel("MoonRotationLabel", "卫星自转: 655.7 小时");
-			orbitVBox.AddChild(_moonRotationLabel);
-		}
-
-		if (_moonRotationSlider == null)
-		{
-			_moonRotationSlider = new HSlider { Name = "MoonRotationSlider", MinValue = 1.0, MaxValue = 5000.0, Step = 0.1, Value = 655.7 };
-			orbitVBox.AddChild(_moonRotationSlider);
-		}
-
-		if (_moonRevolutionLabel == null)
-		{
-			_moonRevolutionLabel = CreateCompactSelectorLabel("MoonRevolutionLabel", "卫星公转: 27.3 天");
-			orbitVBox.AddChild(_moonRevolutionLabel);
-		}
-
-		if (_moonRevolutionSlider == null)
-		{
-			_moonRevolutionSlider = new HSlider { Name = "MoonRevolutionSlider", MinValue = 0.1, MaxValue = 100000.0, Step = 0.1, Value = 27.3217 };
-			orbitVBox.AddChild(_moonRevolutionSlider);
-		}
-
-		if (_extraPlanetsCountLabel == null)
-		{
-			_extraPlanetsCountLabel = CreateCompactSelectorLabel("ExtraPlanetsCountLabel", "额外行星: 0");
-			orbitVBox.AddChild(_extraPlanetsCountLabel);
-		}
-
-		if (_extraPlanetsCountSlider == null)
-		{
-			_extraPlanetsCountSlider = new HSlider { Name = "ExtraPlanetsCountSlider", MinValue = 0.0, MaxValue = 6.0, Step = 1.0, Value = 0.0 };
-			orbitVBox.AddChild(_extraPlanetsCountSlider);
-		}
-
-		if (_extraPlanetFirstOrbitLabel == null)
-		{
-			_extraPlanetFirstOrbitLabel = CreateCompactSelectorLabel("ExtraPlanetFirstOrbitLabel", "额外行星起始轨道: 1.60 AU");
-			orbitVBox.AddChild(_extraPlanetFirstOrbitLabel);
-		}
-
-		if (_extraPlanetFirstOrbitSlider == null)
-		{
-			_extraPlanetFirstOrbitSlider = new HSlider { Name = "ExtraPlanetFirstOrbitSlider", MinValue = 0.1, MaxValue = 30.0, Step = 0.01, Value = 1.6 };
-			orbitVBox.AddChild(_extraPlanetFirstOrbitSlider);
-		}
-
-		if (_extraPlanetOrbitStepLabel == null)
-		{
-			_extraPlanetOrbitStepLabel = CreateCompactSelectorLabel("ExtraPlanetOrbitStepLabel", "额外行星轨道间隔: 0.80 AU");
-			orbitVBox.AddChild(_extraPlanetOrbitStepLabel);
-		}
-
-		if (_extraPlanetOrbitStepSlider == null)
-		{
-			_extraPlanetOrbitStepSlider = new HSlider { Name = "ExtraPlanetOrbitStepSlider", MinValue = 0.1, MaxValue = 10.0, Step = 0.01, Value = 0.8 };
-			orbitVBox.AddChild(_extraPlanetOrbitStepSlider);
-		}
-
-		if (_extraMoonsCountLabel == null)
-		{
-			_extraMoonsCountLabel = CreateCompactSelectorLabel("ExtraMoonsCountLabel", "额外卫星: 0");
-			orbitVBox.AddChild(_extraMoonsCountLabel);
-		}
-
-		if (_extraMoonsCountSlider == null)
-		{
-			_extraMoonsCountSlider = new HSlider { Name = "ExtraMoonsCountSlider", MinValue = 0.0, MaxValue = 6.0, Step = 1.0, Value = 0.0 };
-			orbitVBox.AddChild(_extraMoonsCountSlider);
-		}
-
-		if (_extraMoonFirstOrbitLabel == null)
-		{
-			_extraMoonFirstOrbitLabel = CreateCompactSelectorLabel("ExtraMoonFirstOrbitLabel", "额外卫星起始轨道: 86.0 Rplanet");
-			orbitVBox.AddChild(_extraMoonFirstOrbitLabel);
-		}
-
-		if (_extraMoonFirstOrbitSlider == null)
-		{
-			_extraMoonFirstOrbitSlider = new HSlider { Name = "ExtraMoonFirstOrbitSlider", MinValue = 2.0, MaxValue = 500.0, Step = 0.1, Value = 86.0 };
-			orbitVBox.AddChild(_extraMoonFirstOrbitSlider);
-		}
-
-		if (_extraMoonOrbitStepLabel == null)
-		{
-			_extraMoonOrbitStepLabel = CreateCompactSelectorLabel("ExtraMoonOrbitStepLabel", "额外卫星轨道间隔: 24.0 Rplanet");
-			orbitVBox.AddChild(_extraMoonOrbitStepLabel);
-		}
-
-		if (_extraMoonOrbitStepSlider == null)
-		{
-			_extraMoonOrbitStepSlider = new HSlider { Name = "ExtraMoonOrbitStepSlider", MinValue = 1.0, MaxValue = 150.0, Step = 0.1, Value = 24.0 };
-			orbitVBox.AddChild(_extraMoonOrbitStepSlider);
-		}
+		_planetMassLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/PlanetMassLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/PlanetMassLabel");
+		_planetMassSlider = GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/PlanetMassSlider")
+			?? GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/PlanetMassSlider");
+		_autoPlanetRevolutionToggle = GetNodeOrNull<CheckBox>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/AutoPlanetRevolutionRow/AutoPlanetRevolutionToggle")
+			?? GetNodeOrNull<CheckBox>("OrbitSection/OrbitSectionVBox/AutoPlanetRevolutionRow/AutoPlanetRevolutionToggle");
+		_autoPlanetRevolutionLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/AutoPlanetRevolutionRow/AutoPlanetRevolutionLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/AutoPlanetRevolutionRow/AutoPlanetRevolutionLabel");
+		_planetRotationLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/PlanetRotationLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/PlanetRotationLabel");
+		_planetRotationSlider = GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/PlanetRotationSlider")
+			?? GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/PlanetRotationSlider");
+		_planetRevolutionLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/PlanetRevolutionLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/PlanetRevolutionLabel");
+		_planetRevolutionSlider = GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/PlanetRevolutionSlider")
+			?? GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/PlanetRevolutionSlider");
+		_moonOrbitDistanceLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/MoonOrbitDistanceLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/MoonOrbitDistanceLabel");
+		_moonOrbitDistanceSlider = GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/MoonOrbitDistanceSlider")
+			?? GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/MoonOrbitDistanceSlider");
+		_autoMoonRevolutionToggle = GetNodeOrNull<CheckBox>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/AutoMoonRevolutionRow/AutoMoonRevolutionToggle")
+			?? GetNodeOrNull<CheckBox>("OrbitSection/OrbitSectionVBox/AutoMoonRevolutionRow/AutoMoonRevolutionToggle");
+		_autoMoonRevolutionLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/AutoMoonRevolutionRow/AutoMoonRevolutionLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/AutoMoonRevolutionRow/AutoMoonRevolutionLabel");
+		_moonRotationLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/MoonRotationLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/MoonRotationLabel");
+		_moonRotationSlider = GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/MoonRotationSlider")
+			?? GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/MoonRotationSlider");
+		_moonRevolutionLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/MoonRevolutionLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/MoonRevolutionLabel");
+		_moonRevolutionSlider = GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/MoonRevolutionSlider")
+			?? GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/MoonRevolutionSlider");
+		_extraPlanetsCountLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/ExtraPlanetsCountLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/ExtraPlanetsCountLabel");
+		_extraPlanetsCountSlider = GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/ExtraPlanetsCountSlider")
+			?? GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/ExtraPlanetsCountSlider");
+		_extraPlanetFirstOrbitLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/ExtraPlanetFirstOrbitLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/ExtraPlanetFirstOrbitLabel");
+		_extraPlanetFirstOrbitSlider = GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/ExtraPlanetFirstOrbitSlider")
+			?? GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/ExtraPlanetFirstOrbitSlider");
+		_extraPlanetOrbitStepLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/ExtraPlanetOrbitStepLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/ExtraPlanetOrbitStepLabel");
+		_extraPlanetOrbitStepSlider = GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/ExtraPlanetOrbitStepSlider")
+			?? GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/ExtraPlanetOrbitStepSlider");
+		_extraMoonsCountLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/ExtraMoonsCountLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/ExtraMoonsCountLabel");
+		_extraMoonsCountSlider = GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/ExtraMoonsCountSlider")
+			?? GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/ExtraMoonsCountSlider");
+		_extraMoonFirstOrbitLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/ExtraMoonFirstOrbitLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/ExtraMoonFirstOrbitLabel");
+		_extraMoonFirstOrbitSlider = GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/ExtraMoonFirstOrbitSlider")
+			?? GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/ExtraMoonFirstOrbitSlider");
+		_extraMoonOrbitStepLabel = GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/ExtraMoonOrbitStepLabel")
+			?? GetNodeOrNull<Label>("OrbitSection/OrbitSectionVBox/ExtraMoonOrbitStepLabel");
+		_extraMoonOrbitStepSlider = GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/OrbitAdvancedContainer/ExtraMoonOrbitStepSlider")
+			?? GetNodeOrNull<HSlider>("OrbitSection/OrbitSectionVBox/ExtraMoonOrbitStepSlider");
 	}
 
 	private void BindCelestialPhysicsUi()
@@ -1004,6 +944,18 @@ public partial class PlanetTextureView : TextureRect
 		UpdateCelestialLabels();
 		ApplyInspectorVisibility();
 		EmitCelestialPhysicsChanged();
+	}
+
+	private void OnOrbitAdvancedTogglePressed()
+	{
+		if (!_isHardcoreMode)
+		{
+			return;
+		}
+
+		_isOrbitAdvancedExpanded = !_isOrbitAdvancedExpanded;
+		ApplyInspectorVisibility();
+		ApplyVisualLabels();
 	}
 
 	private void UpdateCelestialLabels()
@@ -1122,22 +1074,38 @@ public partial class PlanetTextureView : TextureRect
 
 		if (_showPlanetOrbitToggle != null)
 		{
-			_showPlanetOrbitToggle.Text = isZh ? "显示行星轨道" : "Show Planet Orbit";
+			_showPlanetOrbitToggle.Text = string.Empty;
+		}
+		if (_showPlanetOrbitLabel != null)
+		{
+			_showPlanetOrbitLabel.Text = isZh ? "显示行星轨道" : "Show Planet Orbit";
 		}
 
 		if (_showMoonOrbitToggle != null)
 		{
-			_showMoonOrbitToggle.Text = isZh ? "显示卫星轨道" : "Show Moon Orbit";
+			_showMoonOrbitToggle.Text = string.Empty;
+		}
+		if (_showMoonOrbitLabel != null)
+		{
+			_showMoonOrbitLabel.Text = isZh ? "显示卫星轨道" : "Show Moon Orbit";
 		}
 
 		if (_autoPlanetRevolutionToggle != null)
 		{
-			_autoPlanetRevolutionToggle.Text = isZh ? "行星公转周期自动求解" : "Auto Solve Planet Period";
+			_autoPlanetRevolutionToggle.Text = string.Empty;
+		}
+		if (_autoPlanetRevolutionLabel != null)
+		{
+			_autoPlanetRevolutionLabel.Text = isZh ? "行星公转周期自动求解" : "Auto Solve Planet Period";
 		}
 
 		if (_autoMoonRevolutionToggle != null)
 		{
-			_autoMoonRevolutionToggle.Text = isZh ? "卫星公转周期自动求解" : "Auto Solve Moon Period";
+			_autoMoonRevolutionToggle.Text = string.Empty;
+		}
+		if (_autoMoonRevolutionLabel != null)
+		{
+			_autoMoonRevolutionLabel.Text = isZh ? "卫星公转周期自动求解" : "Auto Solve Moon Period";
 		}
 
 		ApplyInspectorVisibility();
@@ -1146,75 +1114,20 @@ public partial class PlanetTextureView : TextureRect
 
 	private void EnsureTextureSelectorNodes()
 	{
-		var photoVBox = GetNodeOrNull<VBoxContainer>("PlanetPhotoPanel/PlanetPhotoVBox");
-		if (photoVBox == null)
-		{
-			return;
-		}
-
-		if (_downloadedOnlyToggle == null)
-		{
-			_downloadedOnlyToggle = new CheckButton
-			{
-				Name = "DownloadedOnlyToggle",
-				Text = "仅显示已下载资源",
-				ButtonPressed = false
-			};
-			InsertBeforePlanetPhoto(photoVBox, _downloadedOnlyToggle);
-		}
-
-		if (_sunTextureSelector == null)
-		{
-			var label = CreateCompactSelectorLabel("SunTextureLabel", "恒星贴图");
-			_sunTextureSelector = new OptionButton
-			{
-				Name = "SunTextureSelector"
-			};
-			InsertBeforePlanetPhoto(photoVBox, label);
-			InsertBeforePlanetPhoto(photoVBox, _sunTextureSelector);
-		}
-
-		if (_planetSurfaceTextureSelector == null)
-		{
-			var label = CreateCompactSelectorLabel("PlanetSurfaceTextureLabel", "行星贴图");
-			_planetSurfaceTextureSelector = new OptionButton
-			{
-				Name = "PlanetSurfaceTextureSelector"
-			};
-			InsertBeforePlanetPhoto(photoVBox, label);
-			InsertBeforePlanetPhoto(photoVBox, _planetSurfaceTextureSelector);
-		}
-
-		if (_moonTextureSelector == null)
-		{
-			var label = CreateCompactSelectorLabel("MoonTextureLabel", "卫星贴图");
-			_moonTextureSelector = new OptionButton
-			{
-				Name = "MoonTextureSelector"
-			};
-			InsertBeforePlanetPhoto(photoVBox, label);
-			InsertBeforePlanetPhoto(photoVBox, _moonTextureSelector);
-		}
-
-		if (_solarBrightnessLabel == null)
-		{
-			_solarBrightnessLabel = CreateCompactSelectorLabel("SolarBrightnessLabel", "太阳亮度: 100%");
-			InsertBeforePlanetPhoto(photoVBox, _solarBrightnessLabel);
-		}
-
-		if (_solarBrightnessSlider == null)
-		{
-			_solarBrightnessSlider = new HSlider
-			{
-				Name = "SolarBrightnessSlider",
-				MinValue = 0.5,
-				MaxValue = 2.5,
-				Step = 0.01,
-				Value = 1.0,
-				SizeFlagsHorizontal = Control.SizeFlags.ExpandFill
-			};
-			InsertBeforePlanetPhoto(photoVBox, _solarBrightnessSlider);
-		}
+		_downloadedOnlyToggle = GetNodeOrNull<CheckBox>("PlanetPhotoPanel/PlanetPhotoVBox/DownloadedOnlyRow/DownloadedOnlyToggle")
+			?? _downloadedOnlyToggle;
+		_downloadedOnlyLabel = GetNodeOrNull<Label>("PlanetPhotoPanel/PlanetPhotoVBox/DownloadedOnlyRow/DownloadedOnlyLabel")
+			?? _downloadedOnlyLabel;
+		_sunTextureSelector = GetNodeOrNull<OptionButton>("PlanetPhotoPanel/PlanetPhotoVBox/SunTextureSelector")
+			?? _sunTextureSelector;
+		_planetSurfaceTextureSelector = GetNodeOrNull<OptionButton>("PlanetPhotoPanel/PlanetPhotoVBox/PlanetSurfaceTextureSelector")
+			?? _planetSurfaceTextureSelector;
+		_moonTextureSelector = GetNodeOrNull<OptionButton>("PlanetPhotoPanel/PlanetPhotoVBox/MoonTextureSelector")
+			?? _moonTextureSelector;
+		_solarBrightnessLabel = GetNodeOrNull<Label>("PlanetPhotoPanel/PlanetPhotoVBox/SolarBrightnessLabel")
+			?? _solarBrightnessLabel;
+		_solarBrightnessSlider = GetNodeOrNull<HSlider>("PlanetPhotoPanel/PlanetPhotoVBox/SolarBrightnessSlider")
+			?? _solarBrightnessSlider;
 	}
 
 	private void SetupTextureSelectors()
@@ -1402,47 +1315,62 @@ public partial class PlanetTextureView : TextureRect
 	{
 		bool starMode = _isInspectingStar;
 		bool hardcore = _isHardcoreMode;
+		bool explorer = !hardcore;
+		bool showAdvanced = hardcore && _isOrbitAdvancedExpanded;
 
-		SetVisible(_showPlanetOrbitToggle, starMode || hardcore);
-		SetVisible(_showMoonOrbitToggle, hardcore);
+		SetVisible(_orbitAdvancedToggleButton, hardcore);
+		SetVisible(_orbitAdvancedContainer, showAdvanced);
 
-		SetVisible(_starMassLabel, starMode);
-		SetVisible(_starMassSlider, starMode);
+		SetVisible(_showPlanetOrbitToggle, true);
+		SetVisible(_showPlanetOrbitLabel, true);
+		SetVisible(_showMoonOrbitToggle, showAdvanced);
+		SetVisible(_showMoonOrbitLabel, showAdvanced);
 
-		SetVisible(_planetRadiusLabel, !starMode);
-		SetVisible(_planetRadiusSlider, !starMode);
-		SetVisible(_planetOrbitDistanceLabel, !starMode);
-		SetVisible(_planetOrbitDistanceSlider, !starMode);
+		SetVisible(_starMassLabel, showAdvanced || starMode);
+		SetVisible(_starMassSlider, showAdvanced || starMode);
 
-		SetVisible(_planetMassLabel, !starMode && hardcore);
-		SetVisible(_planetMassSlider, !starMode && hardcore);
-		SetVisible(_autoPlanetRevolutionToggle, !starMode && hardcore);
-		SetVisible(_planetRotationLabel, !starMode && hardcore);
-		SetVisible(_planetRotationSlider, !starMode && hardcore);
-		SetVisible(_planetRevolutionLabel, !starMode && hardcore);
-		SetVisible(_planetRevolutionSlider, !starMode && hardcore);
+		SetVisible(_planetRadiusLabel, showAdvanced || !starMode);
+		SetVisible(_planetRadiusSlider, showAdvanced || !starMode);
+		SetVisible(_planetOrbitDistanceLabel, showAdvanced || !starMode);
+		SetVisible(_planetOrbitDistanceSlider, showAdvanced || !starMode);
 
-		SetVisible(_moonOrbitDistanceLabel, !starMode && hardcore);
-		SetVisible(_moonOrbitDistanceSlider, !starMode && hardcore);
-		SetVisible(_autoMoonRevolutionToggle, !starMode && hardcore);
-		SetVisible(_moonRotationLabel, !starMode && hardcore);
-		SetVisible(_moonRotationSlider, !starMode && hardcore);
-		SetVisible(_moonRevolutionLabel, !starMode && hardcore);
-		SetVisible(_moonRevolutionSlider, !starMode && hardcore);
+		SetVisible(_planetMassLabel, showAdvanced);
+		SetVisible(_planetMassSlider, showAdvanced);
+		SetVisible(_autoPlanetRevolutionToggle, showAdvanced);
+		SetVisible(_autoPlanetRevolutionLabel, showAdvanced);
+		SetVisible(_planetRotationLabel, showAdvanced);
+		SetVisible(_planetRotationSlider, showAdvanced);
+		SetVisible(_planetRevolutionLabel, showAdvanced);
+		SetVisible(_planetRevolutionSlider, showAdvanced);
 
-		SetVisible(_extraPlanetsCountLabel, starMode && hardcore);
-		SetVisible(_extraPlanetsCountSlider, starMode && hardcore);
-		SetVisible(_extraPlanetFirstOrbitLabel, starMode && hardcore);
-		SetVisible(_extraPlanetFirstOrbitSlider, starMode && hardcore);
-		SetVisible(_extraPlanetOrbitStepLabel, starMode && hardcore);
-		SetVisible(_extraPlanetOrbitStepSlider, starMode && hardcore);
+		SetVisible(_moonOrbitDistanceLabel, showAdvanced);
+		SetVisible(_moonOrbitDistanceSlider, showAdvanced);
+		SetVisible(_autoMoonRevolutionToggle, showAdvanced);
+		SetVisible(_autoMoonRevolutionLabel, showAdvanced);
+		SetVisible(_moonRotationLabel, showAdvanced);
+		SetVisible(_moonRotationSlider, showAdvanced);
+		SetVisible(_moonRevolutionLabel, showAdvanced);
+		SetVisible(_moonRevolutionSlider, showAdvanced);
 
-		SetVisible(_extraMoonsCountLabel, !starMode && hardcore);
-		SetVisible(_extraMoonsCountSlider, !starMode && hardcore);
-		SetVisible(_extraMoonFirstOrbitLabel, !starMode && hardcore);
-		SetVisible(_extraMoonFirstOrbitSlider, !starMode && hardcore);
-		SetVisible(_extraMoonOrbitStepLabel, !starMode && hardcore);
-		SetVisible(_extraMoonOrbitStepSlider, !starMode && hardcore);
+		SetVisible(_extraPlanetsCountLabel, showAdvanced);
+		SetVisible(_extraPlanetsCountSlider, showAdvanced);
+		SetVisible(_extraPlanetFirstOrbitLabel, showAdvanced);
+		SetVisible(_extraPlanetFirstOrbitSlider, showAdvanced);
+		SetVisible(_extraPlanetOrbitStepLabel, showAdvanced);
+		SetVisible(_extraPlanetOrbitStepSlider, showAdvanced);
+
+		SetVisible(_extraMoonsCountLabel, showAdvanced);
+		SetVisible(_extraMoonsCountSlider, showAdvanced);
+		SetVisible(_extraMoonFirstOrbitLabel, showAdvanced);
+		SetVisible(_extraMoonFirstOrbitSlider, showAdvanced);
+		SetVisible(_extraMoonOrbitStepLabel, showAdvanced);
+		SetVisible(_extraMoonOrbitStepSlider, showAdvanced);
+
+		if (explorer)
+		{
+			SetVisible(_showMoonOrbitToggle, false);
+			SetVisible(_showMoonOrbitLabel, false);
+		}
 
 		if (_planetRevolutionSlider != null && _autoPlanetRevolutionToggle != null)
 		{
@@ -1534,11 +1462,58 @@ public partial class PlanetTextureView : TextureRect
 			_skyTextureLabel.Text = isZh ? "恒星系背景" : "System Background";
 		}
 
+		if (_livePhotoToggle != null)
+		{
+			_livePhotoToggle.Text = string.Empty;
+		}
+		if (_livePhotoLabel != null)
+		{
+			_livePhotoLabel.Text = isZh ? "实时更新行星照片" : "Live-update planet image";
+		}
+		if (_lightFollowToggle != null)
+		{
+			_lightFollowToggle.Text = string.Empty;
+		}
+		if (_lightFollowLabel != null)
+		{
+			_lightFollowLabel.Text = isZh ? "光照跟随参数变化" : "Light follows parameter changes";
+		}
+		if (_downloadedOnlyToggle != null)
+		{
+			_downloadedOnlyToggle.Text = string.Empty;
+		}
+		if (_downloadedOnlyLabel != null)
+		{
+			_downloadedOnlyLabel.Text = isZh ? "仅显示已下载资源" : "Only show downloaded assets";
+		}
+
 		if (_orbitSectionTitle != null)
 		{
-			_orbitSectionTitle.Text = _isInspectingStar
-				? (isZh ? "[肆] 恒星参数" : "[IV] Star Parameters")
-				: (isZh ? "[肆] 行星参数" : "[IV] Planet Parameters");
+			if (_isHardcoreMode)
+			{
+				_orbitSectionTitle.Text = isZh ? "[肆] 上帝模式 · 全参数调谐" : "[IV] God Mode · Full Parameter Tuning";
+			}
+			else
+			{
+				_orbitSectionTitle.Text = _isInspectingStar
+					? (isZh ? "[肆] 恒星参数（入门）" : "[IV] Star Parameters (Entry)")
+					: (isZh ? "[肆] 行星参数（入门）" : "[IV] Planet Parameters (Entry)");
+			}
+		}
+
+		if (_modeTierHintLabel != null)
+		{
+			_modeTierHintLabel.Text = isZh
+				? "探索模式: 入门参数 | 上帝模式: 展开高级轨道参数"
+				: "Explorer: entry parameters | God Mode: expand advanced orbital controls";
+		}
+
+		if (_orbitAdvancedToggleButton != null)
+		{
+			string prefix = _isOrbitAdvancedExpanded ? "▼" : "▶";
+			_orbitAdvancedToggleButton.Text = isZh
+				? $"{prefix} 高级轨道参数"
+				: $"{prefix} Advanced Orbital Controls";
 		}
 
 		SetVisible(_orbitHudTopLeft, true);
@@ -1697,6 +1672,7 @@ public partial class PlanetTextureView : TextureRect
 		}
 
 		UpdateCelestialLabels();
+		ApplyVisualLabels();
 	}
 
 	private void CleanupEventBindings()
@@ -1749,6 +1725,11 @@ public partial class PlanetTextureView : TextureRect
 		if (_downloadedOnlyToggle != null)
 		{
 			_downloadedOnlyToggle.Toggled -= OnDownloadedOnlyToggleChanged;
+		}
+
+		if (_orbitAdvancedToggleButton != null)
+		{
+			_orbitAdvancedToggleButton.Pressed -= OnOrbitAdvancedTogglePressed;
 		}
 
 		if (_skyTextureSelector != null)
@@ -1827,6 +1808,7 @@ public partial class PlanetTextureView : TextureRect
 	{
 		float brightness = Mathf.Clamp((float)value, 0.5f, 2.5f);
 		UpdateSolarBrightnessLabel(brightness);
+		UpdatePreview(_planetData, _lawAlignment);
 		EmitSignal(SignalName.SolarBrightnessChanged, brightness);
 	}
 
@@ -1955,59 +1937,6 @@ public partial class PlanetTextureView : TextureRect
 		return rect.HasPoint(point);
 	}
 
-	private void InsertBeforePlanetPhoto(VBoxContainer photoVBox, Control control)
-	{
-		if (photoVBox == null || control == null)
-		{
-			return;
-		}
-
-		photoVBox.AddChild(control);
-
-		if (_planetPhotoTexture == null)
-		{
-			return;
-		}
-
-		int photoIndex = FindChildIndex(photoVBox, _planetPhotoTexture);
-		int controlIndex = FindChildIndex(photoVBox, control);
-		if (photoIndex >= 0 && controlIndex >= 0 && controlIndex > photoIndex)
-		{
-			photoVBox.MoveChild(control, photoIndex);
-		}
-	}
-
-	private static int FindChildIndex(Node parent, Node child)
-	{
-		if (parent == null || child == null)
-		{
-			return -1;
-		}
-
-		for (int i = 0; i < parent.GetChildCount(); i++)
-		{
-			if (parent.GetChild(i) == child)
-			{
-				return i;
-			}
-		}
-
-		return -1;
-	}
-
-	private static Label CreateCompactSelectorLabel(string name, string text)
-	{
-		var label = new Label
-		{
-			Name = name,
-			Text = text
-		};
-
-		label.AddThemeFontSizeOverride("font_size", 12);
-		label.AddThemeColorOverride("font_color", new Color(0.8f, 0.8f, 0.82f, 0.95f));
-		return label;
-	}
-
 	private static string FormatOptionLabel(TextureOption option)
 	{
 		if (string.IsNullOrWhiteSpace(option.Source))
@@ -2045,7 +1974,10 @@ public partial class PlanetTextureView : TextureRect
 			Size = planetData.Size,
 			OceanCoverage = planetData.OceanCoverage,
 			Temperature = planetData.Temperature,
-			AtmosphereDensity = planetData.AtmosphereDensity
+			AtmosphereDensity = planetData.AtmosphereDensity,
+			MountainIntensity = planetData.MountainIntensity,
+			PolarCoverage = planetData.PolarCoverage,
+			DesertRatio = planetData.DesertRatio
 		};
 	}
 }

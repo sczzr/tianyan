@@ -400,21 +400,25 @@ public partial class MapGeneratorUI : Control
 		_mapView.CellCount = targetCellCount;
 		_menuController?.UpdateCellCountValue(targetCellCount);
 
-		_mapView.VisualStyleMode = ResolveVisualStyleFromLawAlignment(universeData.LawAlignment);
+		_mapView.ApplyVisualStyle(MapVisualStyleSelection.Relief);
+		_mapView.TerrainStyleMode = MapView.TerrainStyle.Heightmap;
+		_mapView.ApplyLayerPreset(MapView.LayerPreset.Heightmap);
 		_mapView.UseTemplateGeneration = true;
 		_mapView.UseRandomTemplateGeneration = false;
-		_mapView.GenerationTemplateType = ResolveTemplateTypeFromPlanet(universeData.CurrentPlanet?.Element ?? PlanetElement.Terra);
+		_mapView.GenerationTemplateType = HeightmapTemplateType.Continents;
 		_mapView.ApplyGenesisPlanetInfluence(universeData.CurrentPlanet, universeData.LawAlignment);
 		_mapView.SetGenesisTerrainHeightmap(
 			universeData.PlanetTerrainHeightmap,
 			universeData.PlanetTerrainWidth,
-			universeData.PlanetTerrainHeight);
+			universeData.PlanetTerrainHeight,
+			universeData.PlanetGenerationProfile);
 
-		float ocean = Mathf.Clamp(universeData.CurrentPlanet?.OceanCoverage ?? 0.35f, 0.05f, 0.95f);
-		float atmosphere = Mathf.Clamp(universeData.CurrentPlanet?.AtmosphereDensity ?? 0.5f, 0f, 1f);
+		var terrainProfile = universeData.PlanetGenerationProfile;
+		float civilizationSeaLevel = Mathf.Clamp(0.52f + (0.62f - terrainProfile.ContinentalFrequency) * 0.18f, 0.42f, 0.66f);
+		float civilizationRiverDensity = Mathf.Clamp(0.55f + terrainProfile.MoistureTransport * 1.45f, 0.35f, 2.4f);
 
-		_mapView.GenerationWaterLevel = ocean;
-		_mapView.RiverDensity = Mathf.Clamp(0.45f + atmosphere * 1.55f, 0.25f, 3f);
+		_mapView.GenerationWaterLevel = civilizationSeaLevel;
+		_mapView.RiverDensity = civilizationRiverDensity;
 		_mapView.CountryCount = Mathf.Clamp(Mathf.RoundToInt(4f + universeData.CivilizationDensity / 6f), 1, 128);
 
 		_enableMapDrilldown = (universeData.HierarchyConfig?.LevelCount ?? 2) > 1;
@@ -432,18 +436,6 @@ public partial class MapGeneratorUI : Control
 		};
 	}
 
-	private static HeightmapTemplateType ResolveTemplateTypeFromPlanet(PlanetElement element)
-	{
-		return element switch
-		{
-			PlanetElement.Terra => HeightmapTemplateType.Continents,
-			PlanetElement.Pyro => HeightmapTemplateType.Volcano,
-			PlanetElement.Cryo => HeightmapTemplateType.OldWorld,
-			PlanetElement.Aero => HeightmapTemplateType.Archipelago,
-			_ => HeightmapTemplateType.Continents
-		};
-	}
-
 	private static string BuildGenesisSeed(UniverseData universeData)
 	{
 		if (universeData == null)
@@ -452,14 +444,20 @@ public partial class MapGeneratorUI : Control
 		}
 
 		var planet = universeData.CurrentPlanet ?? new PlanetData();
-		int ocean = Mathf.RoundToInt(Mathf.Clamp(planet.OceanCoverage, 0f, 1f) * 1000f);
-		int temperature = Mathf.RoundToInt(Mathf.Clamp(planet.Temperature, 0f, 1f) * 1000f);
-		int atmosphere = Mathf.RoundToInt(Mathf.Clamp(planet.AtmosphereDensity, 0f, 1f) * 1000f);
+		var profile = universeData.PlanetGenerationProfile;
+		int mountains = Mathf.RoundToInt(Mathf.Clamp(planet.MountainIntensity, 0f, 1f) * 1000f);
+		int polar = Mathf.RoundToInt(Mathf.Clamp(planet.PolarCoverage, 0f, 1f) * 1000f);
+		int desert = Mathf.RoundToInt(Mathf.Clamp(planet.DesertRatio, 0f, 1f) * 1000f);
+		int tectonic = profile.TectonicPlateCount;
+		int windCells = profile.WindCellCount;
+		int erosionIterations = profile.ErosionIterations;
+		int erosionStrength = Mathf.RoundToInt(profile.ErosionStrength * 1000f);
+		int heatFactor = Mathf.RoundToInt(profile.HeatFactor);
 		int law = Mathf.Clamp(universeData.LawAlignment, 0, 100);
 		int civ = Mathf.Clamp(universeData.CivilizationDensity, 0, 100);
 		int role = (int)(universeData.HierarchyConfig?.Archetype ?? HierarchyArchetype.Standard);
 
-		return $"genesis_{law}_{civ}_{(int)planet.Element}_{ocean}_{temperature}_{atmosphere}_{role}";
+		return $"genesis_{law}_{civ}_{(int)planet.Element}_{mountains}_{polar}_{desert}_{tectonic}_{windCells}_{erosionIterations}_{erosionStrength}_{heatFactor}_{role}";
 	}
 
 	private void OnMapGeneratedFromGenesis()
@@ -491,33 +489,11 @@ public partial class MapGeneratorUI : Control
 			currentContext.ParentMapData);
 
 		_mapHierarchyController.RestoreContext(updatedContext, regenerate: false);
+		_mapView.ApplyVisualStyle(MapVisualStyleSelection.Relief);
+		_mapView.TerrainStyleMode = MapView.TerrainStyle.Heightmap;
+		_mapView.ApplyLayerPreset(MapView.LayerPreset.Heightmap);
 		_menuController?.UpdateCellCountValue(currentCellCount);
 		UpdateBackToParentButton();
-	}
-
-	private static MapVisualStyleSelection ResolveVisualStyleFromLawAlignment(int lawAlignment)
-	{
-		if (lawAlignment <= 25)
-		{
-			return MapVisualStyleSelection.InkFantasy;
-		}
-
-		if (lawAlignment <= 45)
-		{
-			return MapVisualStyleSelection.Parchment;
-		}
-
-		if (lawAlignment <= 65)
-		{
-			return MapVisualStyleSelection.NavalChart;
-		}
-
-		if (lawAlignment <= 85)
-		{
-			return MapVisualStyleSelection.Relief;
-		}
-
-		return MapVisualStyleSelection.Heatmap;
 	}
 
 	private void SetupBottomMenu()

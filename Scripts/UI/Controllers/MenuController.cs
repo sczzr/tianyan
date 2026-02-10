@@ -64,8 +64,8 @@ public partial class MenuController : Control
 	private SpinBox _provinceCellCountSpinBox;
 	private SpinBox _cityCellCountSpinBox;
 	private HSlider _riverDensitySlider;
-	private CheckButton _useMultithreadingCheck;
-	private CheckButton _enableDrilldownCheck;
+	private CheckBox _useMultithreadingCheck;
+	private CheckBox _enableDrilldownCheck;
 	private Button _mapSettingsApplyButton;
 	private Button _mapSettingsResetButton;
 	private Button _mapSettingsCloseButton;
@@ -134,7 +134,7 @@ public partial class MenuController : Control
 		_riverDensityLabel = GetNodeOrNull<Label>("MapSettingsPopup/PopupVBox/RiverDensityHBox/RiverDensityLabel");
 		_riverDensitySlider = GetNodeOrNull<HSlider>("MapSettingsPopup/PopupVBox/RiverDensityHBox/RiverDensitySlider");
 		_useMultithreadingLabel = GetNodeOrNull<Label>("MapSettingsPopup/PopupVBox/MultithreadingHBox/MultithreadingLabel");
-		_useMultithreadingCheck = GetNodeOrNull<CheckButton>("MapSettingsPopup/PopupVBox/MultithreadingHBox/MultithreadingCheck");
+		_useMultithreadingCheck = GetNodeOrNull<CheckBox>("MapSettingsPopup/PopupVBox/MultithreadingHBox/MultithreadingCheck");
 		_countrySectionLabel = GetNodeOrNull<Label>("MapSettingsPopup/PopupVBox/CountrySectionLabel");
 		_countryCountLabel = GetNodeOrNull<Label>("MapSettingsPopup/PopupVBox/CountryCountHBox/CountryCountLabel");
 		_countryCountSpinBox = GetNodeOrNull<SpinBox>("MapSettingsPopup/PopupVBox/CountryCountHBox/CountryCountSpinBox");
@@ -150,7 +150,7 @@ public partial class MenuController : Control
 		_cityCellCountLabel = GetNodeOrNull<Label>("MapSettingsPopup/PopupVBox/CityCellCountHBox/CityCellCountLabel");
 		_cityCellCountSpinBox = GetNodeOrNull<SpinBox>("MapSettingsPopup/PopupVBox/CityCellCountHBox/CityCellCountSpinBox");
 		_enableDrilldownLabel = GetNodeOrNull<Label>("MapSettingsPopup/PopupVBox/EnableDrilldownHBox/EnableDrilldownLabel");
-		_enableDrilldownCheck = GetNodeOrNull<CheckButton>("MapSettingsPopup/PopupVBox/EnableDrilldownHBox/EnableDrilldownCheck");
+		_enableDrilldownCheck = GetNodeOrNull<CheckBox>("MapSettingsPopup/PopupVBox/EnableDrilldownHBox/EnableDrilldownCheck");
 		_mapSettingsApplyButton = GetNodeOrNull<Button>("MapSettingsPopup/PopupVBox/PopupButtonsHBox/ApplyButton");
 		_mapSettingsResetButton = GetNodeOrNull<Button>("MapSettingsPopup/PopupVBox/PopupButtonsHBox/ResetButton");
 		_mapSettingsCloseButton = GetNodeOrNull<Button>("MapSettingsPopup/PopupVBox/PopupButtonsHBox/CloseButton");

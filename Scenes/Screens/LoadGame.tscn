@@ -2,6 +2,78 @@
 
 [ext_resource type="Script" path="res://Scripts/UI/Screens/LoadGame.cs" id="1_loadgame"]
 [ext_resource type="Theme" uid="uid://inkwashtheme" path="res://Themes/InkWashTheme.tres" id="2_theme"]
+[ext_resource type="Texture2D" path="res://Assets/UI/Textures/Paper/Paper005_1K-PNG_Color.png" id="3_paper"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ScreenPanel"]
+content_margin_left = 20.0
+content_margin_top = 20.0
+content_margin_right = 20.0
+content_margin_bottom = 20.0
+bg_color = Color(0.91, 0.835, 0.71, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.545, 0.478, 0.388, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+shadow_color = Color(0, 0, 0, 0.094)
+shadow_size = 8
+shadow_offset = Vector2(3, 4)
+
+[sub_resource type="StyleBoxLine" id="StyleBoxLine_Separator"]
+color = Color(0, 0, 0, 0.094)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonNormal"]
+content_margin_left = 30.0
+content_margin_top = 10.0
+content_margin_right = 30.0
+content_margin_bottom = 10.0
+bg_color = Color(0.961, 0.925, 0.843, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonHover"]
+content_margin_left = 30.0
+content_margin_top = 10.0
+content_margin_right = 30.0
+content_margin_bottom = 10.0
+bg_color = Color(0.961, 0.925, 0.843, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.545, 0.478, 0.388, 1)
+shadow_color = Color(0.545, 0.478, 0.388, 1)
+shadow_size = 4
+shadow_offset = Vector2(3, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ButtonPressed"]
+content_margin_left = 30.0
+content_margin_top = 10.0
+content_margin_right = 30.0
+content_margin_bottom = 10.0
+bg_color = Color(0.604, 0.243, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.169, 0.137, 1)
+shadow_color = Color(0, 0, 0, 0.188)
+shadow_size = 1
+shadow_offset = Vector2(1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ListPanel"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.961, 0.925, 0.843, 0.5)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.545, 0.478, 0.388, 0.35)
 
 [node name="LoadGame" type="Control"]
 layout_mode = 3
@@ -22,6 +94,28 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.961, 0.925, 0.843, 1)
 
+
+[node name="PaperTexture" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("3_paper")
+expand_mode = 1
+stretch_mode = 6
+modulate = Color(1, 1, 1, 0.1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.545, 0.478, 0.388, 1)
+shadow_color = Color(0.545, 0.478, 0.388, 1)
+shadow_size = 2
+shadow_offset = Vector2(2, 2)
+
 [node name="MainPanel" type="PanelContainer" parent="."]
 layout_mode = 1
 anchors_preset = 8
@@ -35,6 +129,7 @@ offset_right = 300.0
 offset_bottom = 350.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_ScreenPanel")
 
 [node name="MainVBox" type="VBoxContainer" parent="MainPanel"]
 layout_mode = 2
@@ -53,6 +148,7 @@ layout_mode = 2
 
 [node name="Separator1" type="HSeparator" parent="MainPanel/MainVBox"]
 layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxLine_Separator")
 
 [node name="ContentSpacer" type="Control" parent="MainPanel/MainVBox"]
 custom_minimum_size = Vector2(0, 16)
@@ -62,6 +158,7 @@ layout_mode = 2
 custom_minimum_size = Vector2(0, 400)
 layout_mode = 2
 horizontal_scroll_mode = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_ListPanel")
 
 [node name="SaveList" type="VBoxContainer" parent="MainPanel/MainVBox/ScrollContainer"]
 layout_mode = 2
@@ -71,16 +168,31 @@ theme_override_constants/separation = 12
 [node name="Save001Button" type="Button" parent="MainPanel/MainVBox/ScrollContainer/SaveList"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonHover")
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonNormal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonPressed")
 text = "存档 1"
 
 [node name="Save002Button" type="Button" parent="MainPanel/MainVBox/ScrollContainer/SaveList"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonHover")
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonNormal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonPressed")
 text = "存档 2"
 
 [node name="AutosaveButton" type="Button" parent="MainPanel/MainVBox/ScrollContainer/SaveList"]
 custom_minimum_size = Vector2(0, 56)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonHover")
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonNormal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonPressed")
 text = "自动存档"
 
 [node name="BottomSpacer" type="Control" parent="MainPanel/MainVBox"]
@@ -89,6 +201,7 @@ layout_mode = 2
 
 [node name="Separator2" type="HSeparator" parent="MainPanel/MainVBox"]
 layout_mode = 2
+theme_override_styles/separator = SubResource("StyleBoxLine_Separator")
 
 [node name="ButtonSpacer" type="Control" parent="MainPanel/MainVBox"]
 custom_minimum_size = Vector2(0, 8)
@@ -97,4 +210,9 @@ layout_mode = 2
 [node name="BackButton" type="Button" parent="MainPanel/MainVBox"]
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
+theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/hover = SubResource("StyleBoxFlat_ButtonHover")
+theme_override_styles/normal = SubResource("StyleBoxFlat_ButtonNormal")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_ButtonPressed")
 text = "返回"
