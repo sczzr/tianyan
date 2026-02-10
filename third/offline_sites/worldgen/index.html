@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>ProcGenesis - World Generator</title>
+    <script async="" crossorigin="anonymous" src="assets/97c7f30af380502b3af3ef1f8baca9e14f5f8cca.js"></script>
+    <script src="assets/c81f9f0f1263dec5ce3107628f0841cbf88dff28.js"></script>
+    <script src="assets/3c61133e7cdd2956dcd909fe61a570433619f67a.js"></script>
+    <script src="assets/9020197e2362c417a7ae935eaa0f8206631d68ce.js"></script>
+    <script src="assets/6e7054299d5c25d621959ba10b7baf5023ae4f3a.js"></script>
+    <script src="assets/8bbc32b9dd5f7e3dda988a16a7035b7efbb844c8.js"></script>
+    <link href="assets/ad22578e130e48b773eaff24f66b6a4040eaed95.css" rel="stylesheet"/>
+    <script async="" src="assets/e81b811660e8ef3cc4fa295c7eeaa88e4684e192.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+        #Banner {
+            background-color: #0059b3;
+            padding: 10px;
+            text-align: center;
+        }
+        #Logo img {
+            max-width: 200px;
+            height: auto;
+        }
+        #Navbar {
+            background-color: #333;
+            padding: 10px;
+        }
+        #Navbar ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        #Navbar a {
+            color: white;
+            text-decoration: none;
+        }
+        #Navbar a:hover {
+            text-decoration: underline;
+        }
+        #SuperContainer {
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+        #MainContainer {
+            flex: 1;
+            max-width: 800px;
+        }
+        #MapSpace {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        #DisplayButtons {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+        }
+        .folderHeadings {
+            background-color: #0059b3;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            cursor: pointer;
+            width: 100%;
+            text-align: left;
+            font-weight: bold;
+        }
+        .dispButtons {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            margin: 2px 0;
+            cursor: pointer;
+            width: 100%;
+        }
+        .dispButtons:hover {
+            background-color: #45a049;
+        }
+        .controlButtons {
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            padding: 5px;
+            width: 60px;
+        }
+        .resetButtons {
+            background-color: #ddd;
+            border: 1px solid #ccc;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        .genButton {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .genButton:hover {
+            background-color: #c0392b;
+        }
+        #wait_message {
+            display: none;
+            color: red;
+            font-weight: bold;
+            text-align: center;
+            padding: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="Banner">
+        <div id="Logo">
+            <img alt="ProcGenesis" src="assets/b8c040330f4d265e74cdc94bdb057a1902d79b6c.png"/>
+        </div>
+    </div>
+    <div id="Navbar">
+        <ul>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../generators.html">Generators</a></li>
+            <li><a href="http://blog.procgenesis.com">Blog</a></li>
+            <li><a href="../gallery.html">Gallery</a></li>
+        </ul>
+    </div>
+    <div id="SuperContainer">
+        <div id="MainContainer">
+            <div id="MapSpace">
+                <canvas height="400" id="myCanvas4" style="display:none" width="1600"></canvas>
+                <canvas height="400" id="myCanvas8" style="display:none" width="800"></canvas>
+                <canvas height="400" id="myCanvas11" style="border:1px solid #c3c3c3" width="800"></canvas>
+                <br/>
+                <canvas height="100" id="legendCanvas" style="border:1px solid #c3c3c3" width="800"></canvas>
+                <canvas height="400" id="inMemoryCanvas" style="display:none" width="800"></canvas>
+                <canvas height="400" id="bCanvas" style="display:none" width="800"></canvas>
+                <br/>
+                <div id="wait_message">Please Wait...</div>
+            </div>
+            <div id="ViewName"></div>
+            <div id="LangTreeTitle"></div>
+            <div id="LangTree"></div>
+        </div>
+        <div id="DisplayButtons">
+            <div id="mainViewsFolder">
+                <input class="folderHeadings" id="mainViewsFolderButton" onclick='generationIsComplete&&(showMainViews?(document.getElementById("mainViews").style="display: none;",this.value="> View Layers"):(document.getElementById("mainViews").style="",this.value="v View Layers"),showMainViews=!showMainViews)' type="button" value="> View Layers"/>
+                <br/>
+                <div id="mainViews">
+                    <br/>
+                    <div id="buttonWrapper">
+                        <span style="font-size:.8em">Zoom:</span>
+                        <div id="zoom%" style="font-size:.8em;display:inline-block"></div>
+                        <br/>
+                        <input id="plus" type="button" value="+"/>
+                        <input id="minus" type="button" value="-"/>
+                        <br/>
+                        <br/>
+                    </div>
+                    <div id="ViewButtons">
+                        <input class="dispButtons" onclick='setWaitVisibility("visible"),setTimeout(function(){"TecPlates"==LastDataView&&DataViewCount++,canctx.scale(1/scale,1/scale),drawAltData("TecPlates"),imgScale()},0)' style="margin-top:2px" type="button" value="Tec. Plates and Boundaries"/>
+                        <input class="dispButtons" onclick='setWaitVisibility("visible"),setTimeout(function(){"RockTypes"==LastDataView&&DataViewCount++,canctx.scale(1/scale,1/scale),drawAltData("RockTypes"),imgScale()},0)' type="button" value="Rock Types"/>
+                        <input class="dispButtons" onclick='setWaitVisibility("visible"),setTimeout(function(){"OreDeposits"==LastDataView&&DataViewCount++,canctx.scale(1/scale,1/scale),drawAltData("OreDeposits"),imgScale()},0)' type="button" value="Ore Deposits"/>
+                        <input class="dispButtons" onclick='setWaitVisibility("visible"),setTimeout(function(){"Outline"==LastDataView&&DataViewCount++,canctx.scale(1/scale,1/scale),drawAltData("Outline"),imgScale()},0)' type="button" value="Outline"/>
+                        <input class="dispButtons" onclick='setWaitVisibility("visible"),setTimeout(function(){"Elevation"==LastDataView&&DataViewCount++,canctx.scale(1/scale,1/scale),drawAltData("Elevation"),imgScale()},0)' type="button" value="Elevation"/>
+                        <input class="dispButtons" onclick='setWaitVisibility("visible"),setTimeout(function(){"ElevationNoOcean"==LastDataView&&DataViewCount++,canctx.scale(1/scale,1/scale),drawAltData("ElevationNoOcean"),imgScale()},0)' type="button" value="Elevation sans Ocean"/>
+                        <input class="dispButtons" onclick='setWaitVisibility("visible"),setTimeout(function(){"Temp"==LastDataView&&DataViewCount++,canctx.scale(1/scale,1/scale),drawAltData("Temp"),imgScale()},0)' type="button" value="Temperature"/>
+                        <input class="dispButtons" onclick='setWaitVisibility("visible"),setTimeout(function(){"WindMoisture"==LastDataView&&DataViewCount++,canctx.scale(1/scale,1/scale),drawAltData("WindMoisture"),imgScale()},0)' type="button" value="Wind and Moisture"/>
+                        <input class="dispButtons" onclick='setWaitVisibility("visible"),setTimeout(function(){"Biomes"==LastDataView&&DataViewCount++,canctx.scale(1/scale,1/scale),drawAltData("Biomes"),imgScale()},0)' type="button" value="Biomes"/>
+                        <input class="dispButtons" onclick='setWaitVisibility("visible"),setTimeout(function(){"Satellite"==LastDataView&&DataViewCount++,canctx.scale(1/scale,1/scale),drawAltData("Satellite"),imgScale()},0)' type="button" value="Satellite"/>
+                        <input class="dispButtons" onclick='cityToggle&&setWaitVisibility("visible"),setTimeout(function(){cityToggle=!cityToggle,cityToggle?drawCities():(canctx.scale(1/scale,1/scale),drawAltData(LastDataView),imgScale(),document.getElementById("LangTree").innerHTML="",document.getElementById("LangTreeTitle").innerHTML="")},0)' type="button" value="Toggle Cities"/>
+                        <br/>
+                        <br/>
+                    </div>
+                </div>
+            </div>
+            <div id="altViewsFolder">
+                <input class="folderHeadings" id="altViewsFolderButton" onclick='generationIsComplete&&(showAltViews?(document.getElementById("altViews").style="display: none;",this.value="> Alternate Views"):(document.getElementById("altViews").style="",this.value="v Alternate Views"),showAltViews=!showAltViews)' type="button" value="> Alternate Views"/>
+                <br/>
+                <div id="altViews">
+                    <br/>
+                    <input class="dispButtons" onclick="showPlanet()" type="button" value="View as 3D Planet (New Tab)"/>
+                    <input class="dispButtons" onclick="showPlane()" type="button" value="View as 3D Plane (New Tab)"/>
+                    <input class="dispButtons" onclick="drawRColorBiomes()" type="button" value="Randomize Biome Colors"/>
+                    <br/>
+                    <br/>
+                </div>
+            </div>
+            <div id="normalParamsFolder">
+                <input class="folderHeadings" id="normalParamsFolderButton" onclick='generationIsComplete&&(showNormalParams?(document.getElementById("normalParams").style="display: none;",this.value="> Normal Parameters"):(document.getElementById("normalParams").style="",this.value="v Normal Parameters"),showNormalParams=!showNormalParams)' type="button" value="> Normal Parameters"/>
+                <br/>
+                <div id="normalParams">
+                    <br/>
+                    <input class="dispButtons" onclick='setWaitVisibility("visible"),setTimeout(function(){canctx.scale(1/scale,1/scale),drawAltData(LastDataView),imgScale(),generateNormalMap()},0)' type="button" value="Apply Normal Map"/>
+                    <br/>
+                    <br/>
+                    Specularity (1 - 20):
+                    <form>
+                        <input class="controlButtons" id="Specularity" name="Specularity" onchange="this.value>20&&(this.value=20),this.value<1&&(this.value=1)" type="number" value="7"/>
+                        <input class="resetButtons" step="1" type="reset"/>
+                    </form>
+                    Bias:
+                    <form>
+                        <input class="controlButtons" id="Bias" max="10" min="0" name="Bias" onchange="updateBiasText(this.value)" style="width:72%;margin-left:3px" type="range" value="2"/>
+                        <input id="BiasText" onchange="updateBiasSlider(this.value)" style="width:49px;border-radius:5px;border:1px solid #0059b3;background:#101010;color:#fff;margin-left:2px" value="3"/>
+                    </form>
+                    <br/>
+                </div>
+            </div>
+            <div id="genParamsFolder">
+                <input class="folderHeadings" onclick='showGenParams?(document.getElementById("genParams").style="display: none;",this.value="> Generation Parameters"):(document.getElementById("genParams").style="",this.value="v Generation Parameters"),showGenParams=!showGenParams' style="background-color:#0059b3" type="button" value="v Generation Parameters"/>
+                <br/>
+                <div id="genParams">
+                    <br/>
+                    Map Size:
+                    <select id="sizeSelect" onchange="setCanvasSize()" style="width:98%;margin-left:3px;background-color:#101010;border-radius:5px;color:#fff;border:1px solid #0059b3">
+                        <option value="6x3">600 X 300 (Small)</option>
+                        <option value="8x4" selected>800 x 400 (Default)</option>
+                        <option value="10x5">1000 X 500 (Large)</option>
+                        <option value="12x6">1200 X 600 (Very Large)</option>
+                    </select>
+                    <br/>
+                    <br/>
+                    Sea Level (0 - 100):
+                    <form>
+                        <input class="controlButtons" id="SeaLevel" name="SeaLevel" onchange="this.value>100&&(this.value=100),this.value<0&&(this.value=0)" type="number" value="35"/>
+                        <input class="resetButtons" step=".01" type="reset"/>
+                    </form>
+                    Num. of Tectonic Plates (1 - 50):
+                    <form>
+                        <input class="controlButtons" id="NumPlates" name="NumPlates" onchange="this.value>50&&(this.value=50),this.value<1&&(this.value=1)" type="number" value="20"/>
+                        <input class="resetButtons" type="reset"/>
+                    </form>
+                    Num. of Wind Cells (1 - 20):
+                    <form>
+                        <input class="controlButtons" id="NumWindCells" name="NumWindCells" onchange="this.value>20&&(this.value=20),this.value<1&&(this.value=1)" type="number" value="10"/>
+                        <input class="resetButtons" type="reset"/>
+                    </form>
+                    Erosion Factor (1 - 10):
+                    <form>
+                        <input class="controlButtons" id="ErosionFactor" name="ErosionFactor" onchange="this.value>10&&(this.value=10),this.value<1&&(this.value=1)" type="number" value="1"/>
+                        <input class="resetButtons" type="reset"/>
+                    </form>
+                    Erosion Iterations (0 - 15):
+                    <form>
+                        <input class="controlButtons" id="ErosionIterations" name="ErosionIterations" onchange="this.value>15&&(this.value=15),this.value<0&&(this.value=0)" type="number" value="5"/>
+                        <input class="resetButtons" type="reset"/>
+                    </form>
+                    Heat Factor (1 - 1000):
+                    <form>
+                        <input class="controlButtons" id="HeatFactor" name="HeatFactor" onchange="this.value>1e3&&(this.value=1e3),this.value<1&&(this.value=1)" type="number" value="512"/>
+                        <input class="resetButtons" type="reset"/>
+                    </form>
+                    Random Heat Factor:
+                    <input checked="" id="isHeatRandom" name="isHeatRandom" style="margin-bottom:5px" type="checkbox" value="true"/>
+                    <br/>
+                    Generate Rivers:
+                    <input checked="" id="GenRivers" name="GenRivers" style="margin-bottom:5px" type="checkbox" value="true"/>
+                    <br/>
+                    <br/>
+                </div>
+            </div>
+            <br/>
+            <span style="font-size:.8em">Seed: (Random if left blank)</span>
+            <form>
+                <input class="controlButtons" id="Seed" name="Seed"/>
+                <input class="resetButtons" type="reset"/>
+            </form>
+            <input class="genButton" onclick="generateMap()" type="button" value="Generate New Map"/>
+            <br/>
+        </div>
+    </div>
+    <script src="assets/3dd39e59f527fb8a84450cf9ea13d81d839a396e.js"></script>
+</body>
+</html>

@@ -18,6 +18,124 @@ corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_MenuPanel"]
+content_margin_left = 18.0
+content_margin_top = 16.0
+content_margin_right = 18.0
+content_margin_bottom = 16.0
+bg_color = Color(0.91, 0.878, 0.769, 0.97)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.549, 0.498, 0.42, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 12
+shadow_offset = Vector2(0, 4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_SettingsPanel"]
+content_margin_left = 20.0
+content_margin_top = 18.0
+content_margin_right = 20.0
+content_margin_bottom = 18.0
+bg_color = Color(0.91, 0.839, 0.71, 0.99)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.549, 0.498, 0.42, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.45)
+shadow_size = 16
+shadow_offset = Vector2(0, 6)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_SecondaryButton"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.863, 0.816, 0.737, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.749, 0.678, 0.549, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_SecondaryButtonHover"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.941, 0.922, 0.878, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.749, 0.678, 0.549, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_PrimaryButton"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.365, 0.478, 0.549, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.29, 0.388, 0.478, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_PrimaryButtonHover"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.416, 0.537, 0.616, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.29, 0.388, 0.478, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="Theme" id="MenuPopupTheme"]
+Button/colors/font_color = Color(0.169, 0.145, 0.125, 1)
+Button/colors/font_hover_color = Color(0.169, 0.145, 0.125, 1)
+Button/colors/font_pressed_color = Color(0.98, 0.98, 0.98, 1)
+Button/font_sizes/font_size = 15
+Button/styles/normal = SubResource("StyleBoxFlat_SecondaryButton")
+Button/styles/hover = SubResource("StyleBoxFlat_SecondaryButtonHover")
+Button/styles/focus = SubResource("StyleBoxFlat_SecondaryButtonHover")
+Button/styles/pressed = SubResource("StyleBoxFlat_PrimaryButton")
+Label/colors/font_color = Color(0.169, 0.145, 0.125, 1)
+Label/font_sizes/font_size = 15
+OptionButton/colors/font_color = Color(0.169, 0.145, 0.125, 1)
+OptionButton/font_sizes/font_size = 14
+CheckBox/colors/font_color = Color(0.169, 0.145, 0.125, 1)
+CheckBox/font_sizes/font_size = 14
+
 [node name="MenuUI" type="Control" unique_id=1070003001]
 layout_mode = 3
 anchors_preset = 15
@@ -28,6 +146,17 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_menuctrl")
 
+[node name="MenuBackdrop" type="ColorRect" parent="." unique_id=2139857442]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.55)
+
 [node name="MenuPanel" type="PanelContainer" parent="." unique_id=124898716]
 visible = false
 layout_mode = 1
@@ -36,21 +165,23 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -160.0
-offset_top = -280.0
-offset_right = 160.0
-offset_bottom = 280.0
+offset_left = -190.0
+offset_top = -260.0
+offset_right = 190.0
+offset_bottom = 260.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = SubResource("MenuPopupTheme")
+theme_override_styles/panel = SubResource("StyleBoxFlat_MenuPanel")
 
 [node name="MenuVBox" type="VBoxContainer" parent="MenuPanel" unique_id=124898717]
 layout_mode = 2
-theme_override_constants/separation = 16
+theme_override_constants/separation = 12
 
 [node name="PausedLabel" type="Label" parent="MenuPanel/MenuVBox" unique_id=124898718]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.173, 0.122, 0.071, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(0.169, 0.145, 0.125, 1)
+theme_override_font_sizes/font_size = 30
 text = "游戏已暂停"
 horizontal_alignment = 1
 
@@ -62,17 +193,17 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="ResumeButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898721]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "返回游戏"
 
 [node name="RegenerateButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898722]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "重新生成地图"
 
 [node name="BackToParentButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898730]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "返回上级地图"
 
@@ -89,7 +220,7 @@ step = 0.05
 value = 1.0
 
 [node name="SettingsButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898723]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "设置"
 
@@ -97,18 +228,29 @@ text = "设置"
 layout_mode = 2
 
 [node name="MainMenuButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898725]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "返回主菜单"
 
 [node name="QuitButton" type="Button" parent="MenuPanel/MenuVBox" unique_id=124898726]
-custom_minimum_size = Vector2(0, 48)
+custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 text = "退出游戏"
 
 [node name="Spacer2" type="Control" parent="MenuPanel/MenuVBox" unique_id=124898727]
 custom_minimum_size = Vector2(0, 24)
 layout_mode = 2
+
+[node name="SettingsBackdrop" type="ColorRect" parent="." unique_id=148621174]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.62)
 
 [node name="MapSettingsPopup" type="PanelContainer" parent="." unique_id=923406112]
 visible = false
@@ -118,22 +260,35 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -220.0
-offset_top = -490.0
-offset_right = 220.0
-offset_bottom = 490.0
+offset_left = -280.0
+offset_top = -410.0
+offset_right = 280.0
+offset_bottom = 410.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = SubResource("MenuPopupTheme")
+theme_override_styles/panel = SubResource("StyleBoxFlat_SettingsPanel")
+
+[node name="PopupHeader" type="PanelContainer" parent="MapSettingsPopup" unique_id=140525459]
+layout_mode = 2
+
+[node name="HeaderLabel" type="Label" parent="MapSettingsPopup/PopupHeader" unique_id=332911819]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.169, 0.145, 0.125, 1)
+theme_override_font_sizes/font_size = 20
+text = "地图生成设置"
+horizontal_alignment = 1
 
 [node name="PopupVBox" type="VBoxContainer" parent="MapSettingsPopup" unique_id=1473199217]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="GenerationSettingsLabel" type="Label" parent="MapSettingsPopup/PopupVBox" unique_id=1520088659]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_font_sizes/font_size = 26
 text = "生成设置"
 horizontal_alignment = 1
+visible = false
 
 [node name="MapTypeHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=1987654333]
 layout_mode = 2
@@ -494,24 +649,33 @@ button_pressed = true
 
 [node name="PopupButtonsHBox" type="HBoxContainer" parent="MapSettingsPopup/PopupVBox" unique_id=1797617169]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 10
 
 [node name="ApplyButton" type="Button" parent="MapSettingsPopup/PopupVBox/PopupButtonsHBox" unique_id=1840872074]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.98, 0.98, 0.98, 1)
+theme_override_colors/font_hover_color = Color(0.98, 0.98, 0.98, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_PrimaryButton")
+theme_override_styles/hover = SubResource("StyleBoxFlat_PrimaryButtonHover")
+theme_override_styles/focus = SubResource("StyleBoxFlat_PrimaryButtonHover")
 text = "应用并生成"
 
 [node name="ResetButton" type="Button" parent="MapSettingsPopup/PopupVBox/PopupButtonsHBox" unique_id=1840872075]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_SecondaryButton")
+theme_override_styles/hover = SubResource("StyleBoxFlat_SecondaryButtonHover")
 text = "恢复默认"
 
 [node name="CloseButton" type="Button" parent="MapSettingsPopup/PopupVBox/PopupButtonsHBox" unique_id=1785190959]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_styles/normal = SubResource("StyleBoxFlat_SecondaryButton")
+theme_override_styles/hover = SubResource("StyleBoxFlat_SecondaryButtonHover")
 text = "关闭"
 
 [node name="MapSettingsToast" type="PanelContainer" parent="." unique_id=1987654324]

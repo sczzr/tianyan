@@ -2,68 +2,144 @@
 
 [ext_resource type="Script" uid="uid://c4tc2gcndk4gx" path="res://Scripts/UI/Controllers/BottomMenuController.cs" id="1_bottommenuctrl"]
 
-[sub_resource type="StyleBoxFlat" id="BottomMenuButtonStyle"]
-content_margin_left = 10.0
-content_margin_top = 6.0
-content_margin_right = 10.0
-content_margin_bottom = 6.0
-bg_color = Color(0.2, 0.19, 0.16, 0.9)
-border_width_left = 2
+[sub_resource type="StyleBoxFlat" id="BottomDockPanelStyle"]
+bg_color = Color(0.141, 0.129, 0.118, 0.95)
 border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.72, 0.66, 0.52, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+border_color = Color(0.549, 0.498, 0.42, 1)
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 10
+shadow_offset = Vector2(0, -3)
 
-[sub_resource type="StyleBoxFlat" id="BottomMenuButtonPressedStyle"]
-content_margin_left = 10.0
-content_margin_top = 6.0
-content_margin_right = 10.0
-content_margin_bottom = 6.0
-bg_color = Color(0.16, 0.15, 0.12, 0.95)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.86, 0.78, 0.62, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[sub_resource type="StyleBoxFlat" id="BottomMenuButtonStyle"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.9, 0.9, 0.9, 0.2)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="BottomMenuButtonHoverStyle"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(1, 1, 1, 0.1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.4)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="BottomMenuButtonPressedStyle"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.365, 0.478, 0.549, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.29, 0.388, 0.478, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="BottomMenuButtonDisabledStyle"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 1, 1, 0.14)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="BottomMenuButtonActiveStyle"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.365, 0.478, 0.549, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.29, 0.388, 0.478, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="StyleBoxFlat" id="DropdownPanelStyle"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.91, 0.878, 0.769, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.549, 0.498, 0.42, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(0, 0, 0, 0.22)
+shadow_size = 10
+shadow_offset = Vector2(2, 2)
+
+[sub_resource type="StyleBoxFlat" id="DropdownButtonStyle"]
 content_margin_left = 10.0
 content_margin_top = 6.0
 content_margin_right = 10.0
 content_margin_bottom = 6.0
-bg_color = Color(0.26, 0.24, 0.2, 0.92)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.78, 0.71, 0.56, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+bg_color = Color(0.862, 0.816, 0.706, 0.9)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.749, 0.678, 0.549, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
-[sub_resource type="StyleBoxFlat" id="DropdownPanelStyle"]
-bg_color = Color(0.91, 0.835, 0.71, 0.88)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.788, 0.722, 0.588, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-shadow_color = Color(0, 0, 0, 0.15)
-shadow_size = 8
-shadow_offset = Vector2(2, 2)
+[sub_resource type="StyleBoxFlat" id="DropdownButtonHoverStyle"]
+content_margin_left = 10.0
+content_margin_top = 6.0
+content_margin_right = 10.0
+content_margin_bottom = 6.0
+bg_color = Color(0.922, 0.894, 0.839, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.749, 0.678, 0.549, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [node name="BottomMenuUI" type="Control" unique_id=1070005001]
 layout_mode = 3
@@ -75,75 +151,114 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("1_bottommenuctrl")
 
+[node name="BottomDockBackground" type="PanelContainer" parent="." unique_id=1451171188]
+layout_mode = 1
+anchors_preset = 10
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -64.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("BottomDockPanelStyle")
+
 [node name="BottomMenu" type="HBoxContainer" parent="." unique_id=508882228]
 layout_mode = 1
-anchors_preset = 2
+anchors_preset = 10
+anchor_right = 1.0
 anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 20.0
 offset_top = -64.0
-offset_right = 516.0
-offset_bottom = -16.0
-grow_horizontal = 0
+offset_right = -20.0
+offset_bottom = -12.0
+grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/separation = 8
+theme_override_constants/separation = 12
 
-[node name="MapDisplayButton" type="Button" parent="BottomMenu" unique_id=1090608450]
-custom_minimum_size = Vector2(160, 48)
+[node name="DockLeft" type="HBoxContainer" parent="BottomMenu" unique_id=1988200445]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.98, 0.96, 0.9, 1)
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("BottomMenuButtonStyle")
+theme_override_constants/separation = 12
+
+[node name="MapDisplayButton" type="Button" parent="BottomMenu/DockLeft" unique_id=1090608450]
+custom_minimum_size = Vector2(152, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.941, 0.902, 0.824, 1)
+theme_override_colors/font_hover_color = Color(0.941, 0.902, 0.824, 1)
+theme_override_colors/font_pressed_color = Color(0.941, 0.902, 0.824, 1)
+theme_override_font_sizes/font_size = 15
+theme_override_styles/normal = SubResource("BottomMenuButtonActiveStyle")
 theme_override_styles/pressed = SubResource("BottomMenuButtonPressedStyle")
 theme_override_styles/hover = SubResource("BottomMenuButtonHoverStyle")
 text = "地图显示"
 
-[node name="BackToParentButton" type="Button" parent="BottomMenu" unique_id=274820413]
-custom_minimum_size = Vector2(160, 48)
+[node name="BackToParentButton" type="Button" parent="BottomMenu/DockLeft" unique_id=274820413]
+custom_minimum_size = Vector2(152, 44)
 layout_mode = 2
 disabled = true
-theme_override_colors/font_color = Color(0.98, 0.96, 0.9, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 0.9)
+theme_override_colors/font_disabled_color = Color(0.8, 0.8, 0.8, 0.5)
+theme_override_font_sizes/font_size = 15
 theme_override_styles/normal = SubResource("BottomMenuButtonStyle")
 theme_override_styles/pressed = SubResource("BottomMenuButtonPressedStyle")
 theme_override_styles/hover = SubResource("BottomMenuButtonHoverStyle")
+theme_override_styles/disabled = SubResource("BottomMenuButtonDisabledStyle")
 text = "返回上级地图"
 
-[node name="SettingsMenuButton" type="Button" parent="BottomMenu" unique_id=1621974801]
-custom_minimum_size = Vector2(160, 48)
+[node name="DockSpacer" type="Control" parent="BottomMenu" unique_id=1637711912]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.98, 0.96, 0.9, 1)
-theme_override_font_sizes/font_size = 16
+size_flags_horizontal = 3
+
+[node name="DockRight" type="HBoxContainer" parent="BottomMenu" unique_id=1541222752]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="SettingsMenuButton" type="Button" parent="BottomMenu/DockRight" unique_id=1621974801]
+custom_minimum_size = Vector2(152, 44)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.8, 0.8, 1)
+theme_override_colors/font_hover_color = Color(0.95, 0.95, 0.95, 1)
+theme_override_font_sizes/font_size = 15
 theme_override_styles/normal = SubResource("BottomMenuButtonStyle")
 theme_override_styles/pressed = SubResource("BottomMenuButtonPressedStyle")
 theme_override_styles/hover = SubResource("BottomMenuButtonHoverStyle")
 text = "设置"
 
-[node name="SettingsDropdown" type="PanelContainer" parent="BottomMenu/SettingsMenuButton" unique_id=375404561]
+[node name="SettingsDropdown" type="PanelContainer" parent="BottomMenu/DockRight/SettingsMenuButton" unique_id=375404561]
+visible = false
 layout_mode = 1
 anchors_preset = 10
+offset_left = -24.0
 anchor_right = 1.0
-offset_top = -98.0
-offset_bottom = -4.0
+offset_right = 24.0
+offset_top = -110.0
+offset_bottom = -6.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_styles/panel = SubResource("DropdownPanelStyle")
 
-[node name="DropdownVBox" type="VBoxContainer" parent="BottomMenu/SettingsMenuButton/SettingsDropdown" unique_id=602401696]
+[node name="DropdownVBox" type="VBoxContainer" parent="BottomMenu/DockRight/SettingsMenuButton/SettingsDropdown" unique_id=602401696]
 layout_mode = 2
-theme_override_constants/separation = 4
+theme_override_constants/separation = 6
 alignment = 2
 
-[node name="RegenerateDropdownButton" type="Button" parent="BottomMenu/SettingsMenuButton/SettingsDropdown/DropdownVBox" unique_id=960334134]
-custom_minimum_size = Vector2(0, 40)
+[node name="RegenerateDropdownButton" type="Button" parent="BottomMenu/DockRight/SettingsMenuButton/SettingsDropdown/DropdownVBox" unique_id=960334134]
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
+theme_override_colors/font_color = Color(0.169, 0.145, 0.125, 1)
+theme_override_colors/font_hover_color = Color(0.169, 0.145, 0.125, 1)
 theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("DropdownButtonStyle")
+theme_override_styles/hover = SubResource("DropdownButtonHoverStyle")
 text = "重新生成地图"
 
-[node name="MapSettingsDropdownButton" type="Button" parent="BottomMenu/SettingsMenuButton/SettingsDropdown/DropdownVBox" unique_id=1234239205]
-custom_minimum_size = Vector2(0, 40)
+[node name="MapSettingsDropdownButton" type="Button" parent="BottomMenu/DockRight/SettingsMenuButton/SettingsDropdown/DropdownVBox" unique_id=1234239205]
+custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.2, 0.18, 0.14, 1)
+theme_override_colors/font_color = Color(0.169, 0.145, 0.125, 1)
+theme_override_colors/font_hover_color = Color(0.169, 0.145, 0.125, 1)
 theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("DropdownButtonStyle")
+theme_override_styles/hover = SubResource("DropdownButtonHoverStyle")
 text = "地图设置"

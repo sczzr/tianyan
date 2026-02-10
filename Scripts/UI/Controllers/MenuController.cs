@@ -16,8 +16,11 @@ public partial class MenuController : Control
 
 	private PanelContainer _menuPanel;
 	private PanelContainer _mapSettingsPopup;
+	private ColorRect _menuBackdrop;
+	private ColorRect _settingsBackdrop;
 	private Label _pausedLabel;
 	private Label _generationSettingsLabel;
+	private Label _popupHeaderLabel;
 	private Label _mapTypeLabel;
 	private Label _mapStyleLabel;
 	private Label _mapStyleDescriptionLabel;
@@ -102,8 +105,11 @@ public partial class MenuController : Control
 	{
 		_menuPanel = GetNodeOrNull<PanelContainer>("MenuPanel");
 		_mapSettingsPopup = GetNodeOrNull<PanelContainer>("MapSettingsPopup");
+		_menuBackdrop = GetNodeOrNull<ColorRect>("MenuBackdrop");
+		_settingsBackdrop = GetNodeOrNull<ColorRect>("SettingsBackdrop");
 		_pausedLabel = GetNodeOrNull<Label>("MenuPanel/MenuVBox/PausedLabel");
 		_generationSettingsLabel = GetNodeOrNull<Label>("MapSettingsPopup/PopupVBox/GenerationSettingsLabel");
+		_popupHeaderLabel = GetNodeOrNull<Label>("MapSettingsPopup/PopupHeader/HeaderLabel");
 		_mapTypeLabel = GetNodeOrNull<Label>("MapSettingsPopup/PopupVBox/MapTypeHBox/MapTypeLabel");
 		_mapTypeSelector = GetNodeOrNull<OptionButton>("MapSettingsPopup/PopupVBox/MapTypeHBox/MapTypeSelector");
 		_mapStyleHBox = GetNodeOrNull<Control>("MapSettingsPopup/PopupVBox/MapStyleHBox");
@@ -166,6 +172,8 @@ public partial class MenuController : Control
 		_mapViewScaleSlider = GetNodeOrNull<HSlider>("MenuPanel/MenuVBox/MapViewScaleSlider");
 
 		WireMenuButtons();
+		SetMenuVisible(false);
+		HideMapSettingsPopup();
 	}
 
 	public void Initialize(MapView mapView, MapHierarchyConfig mapHierarchyConfig, bool enableDrilldown)
@@ -359,6 +367,11 @@ public partial class MenuController : Control
 		{
 			_menuPanel.Visible = visible;
 		}
+
+		if (_menuBackdrop != null)
+		{
+			_menuBackdrop.Visible = visible;
+		}
 	}
 
 	public void ShowMapSettingsPopup()
@@ -367,6 +380,11 @@ public partial class MenuController : Control
 		{
 			_mapSettingsPopup.Visible = true;
 		}
+
+		if (_settingsBackdrop != null)
+		{
+			_settingsBackdrop.Visible = true;
+		}
 	}
 
 	public void HideMapSettingsPopup()
@@ -374,6 +392,11 @@ public partial class MenuController : Control
 		if (_mapSettingsPopup != null)
 		{
 			_mapSettingsPopup.Visible = false;
+		}
+
+		if (_settingsBackdrop != null)
+		{
+			_settingsBackdrop.Visible = false;
 		}
 	}
 
@@ -436,6 +459,11 @@ public partial class MenuController : Control
 		if (_generationSettingsLabel != null)
 		{
 			_generationSettingsLabel.Text = tm.Tr("generation_settings");
+		}
+
+		if (_popupHeaderLabel != null)
+		{
+			_popupHeaderLabel.Text = tm.Tr("generation_settings");
 		}
 
 		if (_mapTypeLabel != null)

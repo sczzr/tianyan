@@ -9,6 +9,7 @@ namespace FantasyMapGenerator.Scripts.UI.Controllers;
 /// </summary>
 public partial class BottomMenuController : Control
 {
+	private PanelContainer _bottomDockBackground;
 	private HBoxContainer _bottomMenu;
 	private Button _mapDisplayButton;
 	private Button _backToParentButton;
@@ -25,13 +26,14 @@ public partial class BottomMenuController : Control
 
 	public override void _Ready()
 	{
+		_bottomDockBackground = GetNodeOrNull<PanelContainer>("BottomDockBackground");
 		_bottomMenu = GetNodeOrNull<HBoxContainer>("BottomMenu");
-		_mapDisplayButton = GetNodeOrNull<Button>("BottomMenu/MapDisplayButton");
-		_backToParentButton = GetNodeOrNull<Button>("BottomMenu/BackToParentButton");
-		_settingsMenuButton = GetNodeOrNull<Button>("BottomMenu/SettingsMenuButton");
-		_settingsDropdown = GetNodeOrNull<PanelContainer>("BottomMenu/SettingsMenuButton/SettingsDropdown");
-		_mapDropdownRegenerateButton = GetNodeOrNull<Button>("BottomMenu/SettingsMenuButton/SettingsDropdown/DropdownVBox/RegenerateDropdownButton");
-		_mapDropdownSettingsButton = GetNodeOrNull<Button>("BottomMenu/SettingsMenuButton/SettingsDropdown/DropdownVBox/MapSettingsDropdownButton");
+		_mapDisplayButton = GetNodeOrNull<Button>("BottomMenu/DockLeft/MapDisplayButton");
+		_backToParentButton = GetNodeOrNull<Button>("BottomMenu/DockLeft/BackToParentButton");
+		_settingsMenuButton = GetNodeOrNull<Button>("BottomMenu/DockRight/SettingsMenuButton");
+		_settingsDropdown = GetNodeOrNull<PanelContainer>("BottomMenu/DockRight/SettingsMenuButton/SettingsDropdown");
+		_mapDropdownRegenerateButton = GetNodeOrNull<Button>("BottomMenu/DockRight/SettingsMenuButton/SettingsDropdown/DropdownVBox/RegenerateDropdownButton");
+		_mapDropdownSettingsButton = GetNodeOrNull<Button>("BottomMenu/DockRight/SettingsMenuButton/SettingsDropdown/DropdownVBox/MapSettingsDropdownButton");
 	}
 
 	public void Initialize(
@@ -90,7 +92,8 @@ public partial class BottomMenuController : Control
 
 	public bool IsPointerInsideMenu(Vector2 globalPosition)
 	{
-		return IsPointInsideControl(_bottomMenu, globalPosition)
+		return IsPointInsideControl(_bottomDockBackground, globalPosition)
+			|| IsPointInsideControl(_bottomMenu, globalPosition)
 			|| IsPointInsideControl(_settingsDropdown, globalPosition);
 	}
 

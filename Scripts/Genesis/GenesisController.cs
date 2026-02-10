@@ -131,6 +131,7 @@ public partial class GenesisController : Control
 
 		ApplyUniverseToControls(_tempUniverse);
 		UpdateLocalizedText();
+		_planetPreviewController?.SetPlanetPhotoRealtime(false);
 		RefreshAllViews();
 		SetGeneratingState(false, 0f);
 	}
@@ -1115,18 +1116,19 @@ public partial class GenesisController : Control
 
 			_planetPreviewController?.SetGenerationProfile(payload.PlanetGenerationProfile);
 			_planetTextureView?.SetGenerationProfile(payload.PlanetGenerationProfile);
-
-			const int terrainWidth = 1024;
-			const int terrainHeight = 512;
-			payload.PlanetTerrainHeightmap = _planetPreviewController?.GeneratePlanetTerrainHeightmap(
-				payload.CurrentPlanet,
-				terrainWidth,
-				terrainHeight);
-			payload.PlanetTerrainWidth = terrainWidth;
-			payload.PlanetTerrainHeight = terrainHeight;
+			payload.PlanetTerrainHeightmap = null;
+			payload.PlanetTerrainWidth = 0;
+			payload.PlanetTerrainHeight = 0;
 		}
 
-		GenerateRequested?.Invoke(payload);
+		if (GenerateRequested == null)
+		{
+			SetGeneratingState(false, 0f);
+			return;
+		}
+
+		SetGeneratingState(true, 0.02f);
+		GenerateRequested.Invoke(payload);
 	}
 
 	private void OnPlanetParamsChanged()

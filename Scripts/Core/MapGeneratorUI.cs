@@ -19,6 +19,11 @@ public partial class MapGeneratorUI : Control
 	private const bool DefaultEnableMapDrilldown = true;
 	private const int GlobalCityCellCount = 15000;
 	private const int NationalCountyCellCount = 3000;
+	private const int QuickPreviewTerrainWidth = 512;
+	private const int QuickPreviewTerrainHeight = 256;
+	private const float QuickPreviewCellRatio = 0.34f;
+	private const int QuickPreviewMinCellCount = 1200;
+	private const int QuickPreviewMaxCellCount = 4500;
 
 	private ColorRect _background;
 	private Window _rootWindow;
@@ -335,11 +340,25 @@ public partial class MapGeneratorUI : Control
 		try
 		{
 			SyncMapGenerationSizeToWindow();
+			SetWelcomeGeneratingState(true, 0.05f);
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+
+			BuildPlanetTerrainForUniverse(universeData);
+			SetWelcomeGeneratingState(true, 0.38f);
+			await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+
 			ApplyUniverseSettings(universeData);
 
 			int rootCellCount = _mapView.CellCount > 0 ? _mapView.CellCount : DefaultCellCount;
+			int previewCellCount = ResolveQuickPreviewCellCount(rootCellCount);
+			if (previewCellCount != rootCellCount)
+			{
+				_mapView.CellCount = previewCellCount;
+				_menuController?.UpdateCellCountValue(previewCellCount);
+			}
+
 			string genesisSeed = BuildGenesisSeed(universeData);
-			_mapHierarchyController.SetRoot(_rootMapLevel, rootCellCount, genesisSeed, regenerate: false);
+			_mapHierarchyController.SetRoot(_rootMapLevel, previewCellCount, genesisSeed, regenerate: false);
 
 			var targetContext = _mapHierarchyController.Current;
 			if (targetContext == null)
@@ -349,7 +368,8 @@ public partial class MapGeneratorUI : Control
 
 			await _mapView.GenerateMapForContextAsync(targetContext, progress =>
 			{
-				SetWelcomeGeneratingState(true, progress);
+				float mappedProgress = Mathf.Lerp(0.38f, 1f, Mathf.Clamp(progress, 0f, 1f));
+				SetWelcomeGeneratingState(true, mappedProgress);
 			});
 
 			OnMapGeneratedFromGenesis();
@@ -366,6 +386,67 @@ public partial class MapGeneratorUI : Control
 			SetWelcomeGeneratingState(false, 0f);
 			_isWelcomeGenerating = false;
 		}
+	}
+
+	private static void BuildPlanetTerrainForUniverse(UniverseData universeData)
+	{
+		if (universeData == null || universeData.CurrentPlanet == null)
+		{
+			return;
+		}
+
+		PlanetGenerationProfile profile = universeData.PlanetGenerationProfile;
+
+		const int terrainWidth = QuickPreviewTerrainWidth;
+		const int terrainHeight = QuickPreviewTerrainHeight;
+		int seed = BuildPlanetTerrainSeed(universeData.CurrentPlanet, profile, 137);
+
+		universeData.PlanetTerrainHeightmap = PlanetTerrainGenerator.GenerateHeightmap(
+			universeData.CurrentPlanet,
+			profile,
+			terrainWidth,
+			terrainHeight,
+			seed);
+		universeData.PlanetTerrainWidth = terrainWidth;
+		universeData.PlanetTerrainHeight = terrainHeight;
+	}
+
+	private static int BuildPlanetTerrainSeed(PlanetData planetData, PlanetGenerationProfile profile, int salt)
+	{
+		if (planetData == null)
+		{
+			return salt;
+		}
+
+		int mountains = Mathf.RoundToInt(Mathf.Clamp(planetData.MountainIntensity, 0f, 1f) * 1000f);
+		int polar = Mathf.RoundToInt(Mathf.Clamp(planetData.PolarCoverage, 0f, 1f) * 1000f);
+		int desert = Mathf.RoundToInt(Mathf.Clamp(planetData.DesertRatio, 0f, 1f) * 1000f);
+		int tectonic = profile.TectonicPlateCount;
+		int windCells = profile.WindCellCount;
+		int erosionIterations = profile.ErosionIterations;
+		int erosionStrength = Mathf.RoundToInt(profile.ErosionStrength * 1000f);
+		int heatFactor = Mathf.RoundToInt(profile.HeatFactor);
+		int continental = Mathf.RoundToInt(profile.ContinentalFrequency * 1000f);
+
+		return ((int)planetData.Element + 1) * 92821
+			+ mountains * 911
+			+ polar * 1013
+			+ desert * 1231
+			+ tectonic * 53
+			+ windCells * 79
+			+ erosionIterations * 97
+			+ erosionStrength * 13
+			+ heatFactor * 7
+			+ continental * 19
+			+ salt;
+	}
+
+	private static int ResolveQuickPreviewCellCount(int targetCellCount)
+	{
+		int safeTarget = Mathf.Max(QuickPreviewMinCellCount, targetCellCount);
+		int preview = Mathf.RoundToInt(safeTarget * QuickPreviewCellRatio);
+		preview = Mathf.Clamp(preview, QuickPreviewMinCellCount, QuickPreviewMaxCellCount);
+		return Mathf.Min(preview, safeTarget);
 	}
 
 	private void SetWelcomeGeneratingState(bool generating, float progress01)
@@ -656,7 +737,7 @@ public partial class MapGeneratorUI : Control
 	private void OnMapDisplayPressed()
 	{
 		HideDropdowns();
-		_mapDisplayPanelController?.ShowPanel();
+		_mapDisplayPanelController?.TogglePanel();
 	}
 
 	private void OnDisplayTabSelected(int tabIndex)

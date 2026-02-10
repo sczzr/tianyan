@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Godot UI 布局预览</title>
+<style>
+/* --- 全局变量：对应 Godot 的 Theme 和 StyleBox 颜色 --- */
+:root {
+--bg-bottom-dock: rgba(36, 33, 30, 0.95); /* BottomDockPanelStyle */
+--bg-sidebar: #ede0c4; /* SidebarPanelStyle */
+--bg-sidebar-dark: #dcd0bc;
+--bg-modal: #e8d5b5; /* SettingsPanelStyle */
+
+code
+Code
+download
+content_copy
+expand_less
+--btn-default: #dcd0bc;
+    --btn-hover: #ebe4d6;
+    --btn-active: #5d7a8c; /* 选中状态颜色 */
+    --btn-text-active: #fff;
+    
+    --border-color: #8c7f6b;
+    --text-dark: #2b2520;
+    --text-light: #f0e6d2;
+    
+    --spacing: 8px;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+    background-color: #1a1a1a;
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    user-select: none; /* 模拟游戏不可选中文字 */
+}
+
+/* 模拟游戏画面 */
+.viewport {
+    width: 100vw;
+    height: 100vh;
+    background: radial-gradient(circle at center, #3b5d7a 0%, #1e2a36 100%);
+    position: relative;
+}
+
+/* 地图背景占位符 */
+.map-grid {
+    position: absolute;
+    width: 100%; height: 100%;
+    background-image: 
+        linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+}
+
+/* =========================================
+   1. 右侧侧边栏 (MapDisplayPanelUI)
+   ========================================= */
+.sidebar-panel {
+    position: absolute;
+    top: 20px;
+    bottom: 84px; /* 留出底部栏高度 + 间距 */
+    right: 20px;
+    width: 340px;
+    background-color: var(--bg-sidebar);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: -4px 4px 10px rgba(0,0,0,0.3);
+    display: flex;
+    flex-direction: column;
+    z-index: 5;
+}
+
+.sidebar-header {
+    padding: 12px;
+    text-align: center;
+    font-weight: bold;
+    color: var(--text-dark);
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+/* Tab 切换区 */
+.sidebar-tabs {
+    display: flex;
+    background-color: var(--bg-sidebar-dark);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tab-btn {
+    flex: 1;
+    border: none;
+    background: transparent;
+    padding: 10px 0;
+    cursor: pointer;
+    font-weight: 600;
+    color: #666;
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover { background-color: rgba(255,255,255,0.2); }
+
+.tab-btn.active {
+    color: var(--text-dark);
+    background-color: var(--bg-sidebar);
+    border-bottom: 3px solid #4a6680;
+}
+
+/* 滚动内容区 (对应 ScrollContainer) */
+.sidebar-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+/* 自定义滚动条样式 */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+::-webkit-scrollbar-thumb { background: #bbb; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #999; }
+
+.group-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #665;
+    text-transform: uppercase;
+    margin: 16px 0 8px 0;
+    display: block;
+}
+.group-label:first-child { margin-top: 0; }
+
+/* 网格按钮组 */
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 对应 columns=2 */
+    gap: 8px;
+}
+
+.toggle-btn {
+    background-color: #e6dac8;
+    border: 1px solid #c0b090;
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 13px;
+    color: var(--text-dark);
+    cursor: pointer;
+    text-align: center;
+    transition: 0.1s;
+}
+
+.toggle-btn:hover { background-color: #fff; }
+
+.toggle-btn.pressed {
+    background-color: #5c7c98;
+    color: white;
+    border-color: #4a637a;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* =========================================
+   2. 底部通栏 (BottomMenuUI)
+   ========================================= */
+.bottom-dock {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 64px;
+    background-color: var(--bg-bottom-dock);
+    border-top: 2px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    box-sizing: border-box;
+    box-shadow: 0 -4px 10px rgba(0,0,0,0.3);
+    z-index: 10;
+}
+
+.dock-left, .dock-right {
+    display: flex;
+    gap: 12px;
+}
+
+.dock-btn {
+    background: transparent;
+    color: #ccc;
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 8px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: 0.2s;
+}
+
+.dock-btn:hover {
+    background: rgba(255,255,255,0.1);
+    color: white;
+    border-color: rgba(255,255,255,0.4);
+}
+
+.dock-btn.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: transparent !important;
+}
+
+/* =========================================
+   3. 设置弹窗 (MenuUI)
+   ========================================= */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(3px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    visibility: hidden;
+    opacity: 0;
+    transition: 0.2s;
+}
+
+.modal-overlay.open {
+    visibility: visible;
+    opacity: 1;
+}
+
+.modal-window {
+    width: 500px;
+    max-height: 80vh; /* 确保不超出屏幕 */
+    background-color: var(--bg-modal);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column; /* 关键：垂直布局 */
+}
+
+.modal-header {
+    padding: 16px;
+    border-bottom: 1px solid #ccc;
+    font-size: 18px;
+    font-weight: bold;
+    color: var(--text-dark);
+    background: rgba(255,255,255,0.1);
+}
+
+/* 弹窗内的滚动区域 */
+.modal-scroll-area {
+    flex: 1; /* 占据剩余空间 */
+    overflow-y: auto; /* 超出滚动 */
+    padding: 20px;
+}
+
+.setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.setting-row label {
+    font-size: 14px;
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.setting-control {
+    width: 160px;
+}
+
+input[type="range"] { width: 100%; cursor: pointer; }
+select { width: 100%; padding: 4px; border-radius: 4px; border: 1px solid #aaa; background: #fff; }
+input[type="number"] { width: 100%; padding: 4px; }
+
+/* 弹窗底部固定按钮区 */
+.modal-footer {
+    padding: 16px;
+    background: rgba(0,0,0,0.05);
+    border-top: 1px solid #ccc;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.modal-btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: 1px solid #bbb;
+    cursor: pointer;
+    font-weight: bold;
+}
+.btn-cancel { background: #ddd; color: #333; }
+.btn-apply { background: #5c7c98; color: white; border-color: #4a637a; }
+.btn-apply:hover { background: #4a6680; }
+</style>
+</head>
+<body>
+
+<div class="viewport">
+<div class="map-grid"></div>
+
+code
+Code
+download
+content_copy
+expand_less
+<!-- 1. 右侧侧边栏 -->
+<div class="sidebar-panel">
+    <div class="sidebar-header">地图控制台</div>
+    
+    <div class="sidebar-tabs">
+        <button class="tab-btn active" onclick="switchTab('layers')">图层</button>
+        <button class="tab-btn" onclick="switchTab('edit')">编辑</button>
+        <button class="tab-btn" onclick="switchTab('border')">边界</button>
+        <button class="tab-btn" onclick="switchTab('theme')">主题</button>
+    </div>
+
+    <!-- 滚动内容容器 -->
+    <div class="sidebar-scroll" id="content-layers">
+        
+        <div class="group-label">基础地形</div>
+        <div class="grid-container">
+            <button class="toggle-btn pressed" onclick="toggle(this)">高度图</button>
+            <button class="toggle-btn pressed" onclick="toggle(this)">生态群落</button>
+            <button class="toggle-btn" onclick="toggle(this)">网格线</button>
+            <button class="toggle-btn" onclick="toggle(this)">坐标</button>
+        </div>
+
+        <div class="group-label">人文地理</div>
+        <div class="grid-container">
+            <button class="toggle-btn pressed" onclick="toggle(this)">国家</button>
+            <button class="toggle-btn" onclick="toggle(this)">省份</button>
+            <button class="toggle-btn pressed" onclick="toggle(this)">边界线</button>
+            <button class="toggle-btn pressed" onclick="toggle(this)">文字标签</button>
+            <button class="toggle-btn pressed" onclick="toggle(this)">河流</button>
+            <button class="toggle-btn" onclick="toggle(this)">道路</button>
+        </div>
+
+        <div class="group-label">环境数据</div>
+        <div class="grid-container">
+            <button class="toggle-btn" onclick="toggle(this)">温度</button>
+            <button class="toggle-btn" onclick="toggle(this)">降水</button>
+            <button class="toggle-btn" onclick="toggle(this)">人口</button>
+            <button class="toggle-btn" onclick="toggle(this)">军事</button>
+        </div>
+        
+        <div style="height: 50px;"></div> <!-- 模拟更多内容 -->
+    </div>
+    
+    <!-- 其他 Tab 内容占位 -->
+    <div class="sidebar-scroll" id="content-edit" style="display:none;">
+        <div class="group-label">行政编辑</div>
+        <div class="grid-container">
+            <button class="toggle-btn">修改国界</button>
+            <button class="toggle-btn">迁移首都</button>
+        </div>
+    </div>
+    <div class="sidebar-scroll" id="content-border" style="display:none;">
+        <div class="group-label">边界样式</div>
+        <div class="setting-row">
+            <label>边界粗细</label>
+            <input type="range" style="width:100px">
+        </div>
+    </div>
+    <div class="sidebar-scroll" id="content-theme" style="display:none;">
+        <div class="group-label">地图主题</div>
+        <select><option>羊皮纸</option><option>卫星</option></select>
+    </div>
+</div>
+
+<!-- 2. 底部通栏 -->
+<div class="bottom-dock">
+    <div class="dock-left">
+        <button class="dock-btn pressed">🗺️ 地图显示</button>
+        <button class="dock-btn disabled">⬅ 返回上级</button>
+    </div>
+    
+    <div class="dock-right">
+        <button class="dock-btn" onclick="openModal()">⚙️ 系统设置</button>
+    </div>
+</div>
+
+<!-- 3. 设置弹窗 -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal-window">
+        <div class="modal-header">地图生成设置</div>
+        
+        <!-- 可滚动的区域 -->
+        <div class="modal-scroll-area">
+            <div class="setting-row">
+                <label>地图类型</label>
+                <div class="setting-control">
+                    <select><option>盘古大陆</option><option>群岛</option><option>大陆</option></select>
+                </div>
+            </div>
+            
+            <div class="setting-row">
+                <label>单元格数量</label>
+                <div class="setting-control"><input type="number" value="5000"></div>
+            </div>
+
+            <div class="setting-row">
+                <label>河流密度</label>
+                <div class="setting-control"><input type="range" min="1" max="100" value="50"></div>
+            </div>
+
+            <div class="group-label" style="border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-bottom: 12px;">国家参数</div>
+            
+            <div class="setting-row">
+                <label>国家数量</label>
+                <div class="setting-control"><input type="number" value="12"></div>
+            </div>
+            
+            <div class="setting-row">
+                <label>最小领土面积</label>
+                <div class="setting-control"><input type="number" value="5"></div>
+            </div>
+
+            <div class="group-label" style="border-bottom: 1px solid #ccc; padding-bottom: 4px; margin-bottom: 12px;">层级设置</div>
+
+            <div class="setting-row">
+                <label>世界级单元</label>
+                <div class="setting-control"><input type="number" value="15000"></div>
+            </div>
+            
+            <div class="setting-row">
+                <label>允许下钻</label>
+                <div class="setting-control"><input type="checkbox" checked></div>
+            </div>
+            
+            <div class="setting-row">
+                <label>多线程生成</label>
+                <div class="setting-control"><input type="checkbox" checked></div>
+            </div>
+            
+            <!-- 故意加长内容以展示滚动 -->
+            <div class="setting-row"><label>高级选项 A</label><input type="checkbox"></div>
+            <div class="setting-row"><label>高级选项 B</label><input type="checkbox"></div>
+            <div class="setting-row"><label>高级选项 C</label><input type="checkbox"></div>
+        </div>
+
+        <!-- 底部固定按钮 -->
+        <div class="modal-footer">
+            <button class="modal-btn btn-cancel" onclick="closeModal()">取消</button>
+            <button class="modal-btn btn-cancel">恢复默认</button>
+            <button class="modal-btn btn-apply" onclick="closeModal()">应用更改</button>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+// Tab 切换逻辑
+function switchTab(tabName) {
+// 隐藏所有内容
+document.getElementById('content-layers').style.display = 'none';
+document.getElementById('content-edit').style.display = 'none';
+document.getElementById('content-border').style.display = 'none';
+document.getElementById('content-theme').style.display = 'none';
+
+// 显示选中内容
+document.getElementById('content-' + tabName).style.display = 'block';
+
+// 更新按钮状态
+const btns = document.querySelectorAll('.tab-btn');
+btns.forEach(btn => btn.classList.remove('active'));
+event.target.classList.add('active');
+}
+
+// 按钮 Toggle 逻辑
+function toggle(btn) {
+btn.classList.toggle('pressed');
+}
+
+// 弹窗逻辑
+function openModal() {
+document.getElementById('settingsModal').classList.add('open');
+}
+
+function closeModal() {
+document.getElementById('settingsModal').classList.remove('open');
+}
+</script>
+
+</body>
+</html>

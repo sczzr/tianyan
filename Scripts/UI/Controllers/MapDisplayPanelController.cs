@@ -13,11 +13,6 @@ namespace FantasyMapGenerator.Scripts.UI.Controllers;
 public partial class MapDisplayPanelController : Control
 {
 	private MapView _mapView;
-	private PanelContainer _mapDisplayDropdown;
-	private Button _layersTabButton;
-	private Button _editTabButton;
-	private Button _borderTabButton;
-	private Button _themeTabButton;
 	private PanelContainer _mapDisplayPanel;
 	private Label _mapDisplayTitleLabel;
 	private Label _presetSectionLabel;
@@ -77,20 +72,27 @@ public partial class MapDisplayPanelController : Control
 	private bool _updatingLayerToggles;
 	private bool _layerPresetSelectorWired;
 	private bool _mapThemeSelectorWired;
-	private bool _displayTabButtonsWired;
+
+	public bool IsPanelVisible
+	{
+		get
+		{
+			if (!Visible)
+			{
+				return false;
+			}
+
+			return _mapDisplayPanel == null || _mapDisplayPanel.Visible;
+		}
+	}
 
 	public override void _Ready()
 	{
-		_mapDisplayDropdown = GetNodeOrNull<PanelContainer>("MapDisplayDropdown");
-		_layersTabButton = GetNodeOrNull<Button>("MapDisplayDropdown/DropdownVBox/LayersTabButton");
-		_editTabButton = GetNodeOrNull<Button>("MapDisplayDropdown/DropdownVBox/EditTabButton");
-		_borderTabButton = GetNodeOrNull<Button>("MapDisplayDropdown/DropdownVBox/BorderTabButton");
-		_themeTabButton = GetNodeOrNull<Button>("MapDisplayDropdown/DropdownVBox/ThemeTabButton");
 		_mapDisplayPanel = GetNodeOrNull<PanelContainer>("MapDisplayPanel");
 		_mapDisplayTitleLabel = GetNodeOrNull<Label>("MapDisplayPanel/MapDisplayVBox/MapDisplayTitle");
-		_presetSectionLabel = GetNodeOrNull<Label>("MapDisplayPanel/MapDisplayVBox/PresetSectionLabel");
-		_layerPresetLabel = GetNodeOrNull<Label>("MapDisplayPanel/MapDisplayVBox/LayerPresetHBox/LayerPresetLabel");
-		_layerPresetSelector = GetNodeOrNull<OptionButton>("MapDisplayPanel/MapDisplayVBox/LayerPresetHBox/LayerPresetSelector");
+		_presetSectionLabel = GetNodeOrNull<Label>("MapDisplayPanel/MapDisplayVBox/DisplayTabs/LayersPage/PresetSectionLabel");
+		_layerPresetLabel = GetNodeOrNull<Label>("MapDisplayPanel/MapDisplayVBox/DisplayTabs/LayersPage/LayerPresetHBox/LayerPresetLabel");
+		_layerPresetSelector = GetNodeOrNull<OptionButton>("MapDisplayPanel/MapDisplayVBox/DisplayTabs/LayersPage/LayerPresetHBox/LayerPresetSelector");
 		_displayTabs = GetNodeOrNull<TabContainer>("MapDisplayPanel/MapDisplayVBox/DisplayTabs");
 		_layerListLabel = GetNodeOrNull<Label>("MapDisplayPanel/MapDisplayVBox/DisplayTabs/LayersPage/LayerListLabel");
 		_layerListVBox = GetNodeOrNull<VBoxContainer>("MapDisplayPanel/MapDisplayVBox/DisplayTabs/LayersPage/LayerListVBox");
@@ -144,6 +146,7 @@ public partial class MapDisplayPanelController : Control
 	public void Initialize(MapView mapView)
 	{
 		_mapView = mapView;
+
 		SetupMapDisplaySettings();
 		UpdateUIText();
 	}
@@ -216,26 +219,6 @@ public partial class MapDisplayPanelController : Control
 			_layerOverlaySectionLabel.Text = tm.Tr("layer_section_overlay");
 		}
 
-		if (_layersTabButton != null)
-		{
-			_layersTabButton.Text = tm.Tr("map_tab_layers");
-		}
-
-		if (_editTabButton != null)
-		{
-			_editTabButton.Text = tm.Tr("map_tab_edit");
-		}
-
-		if (_borderTabButton != null)
-		{
-			_borderTabButton.Text = tm.Tr("map_tab_border");
-		}
-
-		if (_themeTabButton != null)
-		{
-			_themeTabButton.Text = tm.Tr("map_tab_theme");
-		}
-
 		if (_displayTabs != null)
 		{
 			_displayTabs.SetTabTitle(0, tm.Tr("map_tab_layers"));
@@ -291,16 +274,32 @@ public partial class MapDisplayPanelController : Control
 	{
 		Visible = true;
 
-		if (_mapDisplayDropdown != null)
-		{
-			_mapDisplayDropdown.Visible = true;
-		}
-
 		if (_mapDisplayPanel != null)
 		{
 			_mapDisplayPanel.Visible = true;
 			CallDeferred(nameof(UpdateMapDisplayPanelSize));
 		}
+	}
+
+	public void HidePanel()
+	{
+		if (_mapDisplayPanel != null)
+		{
+			_mapDisplayPanel.Visible = false;
+		}
+
+		Visible = false;
+	}
+
+	public void TogglePanel()
+	{
+		if (IsPanelVisible)
+		{
+			HidePanel();
+			return;
+		}
+
+		ShowPanel();
 	}
 
 	public void OnDisplayTabSelected(int tabIndex)
@@ -325,8 +324,16 @@ public partial class MapDisplayPanelController : Control
 			return;
 		}
 
+		if (_mapDisplayPanel.AnchorTop >= 0f && _mapDisplayPanel.AnchorBottom <= 1f && _mapDisplayPanel.AnchorTop < _mapDisplayPanel.AnchorBottom)
+		{
+			return;
+		}
+
 		var minSize = _mapDisplayPanel.GetCombinedMinimumSize();
-		_mapDisplayPanel.OffsetTop = _mapDisplayPanel.OffsetBottom - minSize.Y;
+		if (minSize.Y > 0f)
+		{
+			_mapDisplayPanel.OffsetTop = _mapDisplayPanel.OffsetBottom - minSize.Y;
+		}
 	}
 
 	private void SetupMapDisplaySettings()
@@ -334,7 +341,6 @@ public partial class MapDisplayPanelController : Control
 		SetupLayerPresetSelector();
 		SetupLayerToggles();
 		SetupEditableElements();
-		SetupDisplayTabButtons();
 		SetupMapDisplaySections();
 
 		if (_countryBorderWidthSlider != null)
@@ -445,36 +451,6 @@ public partial class MapDisplayPanelController : Control
 		UpdateRouteBridgeFluxLabel();
 		UpdateRouteBridgePenaltyLabel();
 		CallDeferred(nameof(SyncLayerUI));
-	}
-
-	private void SetupDisplayTabButtons()
-	{
-		if (_displayTabButtonsWired)
-		{
-			return;
-		}
-
-		_displayTabButtonsWired = true;
-
-		if (_layersTabButton != null)
-		{
-			_layersTabButton.Pressed += () => OnDisplayTabSelected(0);
-		}
-
-		if (_editTabButton != null)
-		{
-			_editTabButton.Pressed += () => OnDisplayTabSelected(1);
-		}
-
-		if (_borderTabButton != null)
-		{
-			_borderTabButton.Pressed += () => OnDisplayTabSelected(2);
-		}
-
-		if (_themeTabButton != null)
-		{
-			_themeTabButton.Pressed += () => OnDisplayTabSelected(3);
-		}
 	}
 
 	private void SetupMapDisplaySections()
